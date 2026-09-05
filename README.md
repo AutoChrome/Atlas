@@ -1,6 +1,6 @@
 # Atlas
 
-FirstB2B's internal documentation platform: Rails 8 + Postgres + Caddy,
+Internal documentation platform: Rails 8 + Postgres + Caddy,
 running in Docker. Content is organised into **Areas** (collections of
 documentation, nestable) containing **Pages** (rich-text content with
 images, video, and file attachments). Areas and individual Pages can be
