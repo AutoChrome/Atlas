@@ -18,6 +18,7 @@
     <a href="#conventions" class="btn btn--text btn--sm">Conventions</a>
     <a href="#areas" class="btn btn--text btn--sm">Areas</a>
     <a href="#pages" class="btn btn--text btn--sm">Pages</a>
+    <a href="#attachments" class="btn btn--text btn--sm">Inline attachments</a>
     <a href="#scoping" class="btn btn--text btn--sm">Token scoping</a>
     <a href="#errors" class="btn btn--text btn--sm">Errors</a>
   </nav>
@@ -44,6 +45,7 @@
       <li><strong>Format:</strong> JSON in, JSON out. No need to set <code class="font-mono">Accept</code> or <code class="font-mono">Content-Type</code> — every response under <code class="font-mono">/api</code> is JSON regardless.</li>
       <li><strong>IDs vs slugs:</strong> Areas are addressed by slug in the URL (<code class="font-mono">/api/v1/areas/getting-started</code>); Pages by numeric ID (<code class="font-mono">/api/v1/pages/42</code>) — a page's slug is only unique within its area, so it can't identify a page on its own.</li>
       <li><strong>Pagination:</strong> list endpoints return 25 per page by default, wrapped in a <code class="font-mono">pagination</code> object.</li>
+      <li><strong><code class="font-mono">url</code> vs <code class="font-mono">web_url</code>:</strong> every Area/Page response has both — <code class="font-mono">url</code> is this same JSON API endpoint (fetching it returns more JSON), <code class="font-mono">web_url</code> is the actual browsable page.</li>
     </ul>
     <pre class="code-block">{
   "areas": [ { "id": 1, "slug": "getting-started", "name": "Getting Started", ... } ],
@@ -167,6 +169,57 @@
       <p>Delete a page. Returns <code class="font-mono">204 No Content</code>.</p>
       <pre class="code-block">curl -X DELETE -H "Authorization: Bearer YOUR_API_TOKEN" \
   <%= base %>/api/v1/pages/42</pre>
+    </div>
+  </section>
+
+  <section id="attachments" class="docs-section stack">
+    <h2>Inline attachments</h2>
+    <p>
+      A page's <code class="font-mono">content</code> is plain HTML, so text-only pages need nothing
+      special — but embedding an image or file <em>inline</em> (the way dragging one into the Trix
+      editor does in the web UI) takes two steps: upload it to get a reference, then splice that
+      reference into the HTML you send as <code class="font-mono">content</code>. It's the same
+      mechanism Trix itself uses under the hood.
+    </p>
+
+    <div>
+      <div class="docs-endpoint">
+        <span class="docs-endpoint__method docs-endpoint__method--post">POST</span>
+        <span class="font-mono">/api/v1/attachments</span>
+      </div>
+      <p>
+        Upload a file (<code class="font-mono">multipart/form-data</code>, field name
+        <code class="font-mono">file</code>). Not tied to any page yet — just registers the file and
+        hands back an <code class="font-mono">html</code> snippet ready to embed.
+      </p>
+      <pre class="code-block">curl -X POST -H "Authorization: Bearer YOUR_API_TOKEN" \
+  -F "file=@screenshot.png;type=image/png" \
+  <%= base %>/api/v1/attachments</pre>
+      <pre class="code-block">{
+  "signed_id": "eyJfcmFpbHMiOns...",
+  "filename": "screenshot.png",
+  "content_type": "image/png",
+  "byte_size": 48213,
+  "html": "&lt;action-text-attachment sgid=\"...\" content-type=\"image/png\" filename=\"screenshot.png\" filesize=\"48213\" previewable=\"true\"&gt;&lt;/action-text-attachment&gt;"
+}</pre>
+    </div>
+
+    <div>
+      <p>
+        Paste that <code class="font-mono">html</code> value directly into the <code class="font-mono">content</code>
+        you send when creating or updating the page — anywhere in the string, it'll render at that
+        point (an inline image for image types, a download card for anything else):
+      </p>
+      <pre class="code-block">curl -X POST -H "Authorization: Bearer YOUR_API_TOKEN" \
+  -d "area_id=1" \
+  -d "title=Deploy screenshots" \
+  -d "content=&lt;p&gt;Here's the dashboard after deploy:&lt;/p&gt;&lt;action-text-attachment sgid=\"...\" content-type=\"image/png\" filename=\"screenshot.png\" filesize=\"48213\" previewable=\"true\"&gt;&lt;/action-text-attachment&gt;" \
+  <%= base %>/api/v1/pages</pre>
+      <p class="field__hint">
+        Don't hand-write the <code class="font-mono">&lt;action-text-attachment&gt;</code> tag yourself —
+        use the exact <code class="font-mono">html</code> the upload call returned. Its internal
+        format isn't a stable public contract; the upload response is.
+      </p>
     </div>
   </section>
 

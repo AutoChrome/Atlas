@@ -9,3 +9,4 @@ json.parent_id area.parent_id
 json.created_at area.created_at
 json.updated_at area.updated_at
 json.url api_v1_area_url(area)
+json.web_url area_url(area)

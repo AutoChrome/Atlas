@@ -55,6 +55,7 @@ Rails.application.routes.draw do
     namespace :v1 do
       resources :areas, param: :slug
       resources :pages
+      resources :attachments, only: %i[create]
     end
   end
 end
