@@ -59,7 +59,7 @@ gem "pundit"
 gem "audited"
 
 # Fast, view-focused pagination [https://github.com/ddnexus/pagy]
-gem "pagy", "~> 9.3"
+gem "pagy", "~> 43.6"
 
 # Search indexing for Areas & Pages (title + full page content), backed by
 # OpenSearch [https://github.com/ankane/searchkick]

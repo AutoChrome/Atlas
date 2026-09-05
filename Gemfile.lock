@@ -241,7 +241,10 @@ GEM
       faraday (>= 1.0, < 3)
       multi_json (>= 1.0)
     ostruct (0.6.3)
-    pagy (9.4.0)
+    pagy (43.6.2)
+      json
+      uri
+      yaml
     parallel (2.1.0)
     parser (3.3.12.0)
       ast (~> 2.4.1)
@@ -418,6 +421,7 @@ GEM
     websocket-extensions (0.1.5)
     xpath (3.2.0)
       nokogiri (~> 1.8)
+    yaml (0.4.0)
     zeitwerk (2.8.3)
 
 PLATFORMS
@@ -440,7 +444,7 @@ DEPENDENCIES
   kamal
   letter_opener_web
   opensearch-ruby
-  pagy (~> 9.3)
+  pagy (~> 43.6)
   pg (~> 1.1)
   propshaft
   puma (>= 5.0)
