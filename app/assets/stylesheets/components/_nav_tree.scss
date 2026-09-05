@@ -1,0 +1,165 @@
+@use "../abstracts/variables" as v;
+@use "../abstracts/mixins" as m;
+
+.nav-tree {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.nav-tree__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding-right: m.spacer(2);
+}
+
+.nav-tree__list {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.nav-tree__node {
+  display: flex;
+  flex-direction: column;
+}
+
+.nav-tree__item {
+  display: flex;
+  align-items: center;
+  gap: m.spacer(1);
+
+  .nav-tree__link {
+    flex: 1;
+    min-width: 0;
+  }
+}
+
+.nav-tree__chevron {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 20px;
+  height: 20px;
+  flex-shrink: 0;
+  color: var(--color-on-surface-variant);
+  border-radius: v.$radius-sm;
+  transition: transform v.$duration-short v.$easing-standard;
+
+  &:hover {
+    background-color: var(--color-surface-container-high);
+  }
+}
+
+.nav-tree__chevron--spacer {
+  visibility: hidden;
+}
+
+.nav-tree__node.is-expanded > .nav-tree__item .nav-tree__chevron {
+  transform: rotate(90deg);
+}
+
+// Hidden outside editing mode — not via the `hidden` attribute (an earlier
+// version toggled that from JS), because this component's own `display`
+// declaration would win over the browser's `[hidden] { display: none }`
+// default the moment it's set unconditionally. Driving visibility from the
+// single .nav-tree--editing class instead keeps one source of truth.
+.nav-tree__drag-handle {
+  display: none;
+  align-items: center;
+  justify-content: center;
+  width: 20px;
+  flex-shrink: 0;
+  color: var(--color-on-surface-variant);
+}
+
+// Editing mode: dashed outline on draggable rows, grab cursor, visible
+// handles.
+.nav-tree--editing {
+  .nav-tree__drag-handle {
+    display: flex;
+  }
+
+  .nav-tree__item {
+    cursor: grab;
+    border-radius: v.$radius-sm;
+    outline: 1px dashed var(--color-outline-variant);
+    outline-offset: -1px;
+  }
+
+  // draggable="true" (and so is-dragging/dragstart/dragover/drop) lives on
+  // .nav-tree__node, not .nav-tree__item — dragging an area has to carry
+  // its children with it, so the whole subtree is the draggable unit, not
+  // just its own row.
+  .nav-tree__node.is-dragging {
+    opacity: 0.5;
+    cursor: grabbing;
+  }
+}
+
+.nav-tree__link {
+  display: flex;
+  align-items: center;
+  gap: m.spacer(3);
+  padding: m.spacer(2) m.spacer(3);
+  border-radius: v.$radius-full;
+  @include m.type(body);
+  color: var(--color-on-surface-variant);
+  transition: background-color v.$duration-short v.$easing-standard;
+
+  &:hover {
+    background-color: var(--color-surface-container-high);
+  }
+
+  &.is-active {
+    background-color: var(--color-secondary-container);
+    color: var(--color-on-secondary-container);
+    font-weight: 500;
+  }
+}
+
+.nav-tree__icon {
+  width: 20px;
+  height: 20px;
+  flex-shrink: 0;
+}
+
+.nav-tree__children {
+  margin-left: m.spacer(5);
+  border-left: 1px solid var(--color-outline-variant);
+  padding-left: m.spacer(3);
+}
+
+.nav-tree__section-label {
+  @include m.type(label);
+  color: var(--color-on-surface-variant);
+  padding: m.spacer(4) m.spacer(3) m.spacer(1);
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+}
+
+.nav-tree__sort {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  padding: 2px;
+  background-color: var(--color-surface-container-high);
+  border-radius: v.$radius-full;
+}
+
+.nav-tree__sort-option {
+  padding: 2px m.spacer(3);
+  border-radius: v.$radius-full;
+  @include m.type(label);
+  color: var(--color-on-surface-variant);
+
+  &:hover {
+    background-color: var(--color-surface-container-highest);
+  }
+
+  &.is-active {
+    background-color: var(--color-primary-container);
+    color: var(--color-on-primary-container);
+  }
+}

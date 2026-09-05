@@ -1,0 +1,28 @@
+<% content_for :title, "Audit log" %>
+
+<div class="stack">
+  <h1>Audit log</h1>
+
+  <table class="data-table">
+    <thead>
+      <tr>
+        <th>When</th>
+        <th>Who</th>
+        <th>Action</th>
+        <th>Record</th>
+      </tr>
+    </thead>
+    <tbody>
+      <% @audits.each do |audit| %>
+        <tr>
+          <td><%= link_to audit.created_at.to_fs(:long), admin_audit_path(audit) %></td>
+          <td><%= audit.user.respond_to?(:name) ? audit.user.name : (audit.user || "System") %></td>
+          <td><span class="badge"><%= audit.action %></span></td>
+          <td><%= audit.auditable_type %> #<%= audit.auditable_id %></td>
+        </tr>
+      <% end %>
+    </tbody>
+  </table>
+
+  <%= raw pagy_nav(@pagy) if @pagy.pages > 1 %>
+</div>

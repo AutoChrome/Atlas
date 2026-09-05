@@ -1,0 +1,49 @@
+<% pages = policy_scope(area.pages).ordered %>
+<% children = policy_scope(area.children).ordered_by(area_sort_mode) %>
+<% has_children = pages.any? || children.any? %>
+<% expanded = expanded_area_ids.include?(area.id) %>
+
+<%# The whole subtree (item + its children) is the draggable unit, not just
+    the row — dragging an area has to bring its sub-areas/pages with it. %>
+<div class="nav-tree__node<%= " is-expanded" if expanded %>"
+     data-controller="nav-collapse"
+     data-nav-reorder-target="item" data-area-id="<%= area.id %>"
+     data-action="dragstart->nav-reorder#dragStart dragover->nav-reorder#dragOver drop->nav-reorder#drop dragend->nav-reorder#dragEnd">
+  <div class="nav-tree__item">
+    <% if has_children %>
+      <button type="button" class="nav-tree__chevron" data-action="nav-collapse#toggle" data-nav-collapse-target="chevron" aria-label="Expand or collapse">
+        <%= fa_icon "chevron-right" %>
+      </button>
+    <% else %>
+      <span class="nav-tree__chevron nav-tree__chevron--spacer"></span>
+    <% end %>
+
+    <span class="nav-tree__drag-handle" data-nav-reorder-target="handle">
+      <%= fa_icon "grip-vertical" %>
+    </span>
+
+    <%= link_to area, class: class_names("nav-tree__link", "is-active" => current_page?(area)),
+          data: { action: "click->nav-reorder#preventNavigationWhileEditing" } do %>
+      <%= record_icon(area, fallback: :folder, css_class: "nav-tree__icon") %>
+      <%= area.name %>
+      <% if current_user && area.public? %>
+        <span class="badge badge--success hide-mobile">Public</span>
+      <% end %>
+    <% end %>
+  </div>
+
+  <% if has_children %>
+    <div class="nav-tree__children" data-nav-collapse-target="children" data-nav-reorder-target="list" <%= "hidden" unless expanded %>>
+      <% pages.each do |page| %>
+        <%= link_to [area, page], class: class_names("nav-tree__link", "is-active" => current_page?([area, page])) do %>
+          <%= record_icon(page, fallback: :page, css_class: "nav-tree__icon") %>
+          <%= page.title %>
+        <% end %>
+      <% end %>
+
+      <% children.each do |child| %>
+        <%= render "shared/area_nav_item", area: child %>
+      <% end %>
+    </div>
+  <% end %>
+</div>

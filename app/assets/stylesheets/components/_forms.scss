@@ -1,0 +1,91 @@
+@use "../abstracts/variables" as v;
+@use "../abstracts/mixins" as m;
+
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: m.spacer(1);
+  margin-bottom: m.spacer(4);
+}
+
+.field__label {
+  @include m.type(label);
+  color: var(--color-on-surface-variant);
+}
+
+.field__hint {
+  @include m.type(label);
+  color: var(--color-on-surface-variant);
+}
+
+.field__error {
+  @include m.type(label);
+  color: var(--color-error);
+}
+
+.input,
+.textarea,
+.select {
+  @include m.input-base;
+}
+
+.textarea {
+  min-height: 8rem;
+  resize: vertical;
+}
+
+.checkbox,
+.radio {
+  display: inline-flex;
+  align-items: center;
+  gap: m.spacer(2);
+  @include m.type(body);
+}
+
+.form-actions {
+  display: flex;
+  gap: m.spacer(3);
+  margin-top: m.spacer(5);
+}
+
+.icon-picker {
+  display: flex;
+  align-items: center;
+  gap: m.spacer(3);
+
+  .search {
+    flex: 1;
+  }
+
+  // The global search's results are icon+title stacked (see
+  // components/_search.scss); this one is icon-name-only, so lay each
+  // option out as a single row instead.
+  .search__result {
+    flex-direction: row;
+    align-items: center;
+    gap: m.spacer(2);
+    width: 100%;
+  }
+}
+
+.icon-picker__preview {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+  flex-shrink: 0;
+  border-radius: v.$radius-sm;
+  background-color: var(--color-surface-container-high);
+  color: var(--color-on-surface);
+  font-size: 18px;
+}
+
+.icon-picker__preview--empty {
+  color: var(--color-on-surface-variant);
+  opacity: 0.4;
+
+  &::before {
+    content: "?";
+  }
+}

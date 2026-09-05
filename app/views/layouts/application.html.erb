@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title><%= content_for(:title) || "Atlas" %></title>
+    <meta name="viewport" content="width=device-width,initial-scale=1">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="application-name" content="Atlas">
+    <meta name="mobile-web-app-capable" content="yes">
+    <%= csrf_meta_tags %>
+    <%= csp_meta_tag %>
+
+    <%# Set data-theme before first paint to avoid a flash of the wrong theme %>
+    <script>
+      (function () {
+        try {
+          var stored = localStorage.getItem("theme");
+          var theme = stored || (window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light");
+          document.documentElement.setAttribute("data-theme", theme);
+        } catch (e) {}
+      })();
+    </script>
+
+    <%= yield :head %>
+
+    <link rel="icon" href="<%= favicon_path %>" type="image/svg+xml">
+    <link rel="apple-touch-icon" href="<%= favicon_path %>">
+
+    <%# Self-hosted Font Awesome Free — see app/assets/fontawesome/LICENSE.txt %>
+    <%= stylesheet_link_tag "css/all.min", "data-turbo-track": "reload" %>
+    <%= stylesheet_link_tag :app, "data-turbo-track": "reload" %>
+    <%= javascript_importmap_tags %>
+  </head>
+
+  <body>
+    <div class="app-shell" data-controller="sidebar">
+      <header class="topbar">
+        <button type="button" class="btn btn--icon topbar__sidebar-toggle" data-action="sidebar#toggle" aria-label="Toggle navigation">
+          <%= icon :menu %>
+        </button>
+
+        <%= link_to root_path, class: "topbar__brand" do %>
+          <%= icon :globe, size: 24 %>
+          Atlas
+        <% end %>
+
+        <div class="topbar__search">
+          <%= render "shared/search" %>
+        </div>
+
+        <div class="topbar__spacer"></div>
+
+        <%= render "shared/guest_preview_toggle" %>
+
+        <button type="button" class="btn btn--icon" data-controller="theme" data-action="theme#toggle" aria-label="Toggle dark mode">
+          <%= icon :moon, css_class: "theme-icon theme-icon--moon" %>
+          <%= icon :sun, css_class: "theme-icon theme-icon--sun" %>
+        </button>
+
+        <%= render "shared/account_menu" %>
+      </header>
+
+      <div class="app-shell__body">
+        <div class="sidebar__scrim" data-sidebar-target="scrim" data-action="click->sidebar#close"></div>
+        <nav class="sidebar" data-sidebar-target="panel">
+          <%= render "shared/area_nav" %>
+        </nav>
+
+        <main class="app-shell__main">
+          <%= render "shared/flashes" %>
+          <%= yield %>
+        </main>
+      </div>
+    </div>
+  </body>
+</html>

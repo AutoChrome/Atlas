@@ -1,0 +1,47 @@
+@use "../abstracts/variables" as v;
+@use "../abstracts/mixins" as m;
+
+.app-shell {
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+}
+
+.app-shell__body {
+  flex: 1;
+  display: flex;
+  min-height: 0;
+}
+
+.app-shell__main {
+  flex: 1;
+  min-width: 0;
+  padding: m.spacer(5);
+
+  @include m.breakpoint(desktop) {
+    padding: m.spacer(6);
+  }
+}
+
+.container {
+  width: 100%;
+  max-width: 960px;
+  margin-inline: auto;
+}
+
+.container--wide {
+  max-width: 1280px;
+}
+
+.stack {
+  display: flex;
+  flex-direction: column;
+  gap: m.spacer(4);
+}
+
+.cluster {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: m.spacer(3);
+}

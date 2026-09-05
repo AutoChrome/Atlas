@@ -1,0 +1,9 @@
+<p>Hi <%= @user.name %>,</p>
+
+<p>
+  An account has been created for you on Atlas. Set your password on
+  <%= link_to "this page", edit_password_url(@user.password_reset_token) %>
+  to finish setting it up.
+
+  This link will expire in <%= distance_of_time_in_words(0, @user.password_reset_token_expires_in) %>.
+</p>

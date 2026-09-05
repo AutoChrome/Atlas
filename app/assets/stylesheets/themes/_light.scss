@@ -1,0 +1,54 @@
+// Light theme (default). Dark overrides live in themes/_dark.scss.
+// To add a new theme: duplicate this file's custom properties under a new
+// `:root[data-theme="yourtheme"]` selector and wire the value into the
+// theme <select> rendered by app/views/shared/_theme_toggle.html.erb.
+
+:root {
+  // Brand
+  --color-primary: #3f51b5;
+  --color-on-primary: #ffffff;
+  --color-primary-container: #dde1ff;
+  --color-on-primary-container: #0f1a6b;
+
+  --color-secondary: #5b5f77;
+  --color-on-secondary: #ffffff;
+  --color-secondary-container: #e0e1f9;
+  --color-on-secondary-container: #181c30;
+
+  // Status
+  --color-error: #ba1a1a;
+  --color-on-error: #ffffff;
+  --color-error-container: #ffdad6;
+  --color-on-error-container: #410002;
+
+  --color-success: #1b873f;
+  --color-on-success: #ffffff;
+  --color-success-container: #d3f8dc;
+  --color-on-success-container: #002910;
+
+  --color-warning: #8a5a00;
+  --color-on-warning: #ffffff;
+  --color-warning-container: #ffddb0;
+  --color-on-warning-container: #2b1700;
+
+  // Neutral surfaces
+  --color-background: #fdfbff;
+  --color-on-background: #1b1b1f;
+
+  --color-surface: #fdfbff;
+  --color-on-surface: #1b1b1f;
+  --color-on-surface-variant: #46464f;
+
+  --color-surface-container-lowest: #ffffff;
+  --color-surface-container-low: #f7f5fa;
+  --color-surface-container: #f1eff6;
+  --color-surface-container-high: #ebe9f1;
+  --color-surface-container-highest: #e5e3ec;
+
+  --color-outline: #777680;
+  --color-outline-variant: #c7c5d0;
+
+  --color-scrim: rgba(0, 0, 0, 0.4);
+
+  color-scheme: light;
+}

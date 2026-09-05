@@ -1,0 +1,39 @@
+<%= form_with model: area, class: "stack", style: "max-width: 560px;" do |f| %>
+  <% if area.errors.any? %>
+    <div class="card card--outlined" style="border-color: var(--color-error);">
+      <p class="field__error"><%= pluralize(area.errors.count, "error") %> prevented this area from being saved:</p>
+      <ul>
+        <% area.errors.each do |error| %>
+          <li class="field__error"><%= error.full_message %></li>
+        <% end %>
+      </ul>
+    </div>
+  <% end %>
+
+  <div class="field">
+    <%= f.label :name, class: "field__label" %>
+    <%= f.text_field :name, class: "input", required: true, spellcheck: true %>
+  </div>
+
+  <div class="field">
+    <%= f.label :description, class: "field__label" %>
+    <%= f.text_area :description, class: "textarea", rows: 4, spellcheck: true %>
+  </div>
+
+  <%= render "shared/icon_field", f: f %>
+
+  <div class="field">
+    <%= f.label :parent_id, "Parent area", class: "field__label" %>
+    <%= f.collection_select :parent_id, Area.where.not(id: area.id).ordered, :id, :name, { include_blank: "None — top level" }, class: "select" %>
+  </div>
+
+  <div class="checkbox">
+    <%= f.check_box :public %>
+    <%= f.label :public, "Public — visible without signing in" %>
+  </div>
+
+  <div class="form-actions">
+    <%= f.submit class: "btn btn--filled" %>
+    <%= link_to "Cancel", area.persisted? ? area : areas_path, class: "btn btn--text" %>
+  </div>
+<% end %>

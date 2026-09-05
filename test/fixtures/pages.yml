@@ -1,0 +1,17 @@
+# Read about fixtures at https://api.rubyonrails.org/classes/ActiveRecord/FixtureSet.html
+
+one:
+  area: one
+  title: MyString
+  slug: MyString
+  user: one
+  public: false
+  position: 1
+
+two:
+  area: two
+  title: MyString
+  slug: MyString
+  user: two
+  public: false
+  position: 1

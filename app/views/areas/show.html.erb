@@ -1,0 +1,68 @@
+<% content_for :title, @area.name %>
+
+<div class="stack">
+  <%= render "shared/breadcrumbs", area: @area, page: nil %>
+
+  <div class="cluster" style="justify-content: space-between;">
+    <div>
+      <h1 class="cluster"><%= record_icon(@area, fallback: :folder) %> <%= @area.name %></h1>
+      <% if current_user && @area.public? %>
+        <span class="badge badge--success">Public — visible without signing in</span>
+      <% end %>
+    </div>
+
+    <div class="cluster">
+      <%= render "shared/share_button", url: area_url(@area) %>
+
+      <% if current_user %>
+        <% if policy(@area).update? %>
+          <%= link_to "Edit", edit_area_path(@area), class: "btn btn--outlined" %>
+        <% end %>
+        <% if policy(Page).create? %>
+          <%= link_to "New page", new_area_page_path(@area), class: "btn btn--filled" %>
+        <% end %>
+        <% if policy(@area).destroy? %>
+          <%= button_to "Delete", area_path(@area), method: :delete,
+                data: { turbo_confirm: "Delete this area and everything in it?" }, class: "btn btn--danger" %>
+        <% end %>
+      <% end %>
+    </div>
+  </div>
+
+  <p class="text-muted"><%= @area.description %></p>
+
+  <% if @child_areas.any? %>
+    <section class="stack">
+      <h2>Sub-areas</h2>
+      <div class="card-grid">
+        <% @child_areas.each do |child| %>
+          <%= link_to child, class: "card card--interactive" do %>
+            <div class="card__title cluster"><%= record_icon(child, fallback: :folder) %> <%= child.name %></div>
+            <p class="card__meta"><%= pluralize(child.pages.count, "page") %></p>
+          <% end %>
+        <% end %>
+      </div>
+    </section>
+  <% end %>
+
+  <section class="stack">
+    <h2>Pages</h2>
+    <% if @pages.any? %>
+      <div class="stack">
+        <% @pages.each do |page| %>
+          <%= link_to [@area, page], class: "card card--interactive" do %>
+            <div class="cluster" style="justify-content: space-between;">
+              <span class="card__title cluster"><%= record_icon(page, fallback: :page) %> <%= page.title %></span>
+              <% if current_user && page.public? %>
+                <span class="badge badge--success">Public</span>
+              <% end %>
+            </div>
+            <p class="card__meta">Updated <%= time_ago_in_words(page.updated_at) %> ago<%= " by #{page.user.name}" if page.user %></p>
+          <% end %>
+        <% end %>
+      </div>
+    <% else %>
+      <p class="text-muted">No pages in this area yet.</p>
+    <% end %>
+  </section>
+</div>

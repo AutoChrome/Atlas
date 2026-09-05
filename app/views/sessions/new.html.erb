@@ -1,0 +1,25 @@
+<% content_for :title, "Sign in" %>
+
+<%= form_with url: session_path, class: "stack" do |form| %>
+  <div class="field">
+    <%= form.label :email_address, "Email address", class: "field__label" %>
+    <%= form.email_field :email_address, required: true, autofocus: true, autocomplete: "username",
+          class: "input", value: params[:email_address] %>
+  </div>
+
+  <div class="field">
+    <%= form.label :password, class: "field__label" %>
+    <%= form.password_field :password, required: true, autocomplete: "current-password", maxlength: 72, class: "input" %>
+  </div>
+
+  <div class="checkbox">
+    <%= form.check_box :remember_me %>
+    <%= form.label :remember_me, "Remember me on this device" %>
+  </div>
+
+  <%= form.submit "Sign in", class: "btn btn--filled" %>
+<% end %>
+
+<p class="text-muted" style="text-align: center;">
+  <%= link_to "Forgot your password?", new_password_path %>
+</p>

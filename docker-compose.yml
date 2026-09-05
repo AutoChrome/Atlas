@@ -1,0 +1,127 @@
+name: documentation
+
+services:
+  db:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${DATABASE_USERNAME:-postgres}
+      POSTGRES_PASSWORD: ${DATABASE_PASSWORD:-postgres}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${DATABASE_USERNAME:-postgres}"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+    ports:
+      - "127.0.0.1:5432:5432"
+
+  redis:
+    image: redis:7-alpine
+    restart: unless-stopped
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+    ports:
+      - "127.0.0.1:6379:6379"
+
+  # Backs search (Area/Page title + full page content) via the searchkick gem.
+  opensearch:
+    image: opensearchproject/opensearch:2
+    restart: unless-stopped
+    environment:
+      discovery.type: single-node
+      plugins.security.disabled: "true"
+      OPENSEARCH_JAVA_OPTS: "-Xms512m -Xmx512m"
+      OPENSEARCH_INITIAL_ADMIN_PASSWORD: ${OPENSEARCH_ADMIN_PASSWORD:-Atlas_search_dev1}
+    volumes:
+      - opensearch_data:/usr/share/opensearch/data
+    healthcheck:
+      test: ["CMD-SHELL", "curl -sf http://localhost:9200/_cluster/health || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 20
+    ports:
+      - "127.0.0.1:9200:9200"
+
+  web:
+    build:
+      context: .
+      dockerfile: Dockerfile.dev
+    restart: unless-stopped
+    env_file:
+      - .env
+    environment:
+      DATABASE_HOST: db
+      DATABASE_PORT: 5432
+      REDIS_URL: redis://redis:6379/0
+      OPENSEARCH_URL: http://opensearch:9200
+    depends_on:
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      opensearch:
+        condition: service_healthy
+    volumes:
+      - .:/rails
+      - bundle_cache:/usr/local/bundle
+      - storage_data:/rails/storage
+    expose:
+      - "3000"
+    stdin_open: true
+    tty: true
+
+  # Runs ActiveJob jobs (e.g. the account-setup email) via Sidekiq. Same
+  # image as `web`; only the command differs.
+  worker:
+    build:
+      context: .
+      dockerfile: Dockerfile.dev
+    restart: unless-stopped
+    command: bundle exec sidekiq
+    env_file:
+      - .env
+    environment:
+      DATABASE_HOST: db
+      DATABASE_PORT: 5432
+      REDIS_URL: redis://redis:6379/0
+      OPENSEARCH_URL: http://opensearch:9200
+    depends_on:
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      opensearch:
+        condition: service_healthy
+    volumes:
+      - .:/rails
+      - bundle_cache:/usr/local/bundle
+      - storage_data:/rails/storage
+
+  caddy:
+    image: caddy:2-alpine
+    restart: unless-stopped
+    depends_on:
+      - web
+    ports:
+      - "${HTTP_PORT:-80}:80"
+      - "${HTTPS_PORT:-443}:443"
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile
+      - caddy_data:/data
+      - caddy_config:/config
+
+volumes:
+  postgres_data:
+  redis_data:
+  opensearch_data:
+  bundle_cache:
+  storage_data:
+  caddy_data:
+  caddy_config:

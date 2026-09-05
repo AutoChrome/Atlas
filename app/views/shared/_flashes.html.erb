@@ -1,0 +1,11 @@
+<div class="flash-stack">
+  <% [:notice, :alert].each do |type| %>
+    <% next if flash[type].blank? %>
+    <div class="flash flash--<%= type %>" data-controller="flash" role="status">
+      <span><%= flash[type] %></span>
+      <button type="button" class="btn btn--icon btn--sm" data-action="flash#dismiss" aria-label="Dismiss">
+        <%= icon :close %>
+      </button>
+    </div>
+  <% end %>
+</div>

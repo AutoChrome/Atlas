@@ -1,0 +1,41 @@
+// Entry point compiled by dartsass-rails into app/assets/builds/application.css
+// (see bin/dev / Procfile.dev). Structure:
+//   abstracts/  - variables & mixins, no CSS output on their own
+//   themes/     - colour tokens (custom properties) per theme, incl. dark mode
+//   base/       - reset, fonts, global typography
+//   layout/     - app shell, sidebar, topbar
+//   components/ - buttons, cards, forms, etc.
+//   utilities/  - small single-purpose helper classes, loaded last so they win
+
+@use "themes/light";
+@use "themes/dark";
+
+@use "base/reset";
+@use "base/fonts";
+@use "base/typography";
+
+@use "vendor/trix";
+
+@use "layout/grid";
+@use "layout/sidebar";
+@use "layout/topbar";
+
+@use "components/buttons";
+@use "components/cards";
+@use "components/forms";
+@use "components/badges";
+@use "components/icons";
+@use "components/fontawesome";
+@use "components/table";
+@use "components/modal";
+@use "components/dropdown";
+@use "components/nav_tree";
+@use "components/flash";
+@use "components/search";
+@use "components/editor";
+@use "components/docs";
+@use "components/pagination";
+@use "components/breadcrumbs";
+
+@use "utilities/spacing";
+@use "utilities/visibility";

@@ -1,0 +1,66 @@
+@use "../abstracts/variables" as v;
+@use "../abstracts/mixins" as m;
+
+.search {
+  position: relative;
+}
+
+.search__input {
+  @include m.input-base;
+  padding-left: m.spacer(7);
+  border-radius: v.$radius-full;
+  background-color: var(--color-surface-container-highest);
+}
+
+.search__icon {
+  position: absolute;
+  left: m.spacer(3);
+  top: 50%;
+  transform: translateY(-50%);
+  color: var(--color-on-surface-variant);
+  pointer-events: none;
+}
+
+.search__results {
+  position: absolute;
+  top: calc(100% + #{m.spacer(1)});
+  left: 0;
+  right: 0;
+  background-color: var(--color-surface-container-high);
+  border-radius: v.$radius-md;
+  padding: m.spacer(2);
+  @include m.surface-elevation(3);
+  z-index: 40;
+  max-height: 60vh;
+  overflow-y: auto;
+}
+
+.search__result {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: m.spacer(3);
+  border-radius: v.$radius-sm;
+
+  &:hover,
+  &.is-active {
+    background-color: var(--color-surface-container-highest);
+  }
+}
+
+.search__result-title {
+  @include m.type(body-lg);
+  color: var(--color-on-surface);
+}
+
+.search__result-meta {
+  @include m.type(label);
+  color: var(--color-on-surface-variant);
+}
+
+.search__empty {
+  padding: m.spacer(4);
+  color: var(--color-on-surface-variant);
+  @include m.type(body);
+  text-align: center;
+}

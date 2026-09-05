@@ -1,0 +1,13 @@
+<div class="search"
+     data-controller="typeahead"
+     data-typeahead-url-value="<%= search_path %>"
+     data-action="click@document->typeahead#closeOnOutsideClick">
+  <%= icon :search, css_class: "search__icon" %>
+  <input type="search"
+         class="search__input"
+         placeholder="Search Atlas…"
+         autocomplete="off"
+         data-typeahead-target="input"
+         data-action="input->typeahead#search keydown->typeahead#navigate focus->typeahead#search">
+  <div class="search__results" data-typeahead-target="results" hidden></div>
+</div>

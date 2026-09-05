@@ -1,0 +1,133 @@
+// Material-ish skin for the Trix WYSIWYG editor (ActionText), layered on
+// top of vendor/_trix.scss (Trix's own real base stylesheet — without it,
+// toolbar buttons render as unstyled raw text, which is what the "garbled
+// letters" toolbar was: not a theming bug, a missing-stylesheet bug).
+//
+// Trix ALSO injects a second copy of its own CSS into <head> at JS-load
+// time, landing after our compiled application.css in the DOM — so on any
+// property both stylesheets set, that injected copy wins ties on
+// specificity by virtue of loading later. The !important below isn't
+// decoration — it's the only way our theme reliably beats that regardless
+// of load timing.
+@use "../abstracts/variables" as v;
+@use "../abstracts/mixins" as m;
+
+trix-toolbar {
+  display: block;
+  background-color: var(--color-surface-container-low) !important;
+  border: 1px solid var(--color-outline-variant) !important;
+  border-bottom: none !important;
+  border-radius: v.$radius-md v.$radius-md 0 0;
+  padding: m.spacer(2) !important;
+  margin: 0 !important;
+
+  .trix-button-row {
+    border: none !important;
+    display: flex;
+    flex-wrap: wrap;
+    gap: m.spacer(1);
+  }
+
+  .trix-button-group {
+    border: 1px solid var(--color-outline-variant) !important;
+    border-radius: v.$radius-sm;
+    margin: 0 !important;
+  }
+
+  .trix-button {
+    background-color: transparent !important;
+    border: none !important;
+    color: var(--color-on-surface-variant) !important;
+    border-radius: v.$radius-sm;
+
+    &:not(:first-child) {
+      border-left: 1px solid var(--color-outline-variant) !important;
+    }
+
+    &:hover {
+      background-color: var(--color-surface-container-high) !important;
+    }
+
+    &.trix-active {
+      background-color: var(--color-primary-container) !important;
+      color: var(--color-on-primary-container) !important;
+    }
+  }
+
+  // Our own button (page_reference_controller.js), injected into the
+  // toolbar at runtime — a real icon glyph rather than the background-image
+  // data URIs the native buttons use, so it needs its own sizing to match.
+  .page-reference-button {
+    display: inline-flex !important;
+    align-items: center;
+    justify-content: center;
+    width: 2.6em;
+    height: 1.6em;
+  }
+
+  // Trix's toolbar icons are hardcoded-black inline SVGs (background-image
+  // data URIs — not currentColor, so our `color` override above has no
+  // effect on them). Flip them to white in dark mode instead of trying to
+  // recolor the data URI itself.
+  :root[data-theme="dark"] & .trix-button--icon::before {
+    filter: invert(1);
+  }
+}
+
+trix-editor {
+  display: block;
+  background-color: var(--color-surface) !important;
+  color: var(--color-on-surface) !important;
+  border: 1px solid var(--color-outline-variant) !important;
+  border-radius: 0 0 v.$radius-md v.$radius-md;
+  padding: m.spacer(4) !important;
+  margin: 0 !important;
+  min-height: 480px !important;
+  @include m.type(body-lg);
+
+  &:focus {
+    outline: none;
+    border-color: var(--color-primary) !important;
+  }
+
+  a {
+    color: var(--color-primary);
+    text-decoration: underline;
+  }
+
+  pre {
+    background-color: var(--color-surface-container-high);
+    padding: m.spacer(3);
+    border-radius: v.$radius-sm;
+    font-family: var(--font-family-mono);
+    overflow-x: auto;
+  }
+
+  action-text-attachment .attachment {
+    border-radius: v.$radius-md;
+    overflow: hidden;
+  }
+}
+
+// Read-only rendered rich text (app/views/layouts/action_text/contents/_content.html.erb)
+.trix-content {
+  color: var(--color-on-surface);
+  border: none;
+  padding: 0;
+  min-height: 0;
+  background: transparent;
+  @include m.type(body-lg);
+
+  a {
+    color: var(--color-primary);
+    text-decoration: underline;
+  }
+
+  pre {
+    background-color: var(--color-surface-container-high);
+    padding: m.spacer(3);
+    border-radius: v.$radius-sm;
+    font-family: var(--font-family-mono);
+    overflow-x: auto;
+  }
+}

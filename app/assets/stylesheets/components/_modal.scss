@@ -1,0 +1,43 @@
+@use "../abstracts/variables" as v;
+@use "../abstracts/mixins" as m;
+
+dialog.modal {
+  border: none;
+  padding: 0;
+  border-radius: v.$radius-lg;
+  background-color: var(--color-surface-container-high);
+  color: var(--color-on-surface);
+  width: min(480px, calc(100vw - #{m.spacer(6)}));
+  max-height: calc(100vh - #{m.spacer(6)});
+  overflow-y: auto;
+  // A <dialog> shown via showModal() centers itself natively via
+  // `margin: auto` in the browser's own stylesheet — our own reset's
+  // `* { margin: 0 }` (base/_reset.scss) overrides that same as it would
+  // any other element, so without this the dialog just sticks to its
+  // default top-left position instead of centering.
+  margin: auto;
+  @include m.surface-elevation(4);
+
+  &::backdrop {
+    background-color: var(--color-scrim);
+  }
+}
+
+.modal__body {
+  padding: m.spacer(5);
+}
+
+.modal__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: m.spacer(5) m.spacer(5) 0;
+  margin-bottom: m.spacer(3);
+}
+
+.modal__footer {
+  display: flex;
+  justify-content: flex-end;
+  gap: m.spacer(3);
+  padding: 0 m.spacer(5) m.spacer(5);
+}

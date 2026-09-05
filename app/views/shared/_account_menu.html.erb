@@ -1,0 +1,27 @@
+<% if current_user %>
+  <div class="dropdown" data-controller="dropdown">
+    <button type="button" class="btn btn--icon" data-action="dropdown#toggle" aria-label="Account menu">
+      <%= icon :account %>
+    </button>
+
+    <div class="dropdown__menu" data-dropdown-target="menu" hidden>
+      <div class="dropdown__item">
+        <div>
+          <strong><%= current_user.name %></strong><br>
+          <span class="text-muted"><%= current_user.email_address %></span>
+        </div>
+      </div>
+      <div class="dropdown__divider"></div>
+      <%= link_to "Profile", edit_profile_path, class: "dropdown__item" %>
+      <%= link_to "API tokens", api_tokens_path, class: "dropdown__item" %>
+      <% if current_user.admin? %>
+        <%= link_to "Manage users", admin_users_path, class: "dropdown__item" %>
+        <%= link_to "Audit log", admin_audits_path, class: "dropdown__item" %>
+      <% end %>
+      <div class="dropdown__divider"></div>
+      <%= button_to "Sign out", session_path, method: :delete, class: "dropdown__item", form: { class: "dropdown__item-form" } %>
+    </div>
+  </div>
+<% else %>
+  <%= link_to "Sign in", new_session_path, class: "btn btn--filled" %>
+<% end %>

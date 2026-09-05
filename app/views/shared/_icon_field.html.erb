@@ -1,0 +1,25 @@
+<div class="field"
+     data-controller="icon-picker"
+     data-icon-picker-url-value="<%= icon_suggestions_path %>"
+     data-action="click@document->icon-picker#closeOnOutsideClick">
+  <%= f.label :icon, "Icon (optional)", class: "field__label" %>
+  <div class="icon-picker">
+    <%# A wrapper box plus an independent inner glyph, deliberately — putting
+        the layout (flex-centering) and the glyph (.icon-fa, which sets its
+        own `display`) classes on one shared element left them fighting over
+        `display` depending on unrelated stylesheet load order. %>
+    <span class="icon-picker__preview <%= "icon-picker__preview--empty" unless f.object.icon.present? %>" data-icon-picker-target="preview">
+      <i class="<%= "fa-solid fa-#{f.object.icon} icon-fa" if f.object.icon.present? %>" data-icon-picker-target="previewIcon"></i>
+    </span>
+    <div class="search">
+      <%= f.text_field :icon, class: "input", placeholder: "e.g. rocket", autocomplete: "off",
+            data: { icon_picker_target: "input", action: "input->icon-picker#search focus->icon-picker#search keydown->icon-picker#navigate" } %>
+      <div class="search__results" data-icon-picker-target="results" hidden></div>
+    </div>
+  </div>
+  <p class="field__hint">
+    Start typing to search the full
+    <%= link_to "Font Awesome Free", "https://fontawesome.com/search?ic=free&s=solid", target: "_blank", rel: "noopener" %>
+    solid icon set — shown next to this in the sidebar. Leave blank for the default.
+  </p>
+</div>

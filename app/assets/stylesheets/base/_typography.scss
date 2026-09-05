@@ -1,0 +1,35 @@
+@use "../abstracts/mixins" as m;
+
+body {
+  font-family: var(--font-family-base);
+  @include m.type(body-lg);
+  color: var(--color-on-background);
+  background-color: var(--color-background);
+}
+
+h1 {
+  @include m.type(headline);
+}
+
+h2 {
+  @include m.type(title-lg);
+}
+
+h3 {
+  @include m.type(title);
+}
+
+small,
+.text-label {
+  @include m.type(label);
+}
+
+code,
+pre,
+.font-mono {
+  font-family: var(--font-family-mono);
+}
+
+.text-muted {
+  color: var(--color-on-surface-variant);
+}

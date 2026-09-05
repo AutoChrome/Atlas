@@ -1,0 +1,26 @@
+// Inline SVG icons (see app/helpers/icon_helper.rb). No web font, no
+// external request, no flash of "menu"/"book_4" literal text before a font
+// loads — the icon is just always there.
+.icon {
+  display: inline-block;
+  vertical-align: middle;
+  flex-shrink: 0;
+}
+
+// Theme toggle: both icons render, CSS shows the one representing the
+// action a click performs (moon = "switch to dark", sun = "switch to
+// light"), driven purely by the data-theme attribute set on <html> — no
+// JS needed to pick the right icon, so it's correct on first paint.
+.theme-icon--sun {
+  display: none;
+}
+
+:root[data-theme="dark"] {
+  .theme-icon--sun {
+    display: inline-block;
+  }
+
+  .theme-icon--moon {
+    display: none;
+  }
+}

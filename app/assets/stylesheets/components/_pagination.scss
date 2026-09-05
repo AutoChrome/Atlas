@@ -1,0 +1,41 @@
+// Styles Pagy's default pagy_nav markup (<nav class="pagy nav">), used on
+// the admin audit log. Pagy renders plain <a> tags with no per-link class
+// except .current on the active page — we own the rest of the look here.
+@use "../abstracts/variables" as v;
+@use "../abstracts/mixins" as m;
+
+.pagy {
+  display: flex;
+  align-items: center;
+  gap: m.spacer(1);
+  list-style: none;
+
+  a,
+  span {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 32px;
+    height: 32px;
+    padding-inline: m.spacer(2);
+    border-radius: v.$radius-sm;
+    color: var(--color-on-surface-variant);
+    @include m.type(body);
+  }
+
+  a:hover {
+    background-color: var(--color-surface-container-high);
+  }
+
+  a.current {
+    background-color: var(--color-primary-container);
+    color: var(--color-on-primary-container);
+    font-weight: 500;
+  }
+
+  a[aria-disabled="true"] {
+    color: var(--color-on-surface-variant);
+    opacity: 0.35;
+    pointer-events: none;
+  }
+}

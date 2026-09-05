@@ -1,0 +1,90 @@
+<% content_for :title, "API tokens" %>
+
+<div class="stack">
+  <div class="cluster" style="justify-content: space-between;">
+    <h1>API tokens</h1>
+    <%= link_to "Full API documentation", docs_api_tokens_path, class: "btn btn--outlined" %>
+  </div>
+  <p class="text-muted">
+    Use a token to call the JSON API from another application:
+    <code class="font-mono">Authorization: Bearer &lt;token&gt;</code>
+    — see the <%= link_to "full documentation", docs_api_tokens_path %> for endpoints and cURL examples.
+  </p>
+
+  <% if flash[:new_api_token] %>
+    <div class="card card--outlined">
+      <p class="field__label">Your new token (copy it now — it won't be shown again)</p>
+      <code class="font-mono" style="word-break: break-all;"><%= flash[:new_api_token] %></code>
+    </div>
+  <% end %>
+
+  <% if @api_tokens.any? %>
+    <table class="data-table">
+      <thead>
+        <tr>
+          <th>Name</th>
+          <th>Scope</th>
+          <th>Last used</th>
+          <th>Created</th>
+          <th></th>
+        </tr>
+      </thead>
+      <tbody>
+        <% @api_tokens.each do |token| %>
+          <tr>
+            <td><%= token.name %></td>
+            <td>
+              <% if token.all_areas? %>
+                <span class="badge badge--primary">All areas</span>
+              <% else %>
+                <span class="badge"><%= pluralize(token.areas.size, "area") %></span>
+                <span class="text-muted"><%= token.areas.map(&:name).to_sentence %></span>
+              <% end %>
+            </td>
+            <td><%= token.last_used_at ? time_ago_in_words(token.last_used_at) + " ago" : "Never" %></td>
+            <td><%= token.created_at.to_date.to_fs(:long) %></td>
+            <td>
+              <%= button_to "Revoke", api_token_path(token), method: :delete,
+                    data: { turbo_confirm: "Revoke \"#{token.name}\"? Anything using it will stop working." },
+                    class: "btn btn--text btn--sm" %>
+            </td>
+          </tr>
+        <% end %>
+      </tbody>
+    </table>
+  <% else %>
+    <p class="text-muted">No API tokens yet.</p>
+  <% end %>
+
+  <h2>New token</h2>
+  <%= form_with model: @api_token, url: api_tokens_path, class: "stack", style: "max-width: 480px;",
+        data: { controller: "token-scope" } do |f| %>
+    <div class="field">
+      <%= f.label :name, class: "field__label" %>
+      <%= f.text_field :name, class: "input", placeholder: "e.g. Intranet integration", required: true %>
+    </div>
+
+    <div class="checkbox">
+      <%= f.check_box :all_areas, { checked: true, data: { token_scope_target: "allAreas", action: "change->token-scope#toggle" } } %>
+      <%= f.label :all_areas, "Access to all areas" %>
+    </div>
+
+    <div class="field" data-token-scope-target="areaList" hidden>
+      <span class="field__label">Areas this token can access</span>
+      <% if @areas.any? %>
+        <div class="stack" style="max-height: 240px; overflow-y: auto; gap: 4px;">
+          <%= f.collection_check_boxes :area_ids, @areas, :id, :name do |b| %>
+            <div class="checkbox">
+              <%= b.check_box %>
+              <%= b.label %>
+            </div>
+          <% end %>
+        </div>
+      <% else %>
+        <p class="field__hint">No areas exist yet.</p>
+      <% end %>
+    </div>
+
+    <%= f.submit "Create token", class: "btn btn--filled" %>
+  <% end %>
+</div>

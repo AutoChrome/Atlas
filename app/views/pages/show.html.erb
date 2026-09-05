@@ -1,0 +1,50 @@
+<% content_for :title, @page.title %>
+
+<div class="stack container">
+  <%= render "shared/breadcrumbs", area: @area, page: @page %>
+
+  <div class="cluster" style="justify-content: space-between;">
+    <div>
+      <h1 class="cluster"><%= record_icon(@page, fallback: :page) %> <%= @page.title %></h1>
+      <% if current_user && @page.public? %>
+        <span class="badge badge--success">Public — visible without signing in</span>
+      <% end %>
+    </div>
+
+    <div class="cluster">
+      <%= render "shared/share_button", url: area_page_url(@area, @page) %>
+
+      <% if current_user %>
+        <% if policy(@page).update? %>
+          <%= link_to "Edit", edit_area_page_path(@area, @page), class: "btn btn--outlined" %>
+        <% end %>
+        <% if policy(@page).destroy? %>
+          <%= button_to "Delete", area_page_path(@area, @page), method: :delete,
+                data: { turbo_confirm: "Delete this page?" }, class: "btn btn--danger" %>
+        <% end %>
+      <% end %>
+    </div>
+  </div>
+
+  <div class="trix-content">
+    <%= @page.content %>
+  </div>
+
+  <% if @page.attachments.attached? %>
+    <section class="stack">
+      <h2>Attachments</h2>
+      <div class="stack">
+        <% @page.attachments.each do |attachment| %>
+          <div class="card cluster" style="justify-content: space-between;">
+            <span><%= attachment.filename %></span>
+            <%= link_to "Download", rails_blob_path(attachment, disposition: "attachment"), class: "btn btn--text btn--sm" %>
+          </div>
+        <% end %>
+      </div>
+    </section>
+  <% end %>
+
+  <p class="text-muted">
+    Last updated <%= time_ago_in_words(@page.updated_at) %> ago<%= " by #{@page.user.name}" if @page.user %>.
+  </p>
+</div>

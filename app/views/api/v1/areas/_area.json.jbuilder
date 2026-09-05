@@ -1,0 +1,11 @@
+json.id area.id
+json.slug area.slug
+json.name area.name
+json.description area.description
+json.icon area.icon
+json.public area.public
+json.position area.position
+json.parent_id area.parent_id
+json.created_at area.created_at
+json.updated_at area.updated_at
+json.url api_v1_area_url(area)

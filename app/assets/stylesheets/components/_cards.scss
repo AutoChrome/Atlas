@@ -1,0 +1,46 @@
+@use "../abstracts/variables" as v;
+@use "../abstracts/mixins" as m;
+
+.card {
+  background-color: var(--color-surface-container-low);
+  border-radius: v.$radius-lg;
+  padding: m.spacer(5);
+  transition: box-shadow v.$duration-short v.$easing-standard;
+}
+
+.card--interactive {
+  cursor: pointer;
+
+  &:hover {
+    @include m.surface-elevation(2);
+  }
+}
+
+.card--outlined {
+  background-color: var(--color-surface);
+  border: 1px solid var(--color-outline-variant);
+}
+
+.card__title {
+  @include m.type(title);
+  margin-bottom: m.spacer(2);
+}
+
+.card__meta {
+  @include m.type(body);
+  color: var(--color-on-surface-variant);
+}
+
+.card-grid {
+  display: grid;
+  grid-template-columns: repeat(1, 1fr);
+  gap: m.spacer(4);
+
+  @include m.breakpoint(tablet) {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  @include m.breakpoint(desktop) {
+    grid-template-columns: repeat(3, 1fr);
+  }
+}

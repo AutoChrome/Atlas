@@ -1,0 +1,33 @@
+<% content_for :title, "Audit ##{@audit.id}" %>
+
+<div class="stack">
+  <p><%= link_to "← Back to audit log", admin_audits_path %></p>
+  <h1><%= @audit.auditable_type %> #<%= @audit.auditable_id %> — <%= @audit.action %></h1>
+  <p class="text-muted">
+    <%= @audit.created_at.to_fs(:long) %> by
+    <%= @audit.user.respond_to?(:name) ? @audit.user.name : (@audit.user || "System") %>
+  </p>
+
+  <table class="data-table">
+    <thead>
+      <tr>
+        <th>Field</th>
+        <th>Before</th>
+        <th>After</th>
+      </tr>
+    </thead>
+    <tbody>
+      <% @audit.audited_changes.each do |field, change| %>
+        <tr>
+          <td><%= field %></td>
+          <% if @audit.action == "update" && change.is_a?(Array) %>
+            <td><%= change[0] %></td>
+            <td><%= change[1] %></td>
+          <% else %>
+            <td colspan="2"><%= change %></td>
+          <% end %>
+        </tr>
+      <% end %>
+    </tbody>
+  </table>
+</div>

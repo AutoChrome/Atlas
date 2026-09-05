@@ -1,0 +1,29 @@
+<% content_for :title, "Atlas" %>
+
+<div class="stack">
+  <div class="cluster" style="justify-content: space-between;">
+    <h1>Atlas</h1>
+    <% if policy(Area).create? %>
+      <%= link_to "New area", new_area_path, class: "btn btn--filled" %>
+    <% end %>
+  </div>
+
+  <% if @areas.any? %>
+    <div class="card-grid">
+      <% @areas.each do |area| %>
+        <%= link_to area, class: "card card--interactive" do %>
+          <div class="cluster" style="justify-content: space-between;">
+            <div class="card__title cluster"><%= record_icon(area, fallback: :folder) %> <%= area.name %></div>
+            <% if current_user && area.public? %>
+              <span class="badge badge--success">Public</span>
+            <% end %>
+          </div>
+          <p class="card__meta"><%= truncate(area.description, length: 140) if area.description.present? %></p>
+          <p class="card__meta mt-3"><%= pluralize(area.pages.count, "page") %></p>
+        <% end %>
+      <% end %>
+    </div>
+  <% else %>
+    <p class="text-muted">No areas yet<%= ". Create the first one to get started." if policy(Area).create? %></p>
+  <% end %>
+</div>

@@ -1,0 +1,15 @@
+// Font Awesome Free is self-hosted (app/assets/fontawesome, linked
+// separately in the layout <head>) rather than pulled from a CDN, for the
+// same reason as everything else icon-related in this app: no external
+// request that can fail or lag behind first paint.
+//
+// Usage: <i class="fa-solid fa-house icon-fa"></i>
+// FA's own fa-solid/fa-regular/fa-brands + fa-<name> classes pick the
+// glyph; this class just keeps it visually consistent with the rest of the
+// UI (our own SVG icons use the .icon class — see components/_icons.scss).
+.icon-fa {
+  display: inline-block;
+  vertical-align: middle;
+  line-height: 1;
+  align-content: center;
+}

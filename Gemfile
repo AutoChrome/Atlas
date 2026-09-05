@@ -1,0 +1,103 @@
+source "https://rubygems.org"
+
+# Bundle edge Rails instead: gem "rails", github: "rails/rails", branch: "main"
+gem "rails", "~> 8.1.3", ">= 8.1.3.1"
+# The modern asset pipeline for Rails [https://github.com/rails/propshaft]
+gem "propshaft"
+# Use postgresql as the database for Active Record
+gem "pg", "~> 1.1"
+# Use the Puma web server [https://github.com/puma/puma]
+gem "puma", ">= 5.0"
+# Use JavaScript with ESM import maps [https://github.com/rails/importmap-rails]
+gem "importmap-rails"
+# Hotwire's SPA-like page accelerator [https://turbo.hotwired.dev]
+gem "turbo-rails"
+# Hotwire's modest JavaScript framework [https://stimulus.hotwired.dev]
+gem "stimulus-rails"
+# Use Dart SASS [https://github.com/rails/dartsass-rails]
+gem "dartsass-rails"
+# Build JSON APIs with ease [https://github.com/rails/jbuilder]
+gem "jbuilder"
+
+# Use Active Model has_secure_password [https://guides.rubyonrails.org/active_model_basics.html#securepassword]
+gem "bcrypt", "~> 3.1.7"
+
+# Windows does not include zoneinfo files, so bundle the tzinfo-data gem
+gem "tzinfo-data", platforms: %i[ windows jruby ]
+
+# Use the database-backed adapters for Rails.cache and Action Cable.
+# Background jobs use Sidekiq (below) instead of Solid Queue.
+gem "solid_cache"
+gem "solid_cable"
+
+# Background job processing [https://github.com/sidekiq/sidekiq]
+gem "sidekiq"
+gem "redis"
+
+# Request/DB/view performance monitoring dashboard [https://github.com/igorkasyanchuk/rails-performance]
+gem "rails_performance"
+
+# Reduces boot times through caching; required in config/boot.rb
+gem "bootsnap", require: false
+
+# Deploy this application anywhere as a Docker container [https://kamal-deploy.org]
+gem "kamal", require: false
+
+# Add HTTP asset caching/compression and X-Sendfile acceleration to Puma [https://github.com/basecamp/thruster/]
+gem "thruster", require: false
+
+# Use Active Storage variants [https://guides.rubyonrails.org/active_storage_overview.html#transforming-images]
+gem "image_processing", "~> 1.2"
+
+# Active Storage on Amazon S3 (optional, enabled via STORAGE_SERVICE env var)
+gem "aws-sdk-s3", require: false
+
+# Authorization policies [https://github.com/varvet/pundit]
+gem "pundit"
+
+# Full model change auditing (who changed what, and when) [https://github.com/collectiveidea/audited]
+gem "audited"
+
+# Fast, view-focused pagination [https://github.com/ddnexus/pagy]
+gem "pagy", "~> 9.3"
+
+# Search indexing for Areas & Pages (title + full page content), backed by
+# OpenSearch [https://github.com/ankane/searchkick]
+gem "searchkick"
+gem "opensearch-ruby"
+
+# Friendly, unique slugs for areas & pages [https://github.com/norman/friendly_id]
+gem "friendly_id"
+
+# CORS headers for the JSON API so other applications can call it from the browser
+gem "rack-cors"
+
+group :development, :test do
+  # See https://guides.rubyonrails.org/debugging_rails_applications.html#debugging-with-the-debug-gem
+  gem "debug", platforms: %i[ mri windows ], require: "debug/prelude"
+
+  # Audits gems for known security defects (use config/bundler-audit.yml to ignore issues)
+  gem "bundler-audit", require: false
+
+  # Static analysis for security vulnerabilities [https://brakemanscanner.org/]
+  gem "brakeman", require: false
+
+  # Omakase Ruby styling [https://github.com/rails/rubocop-rails-omakase/]
+  gem "rubocop-rails-omakase", require: false
+end
+
+group :development do
+  # Use console on exceptions pages [https://github.com/rails/web-console]
+  gem "web-console"
+
+  # Preview sent emails instead of actually delivering them. letter_opener_web
+  # (not plain letter_opener) because this runs in a headless container with
+  # no host browser to launch — it gives a page at /letter_opener instead.
+  gem "letter_opener_web"
+end
+
+group :test do
+  # Use system testing [https://guides.rubyonrails.org/testing.html#system-testing]
+  gem "capybara"
+  gem "selenium-webdriver"
+end

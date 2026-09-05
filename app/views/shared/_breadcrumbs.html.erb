@@ -1,0 +1,18 @@
+<%# locals: area:, page: (optional — pass when viewing a page, not just an area) %>
+<nav class="breadcrumbs" aria-label="Breadcrumb">
+  <%= link_to "Atlas", root_path, class: "breadcrumbs__link" %>
+
+  <% area_ancestors(area).each do |ancestor| %>
+    <span class="breadcrumbs__separator" aria-hidden="true"><%= fa_icon "chevron-right" %></span>
+    <% if page || ancestor != area %>
+      <%= link_to ancestor.name, ancestor, class: "breadcrumbs__link" %>
+    <% else %>
+      <span class="breadcrumbs__current" aria-current="page"><%= ancestor.name %></span>
+    <% end %>
+  <% end %>
+
+  <% if page %>
+    <span class="breadcrumbs__separator" aria-hidden="true"><%= fa_icon "chevron-right" %></span>
+    <span class="breadcrumbs__current" aria-current="page"><%= page.title %></span>
+  <% end %>
+</nav>

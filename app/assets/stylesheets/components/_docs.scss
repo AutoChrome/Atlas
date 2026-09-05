@@ -1,0 +1,67 @@
+@use "../abstracts/variables" as v;
+@use "../abstracts/mixins" as m;
+
+.docs-nav {
+  display: flex;
+  flex-wrap: wrap;
+  gap: m.spacer(2);
+  position: sticky;
+  top: 64px;
+  background-color: var(--color-background);
+  padding-block: m.spacer(3);
+  z-index: 10;
+  border-bottom: 1px solid var(--color-outline-variant);
+}
+
+.docs-section {
+  scroll-margin-top: 130px;
+}
+
+.code-block {
+  background-color: var(--color-surface-container-highest);
+  color: var(--color-on-surface);
+  border-radius: v.$radius-md;
+  padding: m.spacer(4);
+  overflow-x: auto;
+  font-family: var(--font-family-mono);
+  font-size: 0.8125rem;
+  line-height: 1.6;
+  white-space: pre;
+}
+
+.docs-endpoint {
+  display: flex;
+  align-items: center;
+  gap: m.spacer(2);
+  @include m.type(label);
+  color: var(--color-on-surface-variant);
+  margin-bottom: m.spacer(2);
+}
+
+.docs-endpoint__method {
+  padding: 2px m.spacer(2);
+  border-radius: v.$radius-sm;
+  font-weight: 700;
+  color: var(--color-on-primary);
+  background-color: var(--color-primary);
+}
+
+.docs-endpoint__method--get {
+  background-color: var(--color-success);
+  color: var(--color-on-success);
+}
+
+.docs-endpoint__method--post {
+  background-color: var(--color-primary);
+  color: var(--color-on-primary);
+}
+
+.docs-endpoint__method--patch {
+  background-color: var(--color-warning);
+  color: var(--color-on-warning);
+}
+
+.docs-endpoint__method--delete {
+  background-color: var(--color-error);
+  color: var(--color-on-error);
+}

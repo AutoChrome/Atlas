@@ -1,0 +1,10 @@
+# Local dev: http://localhost. In production, set SITE_ADDRESS to your real
+# domain (e.g. docs.example.com) and Caddy will provision TLS automatically.
+{$SITE_ADDRESS:localhost} {
+	encode zstd gzip
+
+	@assets path /assets/* /rails/active_storage/*
+	header @assets Cache-Control "public, max-age=31536000, immutable"
+
+	reverse_proxy web:3000
+}

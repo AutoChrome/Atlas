@@ -1,0 +1,35 @@
+@use "../abstracts/variables" as v;
+@use "../abstracts/mixins" as m;
+
+.topbar {
+  height: 64px;
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  gap: m.spacer(3);
+  padding-inline: m.spacer(4);
+  background-color: var(--color-surface-container-lowest);
+  border-bottom: 1px solid var(--color-outline-variant);
+  position: sticky;
+  top: 0;
+  z-index: 25;
+}
+
+.topbar__brand {
+  display: flex;
+  align-items: center;
+  gap: m.spacer(2);
+  @include m.type(title);
+  color: var(--color-on-surface);
+  margin-right: m.spacer(3);
+}
+
+.topbar__search {
+  flex: 1;
+  max-width: 480px;
+}
+
+.topbar__spacer {
+  flex: 1;
+}
+

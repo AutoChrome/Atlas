@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title><%= content_for(:title) || "Atlas" %></title>
+    <meta name="viewport" content="width=device-width,initial-scale=1">
+    <%= csrf_meta_tags %>
+    <%= csp_meta_tag %>
+
+    <script>
+      (function () {
+        try {
+          var stored = localStorage.getItem("theme");
+          var theme = stored || (window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light");
+          document.documentElement.setAttribute("data-theme", theme);
+        } catch (e) {}
+      })();
+    </script>
+
+    <link rel="icon" href="<%= favicon_path %>" type="image/svg+xml">
+    <%= stylesheet_link_tag "css/all.min", "data-turbo-track": "reload" %>
+    <%= stylesheet_link_tag :app, "data-turbo-track": "reload" %>
+    <%= javascript_importmap_tags %>
+  </head>
+
+  <body>
+    <div style="min-height: 100vh; display: flex; align-items: center; justify-content: center; padding: 24px;">
+      <div class="card card--outlined stack" style="width: 100%; max-width: 400px;">
+        <div class="stack" style="text-align: center;">
+          <%= icon :globe, size: 40 %>
+          <h1 style="font-size: 1.375rem;">Atlas</h1>
+        </div>
+
+        <%= render "shared/flashes" %>
+        <%= yield %>
+      </div>
+    </div>
+  </body>
+</html>

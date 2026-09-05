@@ -1,0 +1,15 @@
+#!/bin/bash
+set -e
+
+# Remove a stale server PID left behind by an unclean container stop
+rm -f /rails/tmp/pids/server.pid
+
+# Wait for Postgres to accept connections before touching the schema
+until pg_isready -h "${DATABASE_HOST:-db}" -p "${DATABASE_PORT:-5432}" -U "${DATABASE_USERNAME:-postgres}" -q; do
+  echo "Waiting for postgres at ${DATABASE_HOST:-db}:${DATABASE_PORT:-5432}..."
+  sleep 1
+done
+
+bin/rails db:prepare
+
+exec "$@"

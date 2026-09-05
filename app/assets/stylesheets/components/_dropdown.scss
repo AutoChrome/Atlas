@@ -1,0 +1,45 @@
+@use "../abstracts/variables" as v;
+@use "../abstracts/mixins" as m;
+
+.dropdown {
+  position: relative;
+  display: inline-block;
+}
+
+.dropdown__menu {
+  position: absolute;
+  top: calc(100% + #{m.spacer(1)});
+  right: 0;
+  min-width: 200px;
+  background-color: var(--color-surface-container-high);
+  border-radius: v.$radius-md;
+  padding: m.spacer(2);
+  @include m.surface-elevation(3);
+  z-index: 30;
+}
+
+.dropdown__item {
+  display: flex;
+  align-items: center;
+  gap: m.spacer(3);
+  width: 100%;
+  padding: m.spacer(3);
+  border-radius: v.$radius-sm;
+  @include m.type(body);
+  color: var(--color-on-surface);
+  text-align: left;
+
+  &:hover {
+    background-color: var(--color-surface-container-highest);
+  }
+}
+
+.dropdown__item-form {
+  width: 100%;
+}
+
+.dropdown__divider {
+  height: 1px;
+  background-color: var(--color-outline-variant);
+  margin: m.spacer(2) 0;
+}

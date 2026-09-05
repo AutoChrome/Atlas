@@ -1,0 +1,212 @@
+<% content_for :title, "API documentation" %>
+
+<% base = request.base_url %>
+
+<div class="stack container--wide">
+  <div>
+    <p class="text-muted"><%= link_to "← Back to API tokens", api_tokens_path %></p>
+    <h1>API documentation</h1>
+    <p class="text-muted">
+      A full JSON CRUD API for Areas and Pages, so other applications can read and manage
+      Atlas content directly. Authenticated with a bearer token — create one from the
+      <%= link_to "API tokens", api_tokens_path %> page.
+    </p>
+  </div>
+
+  <nav class="docs-nav">
+    <a href="#authentication" class="btn btn--text btn--sm">Authentication</a>
+    <a href="#conventions" class="btn btn--text btn--sm">Conventions</a>
+    <a href="#areas" class="btn btn--text btn--sm">Areas</a>
+    <a href="#pages" class="btn btn--text btn--sm">Pages</a>
+    <a href="#scoping" class="btn btn--text btn--sm">Token scoping</a>
+    <a href="#errors" class="btn btn--text btn--sm">Errors</a>
+  </nav>
+
+  <section id="authentication" class="docs-section stack">
+    <h2>Authentication</h2>
+    <p>
+      Every request needs an <code class="font-mono">Authorization</code> header carrying a bearer
+      token, generated from the <%= link_to "API tokens", api_tokens_path %> page. Tokens act on
+      behalf of the user who created them — audit log entries for anything an API call changes are
+      attributed to that user, and the token can only do what that user's role allows (a
+      <code class="font-mono">guest</code>-role user's token can read but not write, exactly as in
+      the web UI).
+    </p>
+    <pre class="code-block">curl -H "Authorization: Bearer YOUR_API_TOKEN" <%= base %>/api/v1/areas</pre>
+    <p>A missing or invalid token gets a <code class="font-mono">401</code>:</p>
+    <pre class="code-block">{"error":"Invalid or missing API token. Pass one as `Authorization: Bearer &lt;token&gt;`."}</pre>
+  </section>
+
+  <section id="conventions" class="docs-section stack">
+    <h2>Conventions</h2>
+    <ul class="stack" style="gap: 8px;">
+      <li><strong>Base URL:</strong> <code class="font-mono"><%= base %>/api/v1</code></li>
+      <li><strong>Format:</strong> JSON in, JSON out. No need to set <code class="font-mono">Accept</code> or <code class="font-mono">Content-Type</code> — every response under <code class="font-mono">/api</code> is JSON regardless.</li>
+      <li><strong>IDs vs slugs:</strong> Areas are addressed by slug in the URL (<code class="font-mono">/api/v1/areas/getting-started</code>); Pages by numeric ID (<code class="font-mono">/api/v1/pages/42</code>) — a page's slug is only unique within its area, so it can't identify a page on its own.</li>
+      <li><strong>Pagination:</strong> list endpoints return 25 per page by default, wrapped in a <code class="font-mono">pagination</code> object.</li>
+    </ul>
+    <pre class="code-block">{
+  "areas": [ { "id": 1, "slug": "getting-started", "name": "Getting Started", ... } ],
+  "pagination": { "page": 1, "pages": 3, "count": 61 }
+}</pre>
+  </section>
+
+  <section id="areas" class="docs-section stack">
+    <h2>Areas</h2>
+
+    <div>
+      <div class="docs-endpoint">
+        <span class="docs-endpoint__method docs-endpoint__method--get">GET</span>
+        <span class="font-mono">/api/v1/areas</span>
+      </div>
+      <p>List areas. A scoped token (see <a href="#scoping">Token scoping</a>) only sees the areas it's been granted.</p>
+      <pre class="code-block">curl -H "Authorization: Bearer YOUR_API_TOKEN" \
+  "<%= base %>/api/v1/areas?page=1"</pre>
+    </div>
+
+    <div>
+      <div class="docs-endpoint">
+        <span class="docs-endpoint__method docs-endpoint__method--get">GET</span>
+        <span class="font-mono">/api/v1/areas/:slug</span>
+      </div>
+      <p>Fetch a single area.</p>
+      <pre class="code-block">curl -H "Authorization: Bearer YOUR_API_TOKEN" \
+  <%= base %>/api/v1/areas/getting-started</pre>
+    </div>
+
+    <div>
+      <div class="docs-endpoint">
+        <span class="docs-endpoint__method docs-endpoint__method--post">POST</span>
+        <span class="font-mono">/api/v1/areas</span>
+      </div>
+      <p>Create an area. Requires a token with access to <em>all</em> areas — see <a href="#scoping">Token scoping</a>.</p>
+      <pre class="code-block">curl -X POST -H "Authorization: Bearer YOUR_API_TOKEN" \
+  -d "name=Release Notes" \
+  -d "description=What shipped, and when." \
+  -d "public=true" \
+  <%= base %>/api/v1/areas</pre>
+      <p class="field__hint">Accepted fields: <code class="font-mono">name</code> (required), <code class="font-mono">description</code>, <code class="font-mono">icon</code>, <code class="font-mono">public</code>, <code class="font-mono">position</code>, <code class="font-mono">parent_id</code>.</p>
+    </div>
+
+    <div>
+      <div class="docs-endpoint">
+        <span class="docs-endpoint__method docs-endpoint__method--patch">PATCH</span>
+        <span class="font-mono">/api/v1/areas/:slug</span>
+      </div>
+      <p>Update an area. Same fields as create.</p>
+      <pre class="code-block">curl -X PATCH -H "Authorization: Bearer YOUR_API_TOKEN" \
+  -d "description=Updated description" \
+  <%= base %>/api/v1/areas/getting-started</pre>
+    </div>
+
+    <div>
+      <div class="docs-endpoint">
+        <span class="docs-endpoint__method docs-endpoint__method--delete">DELETE</span>
+        <span class="font-mono">/api/v1/areas/:slug</span>
+      </div>
+      <p>Delete an area and everything in it. Returns <code class="font-mono">204 No Content</code>.</p>
+      <pre class="code-block">curl -X DELETE -H "Authorization: Bearer YOUR_API_TOKEN" \
+  <%= base %>/api/v1/areas/getting-started</pre>
+    </div>
+  </section>
+
+  <section id="pages" class="docs-section stack">
+    <h2>Pages</h2>
+
+    <div>
+      <div class="docs-endpoint">
+        <span class="docs-endpoint__method docs-endpoint__method--get">GET</span>
+        <span class="font-mono">/api/v1/pages</span>
+      </div>
+      <p>List pages, optionally filtered to one area. A scoped token only sees pages in areas it's been granted.</p>
+      <pre class="code-block">curl -H "Authorization: Bearer YOUR_API_TOKEN" \
+  "<%= base %>/api/v1/pages?area_id=1&page=1"</pre>
+    </div>
+
+    <div>
+      <div class="docs-endpoint">
+        <span class="docs-endpoint__method docs-endpoint__method--get">GET</span>
+        <span class="font-mono">/api/v1/pages/:id</span>
+      </div>
+      <p>Fetch a single page. <code class="font-mono">content</code> comes back as rendered HTML.</p>
+      <pre class="code-block">curl -H "Authorization: Bearer YOUR_API_TOKEN" \
+  <%= base %>/api/v1/pages/42</pre>
+    </div>
+
+    <div>
+      <div class="docs-endpoint">
+        <span class="docs-endpoint__method docs-endpoint__method--post">POST</span>
+        <span class="font-mono">/api/v1/pages</span>
+      </div>
+      <p>Create a page. <code class="font-mono">area_id</code> is required, and the token must have access to that area.</p>
+      <pre class="code-block">curl -X POST -H "Authorization: Bearer YOUR_API_TOKEN" \
+  -d "area_id=1" \
+  -d "title=Deploying to production" \
+  -d "content=&lt;p&gt;Step one: don't panic.&lt;/p&gt;" \
+  -d "public=false" \
+  <%= base %>/api/v1/pages</pre>
+      <p class="field__hint">Accepted fields: <code class="font-mono">area_id</code> (required), <code class="font-mono">title</code> (required), <code class="font-mono">content</code> (HTML), <code class="font-mono">icon</code>, <code class="font-mono">public</code>, <code class="font-mono">position</code>.</p>
+    </div>
+
+    <div>
+      <div class="docs-endpoint">
+        <span class="docs-endpoint__method docs-endpoint__method--patch">PATCH</span>
+        <span class="font-mono">/api/v1/pages/:id</span>
+      </div>
+      <p>Update a page. Moving it to a different area (by changing <code class="font-mono">area_id</code>) requires access to the destination area too.</p>
+      <pre class="code-block">curl -X PATCH -H "Authorization: Bearer YOUR_API_TOKEN" \
+  -d "title=Deploying to production (updated)" \
+  <%= base %>/api/v1/pages/42</pre>
+    </div>
+
+    <div>
+      <div class="docs-endpoint">
+        <span class="docs-endpoint__method docs-endpoint__method--delete">DELETE</span>
+        <span class="font-mono">/api/v1/pages/:id</span>
+      </div>
+      <p>Delete a page. Returns <code class="font-mono">204 No Content</code>.</p>
+      <pre class="code-block">curl -X DELETE -H "Authorization: Bearer YOUR_API_TOKEN" \
+  <%= base %>/api/v1/pages/42</pre>
+    </div>
+  </section>
+
+  <section id="scoping" class="docs-section stack">
+    <h2>Token scoping</h2>
+    <p>
+      Every token has either access to <strong>all areas</strong>, or to a specific list of areas
+      chosen when it's created (on the <%= link_to "API tokens", api_tokens_path %> page — scope
+      can't be changed after creation; revoke and issue a new token instead). A page's area
+      determines access to that page too — there's no separate per-page scope.
+    </p>
+    <p>
+      Only an all-areas token can create new top-level areas: a brand-new area has no existing
+      scope to check it against, so scoped tokens are limited to reading and managing the areas
+      (and pages within them) they've already been granted.
+    </p>
+    <p>Trying to touch an area — or a page inside an area — the token wasn't granted returns a <code class="font-mono">403</code>:</p>
+    <pre class="code-block">curl -X PATCH -H "Authorization: Bearer YOUR_API_TOKEN" \
+  -d "name=Renamed" \
+  <%= base %>/api/v1/areas/some-other-team-area
+
+{"error":"This API token doesn't have access to the \"Some Other Team Area\" area."}</pre>
+  </section>
+
+  <section id="errors" class="docs-section stack">
+    <h2>Errors</h2>
+    <table class="data-table">
+      <thead>
+        <tr>
+          <th>Status</th>
+          <th>Meaning</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr><td><code class="font-mono">401</code></td><td>Missing or invalid token.</td></tr>
+        <tr><td><code class="font-mono">403</code></td><td>Valid token, but not allowed — wrong role, or that area isn't in the token's scope.</td></tr>
+        <tr><td><code class="font-mono">404</code></td><td>No area/page matches that slug or ID.</td></tr>
+        <tr><td><code class="font-mono">422</code></td><td>Validation failed — the response body has an <code class="font-mono">errors</code> array.</td></tr>
+      </tbody>
+    </table>
+    <pre class="code-block">{"errors":["Title can't be blank"]}</pre>
+  </section>
+</div>

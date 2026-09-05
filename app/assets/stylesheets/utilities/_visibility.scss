@@ -1,0 +1,19 @@
+@use "../abstracts/mixins" as m;
+
+.visually-hidden {
+  @include m.visually-hidden;
+}
+
+.hide-mobile {
+  display: none;
+
+  @include m.breakpoint(tablet) {
+    display: initial;
+  }
+}
+
+.hide-desktop {
+  @include m.breakpoint(desktop) {
+    display: none;
+  }
+}

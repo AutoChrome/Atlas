@@ -1,0 +1,43 @@
+<% content_for :title, "Manage users" %>
+
+<div class="stack">
+  <div class="cluster" style="justify-content: space-between;">
+    <h1>Users</h1>
+    <%= link_to "New user", new_admin_user_path, class: "btn btn--filled" %>
+  </div>
+
+  <table class="data-table">
+    <thead>
+      <tr>
+        <th>Name</th>
+        <th>Email</th>
+        <th>Role</th>
+        <th></th>
+      </tr>
+    </thead>
+    <tbody>
+      <% @users.each do |user| %>
+        <tr>
+          <td><%= user.name %></td>
+          <td><%= user.email_address %></td>
+          <td>
+            <span class="badge badge--primary"><%= user.role.capitalize %></span>
+            <% if user.sessions.none? %>
+              <span class="badge badge--warning">Setup pending</span>
+            <% end %>
+          </td>
+          <td class="cluster">
+            <%= link_to "Edit", edit_admin_user_path(user), class: "btn btn--text btn--sm" %>
+            <% if user.sessions.none? %>
+              <%= button_to "Resend setup email", resend_setup_email_admin_user_path(user), method: :post, class: "btn btn--text btn--sm" %>
+            <% end %>
+            <% if user != current_user %>
+              <%= button_to "Remove", admin_user_path(user), method: :delete,
+                    data: { turbo_confirm: "Remove #{user.name}?" }, class: "btn btn--text btn--sm" %>
+            <% end %>
+          </td>
+        </tr>
+      <% end %>
+    </tbody>
+  </table>
+</div>
