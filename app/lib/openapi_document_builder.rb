@@ -9,7 +9,7 @@ class OpenapiDocumentBuilder
     integer: { "type" => "integer" },
     boolean: { "type" => "boolean" },
     date: { "type" => "string", "format" => "date" },
-    file: { "type" => "string", "format" => "binary" },
+    file: { "type" => "string", "format" => "binary" }
   }.freeze
 
   def self.build(base_url:)
@@ -27,17 +27,17 @@ class OpenapiDocumentBuilder
         "title" => "Atlas API",
         "version" => "1",
         "description" => "Self-hosted documentation platform: nested areas, rich WYSIWYG pages, " \
-          "public sharing, role-based access, full audit trail, and a scoped JSON API.",
+          "public sharing, role-based access, full audit trail, and a scoped JSON API."
       },
-      "servers" => [{ "url" => @base_url }],
-      "security" => [{ "bearerAuth" => [] }],
+      "servers" => [ { "url" => @base_url } ],
+      "security" => [ { "bearerAuth" => [] } ],
       "components" => {
         "securitySchemes" => {
-          "bearerAuth" => { "type" => "http", "scheme" => "bearer", "bearerFormat" => "API token" },
+          "bearerAuth" => { "type" => "http", "scheme" => "bearer", "bearerFormat" => "API token" }
         },
-        "schemas" => component_schemas,
+        "schemas" => component_schemas
       },
-      "paths" => paths,
+      "paths" => paths
     }
   end
 
@@ -74,14 +74,14 @@ class OpenapiDocumentBuilder
         "in" => location,
         "required" => location == "path" ? true : !!param[:required],
         "schema" => schema,
-        "example" => param[:example],
+        "example" => param[:example]
       }.compact
     end
 
     def request_body_object(op)
-      properties = Array(op[:body_params]).to_h { |p| [p[:name], TYPE_SCHEMAS.fetch(p[:type])] }
+      properties = Array(op[:body_params]).to_h { |p| [ p[:name], TYPE_SCHEMAS.fetch(p[:type]) ] }
       required = Array(op[:body_params]).select { |p| p[:required] }.map { |p| p[:name] }
-      example = Array(op[:body_params]).filter_map { |p| [p[:name], p[:example]] if p[:example] }.to_h
+      example = Array(op[:body_params]).filter_map { |p| [ p[:name], p[:example] ] if p[:example] }.to_h
 
       schema = { "type" => "object", "properties" => properties }
       schema["required"] = required if required.any?
@@ -91,8 +91,8 @@ class OpenapiDocumentBuilder
       {
         "required" => true,
         "content" => {
-          content_type => { "schema" => schema, "example" => example },
-        },
+          content_type => { "schema" => schema, "example" => example }
+        }
       }
     end
 
@@ -127,20 +127,20 @@ class OpenapiDocumentBuilder
       {
         "Error" => {
           "type" => "object",
-          "properties" => { "error" => { "type" => "string" } },
+          "properties" => { "error" => { "type" => "string" } }
         },
         "ValidationError" => {
           "type" => "object",
-          "properties" => { "errors" => { "type" => "array", "items" => { "type" => "string" } } },
+          "properties" => { "errors" => { "type" => "array", "items" => { "type" => "string" } } }
         },
         "Pagination" => {
           "type" => "object",
           "properties" => {
             "page" => { "type" => "integer" },
             "pages" => { "type" => "integer" },
-            "count" => { "type" => "integer" },
-          },
-        },
+            "count" => { "type" => "integer" }
+          }
+        }
       }
     end
 end

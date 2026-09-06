@@ -84,8 +84,8 @@ class WebhookDeliveryJob < ApplicationJob
           # announcements run whole days, not exact instants.
           starts_on: announcement.starts_on&.iso8601,
           ends_on: announcement.ends_on&.iso8601,
-          url: Rails.application.routes.url_helpers.announcement_url(announcement, host: ENV.fetch("SITE_ADDRESS", "localhost")),
-        },
+          url: Rails.application.routes.url_helpers.announcement_url(announcement, host: ENV.fetch("SITE_ADDRESS", "localhost"))
+        }
       }.to_json
     end
 end

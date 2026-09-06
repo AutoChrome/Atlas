@@ -19,7 +19,7 @@ class PagesController < ApplicationController
     authorize @page
 
     if @page.save
-      redirect_to [@area, @page], notice: "Page created."
+      redirect_to [ @area, @page ], notice: "Page created."
     else
       render :new, status: :unprocessable_entity
     end
@@ -33,7 +33,7 @@ class PagesController < ApplicationController
     authorize @page
 
     if @page.update(page_params)
-      redirect_to [@area, @page], notice: "Page updated."
+      redirect_to [ @area, @page ], notice: "Page updated."
     else
       render :edit, status: :unprocessable_entity
     end

@@ -102,6 +102,12 @@ jobs:
           DATABASE_URL: postgres://postgres:postgres@localhost:5432
           # RAILS_MASTER_KEY: ${{ secrets.RAILS_MASTER_KEY }}
           # REDIS_URL: redis://localhost:6379/0
+          # Test-only values, not real secrets — Webhook#secret (encrypts
+          # :secret) needs these configured or fixture loading and any test
+          # touching a Webhook raises a missing-encryption-key error.
+          AR_ENCRYPTION_PRIMARY_KEY: WW1AeDRUf17rSVsMlZsKs8blTOqTIYk4
+          AR_ENCRYPTION_DETERMINISTIC_KEY: MMfkqhmh775hoEtddlYArzqcr92CsD50
+          AR_ENCRYPTION_KEY_DERIVATION_SALT: TDbwWTvnfjmiKipg8Y6uxFldtaUWqoS1
         run: bin/rails db:test:prepare test
 
   system-test:
@@ -141,6 +147,10 @@ jobs:
           DATABASE_URL: postgres://postgres:postgres@localhost:5432
           # RAILS_MASTER_KEY: ${{ secrets.RAILS_MASTER_KEY }}
           # REDIS_URL: redis://localhost:6379/0
+          # Test-only values, not real secrets — see the "test" job above.
+          AR_ENCRYPTION_PRIMARY_KEY: WW1AeDRUf17rSVsMlZsKs8blTOqTIYk4
+          AR_ENCRYPTION_DETERMINISTIC_KEY: MMfkqhmh775hoEtddlYArzqcr92CsD50
+          AR_ENCRYPTION_KEY_DERIVATION_SALT: TDbwWTvnfjmiKipg8Y6uxFldtaUWqoS1
         run: bin/rails db:test:prepare test:system
 
       - name: Keep screenshots from failed system tests

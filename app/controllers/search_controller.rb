@@ -12,8 +12,8 @@ class SearchController < ApplicationController
     # flag.
     visibility_filter = current_user ? {} : { public: true }
 
-    areas = Area.search(query, fields: ["name^3", "description"], match: :word_start, where: visibility_filter, limit: 5)
-    pages = Page.search(query, fields: ["title^3", "content"], match: :word_start, where: visibility_filter, limit: 8, includes: [:area])
+    areas = Area.search(query, fields: [ "name^3", "description" ], match: :word_start, where: visibility_filter, limit: 5)
+    pages = Page.search(query, fields: [ "title^3", "content" ], match: :word_start, where: visibility_filter, limit: 8, includes: [ :area ])
 
     results = areas.map { |a| { type: "Area", title: a.name, url: area_path(a) } } +
               pages.map { |p| { type: "Page", title: p.title, meta: p.area.name, url: area_page_path(p.area, p) } }

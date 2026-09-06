@@ -5,7 +5,7 @@ class User < ApplicationRecord
   has_many :pages, dependent: :nullify
   has_many :announcements, dependent: :nullify
 
-  audited except: [:password_digest]
+  audited except: [ :password_digest ]
 
   enum :role, { member: 0, admin: 1, guest: 2 }, default: :member
 

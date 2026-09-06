@@ -13,7 +13,7 @@ class Area < ApplicationRecord
 
   # word_start on both fields so a partial word like "onbo" matches
   # "Onboarding" whether it's in the name or the description.
-  searchkick word_start: [:name, :description]
+  searchkick word_start: [ :name, :description ]
 
   def search_data
     { name: name, description: description, public: publicly_visible? }

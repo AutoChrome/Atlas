@@ -10,13 +10,13 @@ module IconHelper
     svg = ICONS_PATH.join("#{name}.svg").read
     svg.sub(
       "<svg ",
-      %(<svg class="#{["icon", css_class].compact.join(" ")}" width="#{size}" height="#{size}" aria-hidden="true" )
+      %(<svg class="#{[ "icon", css_class ].compact.join(" ")}" width="#{size}" height="#{size}" aria-hidden="true" )
     ).html_safe
   end
 
   # A Font Awesome Free solid icon, e.g. fa_icon("rocket").
   def fa_icon(name, css_class: nil)
-    tag.i class: ["fa-solid", "fa-#{name}", "icon-fa", css_class].compact.join(" "), aria: { hidden: "true" }
+    tag.i class: [ "fa-solid", "fa-#{name}", "icon-fa", css_class ].compact.join(" "), aria: { hidden: "true" }
   end
 
   # An Area/Page's own chosen icon (see Iconable), falling back to one of

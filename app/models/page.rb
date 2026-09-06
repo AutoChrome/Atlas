@@ -14,7 +14,7 @@ class Page < ApplicationRecord
 
   # word_start on both fields so a partial word like "onbo" matches
   # "Onboarding" whether it's in the title or the body content.
-  searchkick word_start: [:title, :content]
+  searchkick word_start: [ :title, :content ]
 
   def search_data
     { title: title, content: content.to_plain_text, area_name: area.name, public: publicly_visible? }

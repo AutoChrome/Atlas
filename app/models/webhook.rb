@@ -6,7 +6,7 @@ class Webhook < ApplicationRecord
 
   has_many :webhook_deliveries, dependent: :destroy
 
-  audited except: [:secret]
+  audited except: [ :secret ]
 
   before_validation :generate_secret, on: :create
 

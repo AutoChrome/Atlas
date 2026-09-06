@@ -2,12 +2,12 @@
 
 one:
   user: one
-  token: MyString
+  token_digest: fixture_token_digest_one
   name: MyString
   last_used_at: 2026-09-05 11:54:13
 
 two:
   user: two
-  token: MyString
+  token_digest: fixture_token_digest_two
   name: MyString
   last_used_at: 2026-09-05 11:54:13

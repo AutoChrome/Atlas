@@ -6,6 +6,6 @@ class CreateApiTokenAreas < ActiveRecord::Migration[8.1]
 
       t.timestamps
     end
-    add_index :api_token_areas, [:api_token_id, :area_id], unique: true
+    add_index :api_token_areas, [ :api_token_id, :area_id ], unique: true
   end
 end

@@ -22,11 +22,11 @@ module ApiSpec
       operations: [
         {
           method: :get, path: "/api/v1/areas", summary: "List areas",
-          query_params: [{ name: "page", type: :integer, required: false, example: 1 }],
+          query_params: [ { name: "page", type: :integer, required: false, example: 1 } ]
         },
         {
           method: :get, path: "/api/v1/areas/{slug}", summary: "Fetch a single area",
-          path_params: [{ name: "slug", type: :string, example: "getting-started" }],
+          path_params: [ { name: "slug", type: :string, example: "getting-started" } ]
         },
         {
           method: :post, path: "/api/v1/areas", summary: "Create an area",
@@ -37,12 +37,12 @@ module ApiSpec
             { name: "icon", type: :string, required: false, example: "rocket" },
             { name: "public", type: :boolean, required: false, example: true },
             { name: "position", type: :integer, required: false, example: 0 },
-            { name: "parent_id", type: :integer, required: false, example: nil },
-          ],
+            { name: "parent_id", type: :integer, required: false, example: nil }
+          ]
         },
         {
           method: :patch, path: "/api/v1/areas/{slug}", summary: "Update an area",
-          path_params: [{ name: "slug", type: :string, example: "getting-started" }],
+          path_params: [ { name: "slug", type: :string, example: "getting-started" } ],
           body_type: :form,
           body_params: [
             { name: "name", type: :string, required: false, example: "Release Notes" },
@@ -50,14 +50,14 @@ module ApiSpec
             { name: "icon", type: :string, required: false, example: "rocket" },
             { name: "public", type: :boolean, required: false, example: true },
             { name: "position", type: :integer, required: false, example: 0 },
-            { name: "parent_id", type: :integer, required: false, example: nil },
-          ],
+            { name: "parent_id", type: :integer, required: false, example: nil }
+          ]
         },
         {
           method: :delete, path: "/api/v1/areas/{slug}", summary: "Delete an area",
-          path_params: [{ name: "slug", type: :string, example: "getting-started" }],
-        },
-      ],
+          path_params: [ { name: "slug", type: :string, example: "getting-started" } ]
+        }
+      ]
     },
     {
       name: "Pages",
@@ -66,12 +66,12 @@ module ApiSpec
           method: :get, path: "/api/v1/pages", summary: "List pages",
           query_params: [
             { name: "area_id", type: :integer, required: false, example: 1 },
-            { name: "page", type: :integer, required: false, example: 1 },
-          ],
+            { name: "page", type: :integer, required: false, example: 1 }
+          ]
         },
         {
           method: :get, path: "/api/v1/pages/{id}", summary: "Fetch a single page",
-          path_params: [{ name: "id", type: :integer, example: 42 }],
+          path_params: [ { name: "id", type: :integer, example: 42 } ]
         },
         {
           method: :post, path: "/api/v1/pages", summary: "Create a page",
@@ -82,12 +82,12 @@ module ApiSpec
             { name: "content", type: :string, required: false, example: "<p>Step one: don't panic.</p>" },
             { name: "icon", type: :string, required: false, example: "rocket" },
             { name: "public", type: :boolean, required: false, example: false },
-            { name: "position", type: :integer, required: false, example: 0 },
-          ],
+            { name: "position", type: :integer, required: false, example: 0 }
+          ]
         },
         {
           method: :patch, path: "/api/v1/pages/{id}", summary: "Update a page",
-          path_params: [{ name: "id", type: :integer, example: 42 }],
+          path_params: [ { name: "id", type: :integer, example: 42 } ],
           body_type: :form,
           body_params: [
             { name: "area_id", type: :integer, required: false, example: 1 },
@@ -95,14 +95,14 @@ module ApiSpec
             { name: "content", type: :string, required: false, example: "<p>Updated content.</p>" },
             { name: "icon", type: :string, required: false, example: "rocket" },
             { name: "public", type: :boolean, required: false, example: false },
-            { name: "position", type: :integer, required: false, example: 0 },
-          ],
+            { name: "position", type: :integer, required: false, example: 0 }
+          ]
         },
         {
           method: :delete, path: "/api/v1/pages/{id}", summary: "Delete a page",
-          path_params: [{ name: "id", type: :integer, example: 42 }],
-        },
-      ],
+          path_params: [ { name: "id", type: :integer, example: 42 } ]
+        }
+      ]
     },
     {
       name: "Attachments",
@@ -112,21 +112,21 @@ module ApiSpec
           description: "Not tied to any page yet — registers the file and hands back an `html` snippet ready to embed in a page's `content`.",
           body_type: :multipart,
           body_params: [
-            { name: "file", type: :file, required: true, example: "screenshot.png" },
-          ],
-        },
-      ],
+            { name: "file", type: :file, required: true, example: "screenshot.png" }
+          ]
+        }
+      ]
     },
     {
       name: "Announcements",
       operations: [
         {
           method: :get, path: "/api/v1/announcements", summary: "List announcements",
-          query_params: [{ name: "page", type: :integer, required: false, example: 1 }],
+          query_params: [ { name: "page", type: :integer, required: false, example: 1 } ]
         },
         {
           method: :get, path: "/api/v1/announcements/{id}", summary: "Fetch a single announcement",
-          path_params: [{ name: "id", type: :integer, example: 42 }],
+          path_params: [ { name: "id", type: :integer, example: 42 } ]
         },
         {
           method: :post, path: "/api/v1/announcements", summary: "Create an announcement",
@@ -136,25 +136,25 @@ module ApiSpec
             { name: "title", type: :string, required: true, example: "Scheduled maintenance this weekend" },
             { name: "content", type: :string, required: false, example: "<p>We'll be taking the app down...</p>" },
             { name: "starts_on", type: :date, required: true, example: "2026-09-06" },
-            { name: "ends_on", type: :date, required: true, example: "2026-09-07" },
-          ],
+            { name: "ends_on", type: :date, required: true, example: "2026-09-07" }
+          ]
         },
         {
           method: :patch, path: "/api/v1/announcements/{id}", summary: "Update an announcement",
-          path_params: [{ name: "id", type: :integer, example: 42 }],
+          path_params: [ { name: "id", type: :integer, example: 42 } ],
           body_type: :form,
           body_params: [
             { name: "title", type: :string, required: false, example: "Scheduled maintenance this weekend" },
             { name: "content", type: :string, required: false, example: "<p>Updated details.</p>" },
             { name: "starts_on", type: :date, required: false, example: "2026-09-06" },
-            { name: "ends_on", type: :date, required: false, example: "2026-09-08" },
-          ],
+            { name: "ends_on", type: :date, required: false, example: "2026-09-08" }
+          ]
         },
         {
           method: :delete, path: "/api/v1/announcements/{id}", summary: "Delete an announcement",
-          path_params: [{ name: "id", type: :integer, example: 42 }],
-        },
-      ],
+          path_params: [ { name: "id", type: :integer, example: 42 } ]
+        }
+      ]
     },
     {
       name: "Webhooks",
@@ -162,14 +162,14 @@ module ApiSpec
         {
           method: :get, path: "/api/v1/webhooks", summary: "List webhooks",
           description: "Admin-only. Never includes the signing secret.",
-          query_params: [{ name: "page", type: :integer, required: false, example: 1 }],
+          query_params: [ { name: "page", type: :integer, required: false, example: 1 } ]
         },
         {
           method: :get, path: "/api/v1/webhooks/{id}", summary: "Fetch a single webhook",
           description: "Admin-only. Never includes the signing secret.",
-          path_params: [{ name: "id", type: :integer, example: 1 }],
-        },
-      ],
+          path_params: [ { name: "id", type: :integer, example: 1 } ]
+        }
+      ]
     },
     {
       name: "Search",
@@ -180,10 +180,10 @@ module ApiSpec
           query_params: [
             { name: "q", type: :string, required: true, example: "deploy" },
             { name: "areas", type: :boolean, required: false, default: true, example: true },
-            { name: "pages", type: :boolean, required: false, default: true, example: true },
-          ],
-        },
-      ],
-    },
+            { name: "pages", type: :boolean, required: false, default: true, example: true }
+          ]
+        }
+      ]
+    }
   ].freeze
 end

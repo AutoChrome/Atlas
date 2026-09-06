@@ -31,7 +31,7 @@ class BrunoCollectionBuilder
         "version" => "1",
         "name" => COLLECTION_NAME,
         "type" => "collection",
-        "ignore" => ["node_modules", ".git"],
+        "ignore" => [ "node_modules", ".git" ],
       )
     end
 
@@ -66,7 +66,7 @@ class BrunoCollectionBuilder
         path_params_block(op),
         query_params_block(op),
         auth_block,
-        body_block(op),
+        body_block(op)
       ].compact
 
       "#{blocks.join("\n\n")}\n"
@@ -119,7 +119,7 @@ class BrunoCollectionBuilder
 
       case op[:body_type]
       when :multipart
-        pairs = Array(op[:body_params]).map { |p| [p[:name], "@file(#{p[:example]})"] }
+        pairs = Array(op[:body_params]).map { |p| [ p[:name], "@file(#{p[:example]})" ] }
         "body:multipart-form {\n#{format_pairs(pairs)}\n}"
       else
         "body:form-urlencoded {\n#{format_pairs(example_pairs(op[:body_params]))}\n}"
@@ -130,7 +130,7 @@ class BrunoCollectionBuilder
     # a nil example (e.g. optional parent_id, "top-level if omitted") is
     # left out of the request entirely rather than rendered as a blank value.
     def example_pairs(params)
-      Array(params).filter_map { |p| [p[:name], p[:example]] unless p[:example].nil? }
+      Array(params).filter_map { |p| [ p[:name], p[:example] ] unless p[:example].nil? }
     end
 
     def format_pairs(pairs)

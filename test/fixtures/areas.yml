@@ -1,17 +1,15 @@
 # Read about fixtures at https://api.rubyonrails.org/classes/ActiveRecord/FixtureSet.html
 
 one:
-  name: MyString
-  slug: MyString
+  name: Area One
+  slug: area-one
   description: MyText
-  parent: one
   public: false
   position: 1
 
 two:
-  name: MyString
-  slug: MyString
+  name: Area Two
+  slug: area-two
   description: MyText
-  parent: two
   public: false
   position: 1

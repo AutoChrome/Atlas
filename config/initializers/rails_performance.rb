@@ -17,7 +17,7 @@ if defined?(RailsPerformance)
       Session.find_by(id: controller.request.cookie_jar.signed[:session_id])&.user&.admin?
     end
 
-    config.ignored_paths = ["/admin/performance"]
+    config.ignored_paths = [ "/admin/performance" ]
     config.home_link = "/"
     config.include_rake_tasks = false
     config.include_custom_events = true

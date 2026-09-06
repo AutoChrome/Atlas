@@ -30,7 +30,7 @@ module Api
           # The exact <action-text-attachment> tag ActionText itself
           # generates — paste this straight into a page's `content` HTML at
           # whatever point you want the image/file to appear.
-          html: ActionText::Attachment.from_attachable(blob).node.to_html,
+          html: ActionText::Attachment.from_attachable(blob).node.to_html
         }, status: :created
       end
     end

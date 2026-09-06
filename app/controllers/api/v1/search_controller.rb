@@ -39,7 +39,7 @@ module Api
         end
 
         def area_results
-          areas = Area.search(query, fields: ["name^3", "description"], match: :word_start, limit: 5)
+          areas = Area.search(query, fields: [ "name^3", "description" ], match: :word_start, limit: 5)
           areas.select { |area| current_api_token.authorized_for_area?(area) }.map do |area|
             {
               type: "Area",
@@ -48,13 +48,13 @@ module Api
               title: area.name,
               public: area.publicly_visible?,
               url: api_v1_area_url(area),
-              web_url: area_url(area),
+              web_url: area_url(area)
             }
           end
         end
 
         def page_results
-          pages = Page.search(query, fields: ["title^3", "content"], match: :word_start, limit: 8, includes: [:area])
+          pages = Page.search(query, fields: [ "title^3", "content" ], match: :word_start, limit: 8, includes: [ :area ])
           pages.select { |page| current_api_token.authorized_for_area?(page.area) }.map do |page|
             {
               type: "Page",
@@ -65,7 +65,7 @@ module Api
               # id:, not the page itself — see _page.json.jbuilder for why
               # passing the record would generate a 404ing slug-based URL.
               url: api_v1_page_url(id: page.id),
-              web_url: area_page_url(page.area, page),
+              web_url: area_page_url(page.area, page)
             }
           end
         end
