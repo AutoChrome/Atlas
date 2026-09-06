@@ -1,0 +1,72 @@
+<% content_for :title, @announcement.title %>
+
+<div class="stack container">
+  <p class="text-muted"><%= link_to "← Back to announcements", announcements_path %></p>
+
+  <div class="cluster" style="justify-content: space-between;">
+    <div>
+      <h1><%= @announcement.title %></h1>
+      <% if @announcement.published? %>
+        <span class="badge badge--success">Published <%= time_ago_in_words(@announcement.published_at) %> ago</span>
+      <% else %>
+        <span class="badge badge--warning">Draft — not yet sent to any webhook</span>
+      <% end %>
+    </div>
+
+    <div class="cluster">
+      <% if policy(@announcement).publish? %>
+        <%= button_to (@announcement.published? ? "Re-send to webhooks" : "Publish"), publish_announcement_path(@announcement),
+              method: :post, class: "btn btn--filled",
+              data: { turbo_confirm: @announcement.published? ? "Re-send this announcement to all active webhooks?" : nil } %>
+      <% end %>
+      <% if policy(@announcement).update? %>
+        <%= link_to "Edit", edit_announcement_path(@announcement), class: "btn btn--outlined" %>
+      <% end %>
+      <% if policy(@announcement).destroy? %>
+        <%= button_to "Delete", announcement_path(@announcement), method: :delete,
+              data: { turbo_confirm: "Delete this announcement?" }, class: "btn btn--danger" %>
+      <% end %>
+    </div>
+  </div>
+
+  <div class="trix-content">
+    <%= @announcement.content %>
+  </div>
+
+  <p class="text-muted">
+    Created <%= time_ago_in_words(@announcement.created_at) %> ago<%= " by #{@announcement.user.name}" if @announcement.user %>.
+  </p>
+
+  <% if @announcement.webhook_deliveries.any? %>
+    <section class="stack">
+      <h2>Delivery log</h2>
+      <table class="data-table">
+        <thead>
+          <tr>
+            <th>When</th>
+            <th>Webhook</th>
+            <th>Result</th>
+          </tr>
+        </thead>
+        <tbody>
+          <% @announcement.webhook_deliveries.ordered.each do |delivery| %>
+            <tr>
+              <td><%= delivery.created_at.to_fs(:long) %></td>
+              <td><%= delivery.webhook&.description || "(deleted webhook)" %></td>
+              <td>
+                <% if delivery.success? %>
+                  <span class="badge badge--success"><%= delivery.status_code %> OK</span>
+                <% else %>
+                  <span class="badge badge--error"><%= delivery.status_code || "Failed" %></span>
+                  <% if delivery.error_message.present? %>
+                    <span class="text-muted"><%= delivery.error_message %></span>
+                  <% end %>
+                <% end %>
+              </td>
+            </tr>
+          <% end %>
+        </tbody>
+      </table>
+    </section>
+  <% end %>
+</div>

@@ -27,6 +27,10 @@ Rails.application.routes.draw do
     collection { get :docs }
   end
 
+  resources :announcements do
+    member { post :publish }
+  end
+
   admin_only = lambda do |request|
     Session.find_by(id: request.cookie_jar.signed[:session_id])&.user&.admin?
   end
@@ -38,6 +42,11 @@ Rails.application.routes.draw do
       end
     end
     resources :audits, only: %i[index show]
+
+    resources :webhooks do
+      collection { get :docs }
+      member { post :regenerate_secret }
+    end
   end
 
   constraints admin_only do

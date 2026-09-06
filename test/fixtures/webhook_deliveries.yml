@@ -1,0 +1,17 @@
+# Read about fixtures at https://api.rubyonrails.org/classes/ActiveRecord/FixtureSet.html
+
+one:
+  webhook: one
+  announcement: one
+  status_code: 1
+  success: false
+  response_body: MyText
+  error_message: MyString
+
+two:
+  webhook: two
+  announcement: two
+  status_code: 1
+  success: false
+  response_body: MyText
+  error_message: MyString

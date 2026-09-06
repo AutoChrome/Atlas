@@ -1,0 +1,7 @@
+<% content_for :title, "New webhook" %>
+
+<div class="stack">
+  <p class="text-muted"><%= link_to "← Back to webhooks", admin_webhooks_path %></p>
+  <h1>New webhook</h1>
+  <%= render "form", webhook: @webhook %>
+</div>

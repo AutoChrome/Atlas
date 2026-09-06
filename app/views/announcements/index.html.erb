@@ -1,0 +1,34 @@
+<% content_for :title, "Announcements" %>
+
+<div class="stack">
+  <div class="cluster" style="justify-content: space-between;">
+    <h1>Announcements</h1>
+    <% if policy(Announcement).create? %>
+      <%= link_to "New announcement", new_announcement_path, class: "btn btn--filled" %>
+    <% end %>
+  </div>
+
+  <% if @announcements.any? %>
+    <div class="stack">
+      <% @announcements.each do |announcement| %>
+        <%= link_to announcement, class: "card card--interactive" do %>
+          <div class="cluster" style="justify-content: space-between;">
+            <span class="card__title"><%= announcement.title %></span>
+            <% if announcement.published? %>
+              <span class="badge badge--success">Published</span>
+            <% else %>
+              <span class="badge badge--warning">Draft</span>
+            <% end %>
+          </div>
+          <p class="card__meta">
+            <%= time_ago_in_words(announcement.created_at) %> ago<%= " by #{announcement.user.name}" if announcement.user %>
+          </p>
+        <% end %>
+      <% end %>
+    </div>
+  <% else %>
+    <p class="text-muted">No announcements yet<%= ". Create the first one to get started." if policy(Announcement).create? %></p>
+  <% end %>
+
+  <%= raw pagy_nav(@pagy) if @pagy.pages > 1 %>
+</div>

@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_09_05_132231) do
+ActiveRecord::Schema[8.1].define(version: 2026_09_05_181016) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
 
@@ -50,6 +50,16 @@ ActiveRecord::Schema[8.1].define(version: 2026_09_05_132231) do
     t.bigint "blob_id", null: false
     t.string "variation_digest", null: false
     t.index ["blob_id", "variation_digest"], name: "index_active_storage_variant_records_uniqueness", unique: true
+  end
+
+  create_table "announcements", force: :cascade do |t|
+    t.datetime "created_at", null: false
+    t.datetime "published_at"
+    t.string "title", null: false
+    t.datetime "updated_at", null: false
+    t.bigint "user_id"
+    t.index ["published_at"], name: "index_announcements_on_published_at"
+    t.index ["user_id"], name: "index_announcements_on_user_id"
   end
 
   create_table "api_token_areas", force: :cascade do |t|
@@ -158,8 +168,32 @@ ActiveRecord::Schema[8.1].define(version: 2026_09_05_132231) do
     t.index ["role"], name: "index_users_on_role"
   end
 
+  create_table "webhook_deliveries", force: :cascade do |t|
+    t.bigint "announcement_id", null: false
+    t.datetime "created_at", null: false
+    t.string "error_message"
+    t.text "response_body"
+    t.integer "status_code"
+    t.boolean "success", default: false, null: false
+    t.datetime "updated_at", null: false
+    t.bigint "webhook_id", null: false
+    t.index ["announcement_id"], name: "index_webhook_deliveries_on_announcement_id"
+    t.index ["webhook_id"], name: "index_webhook_deliveries_on_webhook_id"
+  end
+
+  create_table "webhooks", force: :cascade do |t|
+    t.boolean "active", default: true, null: false
+    t.datetime "created_at", null: false
+    t.string "description", null: false
+    t.string "secret", null: false
+    t.datetime "updated_at", null: false
+    t.string "url", null: false
+    t.index ["active"], name: "index_webhooks_on_active"
+  end
+
   add_foreign_key "active_storage_attachments", "active_storage_blobs", column: "blob_id"
   add_foreign_key "active_storage_variant_records", "active_storage_blobs", column: "blob_id"
+  add_foreign_key "announcements", "users"
   add_foreign_key "api_token_areas", "api_tokens"
   add_foreign_key "api_token_areas", "areas"
   add_foreign_key "api_tokens", "users"
@@ -167,4 +201,6 @@ ActiveRecord::Schema[8.1].define(version: 2026_09_05_132231) do
   add_foreign_key "pages", "areas"
   add_foreign_key "pages", "users"
   add_foreign_key "sessions", "users"
+  add_foreign_key "webhook_deliveries", "announcements"
+  add_foreign_key "webhook_deliveries", "webhooks"
 end

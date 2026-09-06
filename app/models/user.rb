@@ -3,6 +3,7 @@ class User < ApplicationRecord
   has_many :sessions, dependent: :destroy
   has_many :api_tokens, dependent: :destroy
   has_many :pages, dependent: :nullify
+  has_many :announcements, dependent: :nullify
 
   audited except: [:password_digest]
 

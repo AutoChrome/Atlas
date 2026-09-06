@@ -1,0 +1,87 @@
+# Fans a published Announcement out to every active Webhook. Runs in the
+# background (Sidekiq) so publishing doesn't block on a slow or unreachable
+# receiver, and each delivery is independent — one webhook failing doesn't
+# stop the others, or get retried into a pile of duplicate deliveries.
+#
+# We don't validate or care what the receiving endpoint does with the
+# payload — this only cares that the HTTP request was made and records
+# what came back, for visibility on the webhook's delivery log.
+class WebhookDeliveryJob < ApplicationJob
+  queue_as :default
+
+  EVENT = "announcement.published"
+  OPEN_TIMEOUT = 5
+  READ_TIMEOUT = 10
+
+  def perform(announcement_id)
+    announcement = Announcement.find_by(id: announcement_id)
+    return unless announcement
+
+    body = payload_json(announcement)
+
+    Webhook.active.find_each do |webhook|
+      deliver(webhook, announcement, body)
+    end
+  end
+
+  private
+    def deliver(webhook, announcement, body)
+      response = post(webhook, body)
+
+      WebhookDelivery.create!(
+        webhook: webhook,
+        announcement: announcement,
+        status_code: response.code.to_i,
+        success: response.is_a?(Net::HTTPSuccess),
+        response_body: response.body.to_s.first(2000)
+      )
+    rescue => e
+      WebhookDelivery.create!(
+        webhook: webhook,
+        announcement: announcement,
+        success: false,
+        error_message: "#{e.class}: #{e.message}".first(500)
+      )
+    end
+
+    def post(webhook, body)
+      uri = URI.parse(webhook.url)
+
+      http = Net::HTTP.new(uri.host, uri.port)
+      http.use_ssl = uri.scheme == "https"
+      http.open_timeout = OPEN_TIMEOUT
+      http.read_timeout = READ_TIMEOUT
+
+      request = Net::HTTP::Post.new(uri.request_uri.presence || "/")
+      request["Content-Type"] = "application/json"
+      request["X-Atlas-Event"] = EVENT
+      request["X-Atlas-Signature"] = "sha256=#{signature_for(webhook, body)}"
+      request.body = body
+
+      http.request(request)
+    end
+
+    def signature_for(webhook, body)
+      OpenSSL::HMAC.hexdigest("SHA256", webhook.secret, body)
+    end
+
+    def payload_json(announcement)
+      {
+        event: EVENT,
+        announcement: {
+          id: announcement.id,
+          title: announcement.title,
+          # .body.fragment.source.to_html, not .content.to_s — the latter
+          # renders through ActionView (for attachment previews), which in
+          # development also injects the view-annotation comments
+          # (config.action_view.annotate_rendered_view_with_filenames) right
+          # into the payload. This is the same raw-fragment serialization
+          # Autocorrectable uses for the same reason.
+          content_html: announcement.content.body.fragment.source.to_html,
+          author: announcement.user&.name,
+          published_at: announcement.published_at&.iso8601,
+          url: Rails.application.routes.url_helpers.announcement_url(announcement, host: ENV.fetch("SITE_ADDRESS", "localhost")),
+        },
+      }.to_json
+    end
+end

@@ -1,0 +1,144 @@
+<% content_for :title, "Webhook integration guide" %>
+
+<div class="stack container--wide">
+  <div>
+    <p class="text-muted"><%= link_to "← Back to webhooks", admin_webhooks_path %></p>
+    <h1>Webhook integration guide</h1>
+    <p class="text-muted">
+      How to receive announcements published from Atlas. Create a webhook from the
+      <%= link_to "webhooks", admin_webhooks_path %> page to get a URL configured and a signing secret
+      issued, then build a receiver against what's documented here.
+    </p>
+  </div>
+
+  <nav class="docs-nav">
+    <a href="#overview" class="btn btn--text btn--sm">Overview</a>
+    <a href="#request" class="btn btn--text btn--sm">The request</a>
+    <a href="#payload" class="btn btn--text btn--sm">Payload</a>
+    <a href="#signature" class="btn btn--text btn--sm">Verifying the signature</a>
+    <a href="#response" class="btn btn--text btn--sm">Your response</a>
+    <a href="#retries" class="btn btn--text btn--sm">Delivery, retries &amp; logging</a>
+  </nav>
+
+  <section id="overview" class="docs-section stack">
+    <h2>Overview</h2>
+    <p>
+      When an announcement is published (or re-published) inside Atlas, it's delivered as a single
+      HTTP <code class="font-mono">POST</code> to every <strong>active</strong> webhook's configured
+      URL. Delivery happens in the background, independently per webhook — one receiver being slow
+      or down doesn't affect the others.
+    </p>
+    <p>
+      Atlas does not inspect or validate what your endpoint does with the announcement. It sends the
+      request, records the HTTP status and response body it got back for the delivery log, and
+      that's the extent of the contract — what your application does with the content
+      (post it to Slack, render it on an intranet page, forward it somewhere else entirely) is
+      entirely up to you.
+    </p>
+  </section>
+
+  <section id="request" class="docs-section stack">
+    <h2>The request</h2>
+    <p>Every delivery is a <code class="font-mono">POST</code> with a JSON body and these headers:</p>
+    <table class="data-table">
+      <thead>
+        <tr>
+          <th>Header</th>
+          <th>Value</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr><td><code class="font-mono">Content-Type</code></td><td><code class="font-mono">application/json</code></td></tr>
+        <tr><td><code class="font-mono">X-Atlas-Event</code></td><td><code class="font-mono">announcement.published</code></td></tr>
+        <tr><td><code class="font-mono">X-Atlas-Signature</code></td><td><code class="font-mono">sha256=&lt;hex-encoded HMAC&gt;</code> — see <a href="#signature">Verifying the signature</a></td></tr>
+      </tbody>
+    </table>
+    <p class="field__hint">
+      There is currently one event type. Re-publishing an announcement sends the same event again
+      with the updated content, so a receiver that de-duplicates should key on
+      <code class="font-mono">announcement.id</code> plus <code class="font-mono">announcement.published_at</code>, not the event name alone.
+    </p>
+  </section>
+
+  <section id="payload" class="docs-section stack">
+    <h2>Payload</h2>
+    <p>The request body is JSON shaped like this:</p>
+    <pre class="code-block">{
+  "event": "announcement.published",
+  "announcement": {
+    "id": 42,
+    "title": "Scheduled maintenance this weekend",
+    "content_html": "&lt;div&gt;&lt;p&gt;We'll be taking the app down...&lt;/p&gt;&lt;/div&gt;",
+    "author": "Jordan Blake",
+    "published_at": "2026-09-05T18:32:10Z",
+    "url": "https://atlas.example.com/announcements/42"
+  }
+}</pre>
+    <table class="data-table">
+      <thead>
+        <tr>
+          <th>Field</th>
+          <th>Type</th>
+          <th>Notes</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr><td><code class="font-mono">announcement.id</code></td><td>integer</td><td>Stable identifier for de-duplication.</td></tr>
+        <tr><td><code class="font-mono">announcement.title</code></td><td>string</td><td>Plain text.</td></tr>
+        <tr><td><code class="font-mono">announcement.content_html</code></td><td>string</td><td>The full rich-text body as raw HTML, exactly as authored in Atlas's WYSIWYG editor. Atlas does not sanitize or transform this for your use case — treat it as trusted HTML from your own organization's editors and render or forward it however fits your application.</td></tr>
+        <tr><td><code class="font-mono">announcement.author</code></td><td>string or null</td><td>Display name of the user who created it, if any.</td></tr>
+        <tr><td><code class="font-mono">announcement.published_at</code></td><td>string (ISO 8601)</td><td>When this publish/re-publish happened.</td></tr>
+        <tr><td><code class="font-mono">announcement.url</code></td><td>string</td><td>Link back to the announcement inside Atlas.</td></tr>
+      </tbody>
+    </table>
+  </section>
+
+  <section id="signature" class="docs-section stack">
+    <h2>Verifying the signature</h2>
+    <p>
+      Each webhook has its own secret (shown on its edit page in Atlas). The
+      <code class="font-mono">X-Atlas-Signature</code> header is an HMAC-SHA256 of the <strong>raw
+      request body</strong>, hex-encoded and prefixed with <code class="font-mono">sha256=</code>.
+      Verifying it confirms the request genuinely came from this Atlas instance and wasn't
+      tampered with in transit.
+    </p>
+    <pre class="code-block"># Ruby
+signature = "sha256=" + OpenSSL::HMAC.hexdigest("SHA256", webhook_secret, request_body)
+ActiveSupport::SecurityUtils.secure_compare(signature, request.headers["X-Atlas-Signature"])</pre>
+    <pre class="code-block"># Node.js
+const crypto = require("crypto");
+const expected = "sha256=" + crypto.createHmac("sha256", webhookSecret).update(rawBody).digest("hex");
+crypto.timingSafeEqual(Buffer.from(expected), Buffer.from(receivedSignature));</pre>
+    <p class="field__hint">
+      Compute the HMAC over the exact raw bytes of the request body, before any JSON parsing —
+      re-serializing a parsed body can change whitespace or key order and produce a different
+      signature. Use a constant-time comparison, not <code class="font-mono">==</code>.
+    </p>
+  </section>
+
+  <section id="response" class="docs-section stack">
+    <h2>Your response</h2>
+    <p>
+      Return any <code class="font-mono">2xx</code> status to mark the delivery a success. Atlas
+      reads and stores up to the first 2,000 characters of your response body against the delivery
+      log purely for your own visibility when troubleshooting — it isn't parsed, validated, or acted
+      on in any way. A non-2xx status, a connection failure, or a timeout (5s to connect, 10s to
+      read) is recorded as a failed delivery.
+    </p>
+  </section>
+
+  <section id="retries" class="docs-section stack">
+    <h2>Delivery, retries &amp; logging</h2>
+    <p>
+      Deliveries are <strong>not automatically retried</strong> on failure. If your endpoint was
+      down when an announcement was published, re-publish it from Atlas to trigger a fresh delivery
+      to every active webhook. Every attempt — success or failure, including the status code and any
+      error — is recorded and visible in the delivery log on each announcement's page and summarized
+      on the <%= link_to "webhooks", admin_webhooks_path %> page.
+    </p>
+    <p>
+      Disabling a webhook (uncheck "Active") stops new deliveries without deleting its configuration
+      or delivery history.
+    </p>
+  </section>
+</div>

@@ -1,0 +1,70 @@
+<% content_for :title, "Webhooks" %>
+
+<div class="stack">
+  <div class="cluster" style="justify-content: space-between;">
+    <h1>Webhooks</h1>
+    <div class="cluster">
+      <%= link_to "Integration guide", docs_admin_webhooks_path, class: "btn btn--outlined" %>
+      <%= link_to "New webhook", new_admin_webhook_path, class: "btn btn--filled" %>
+    </div>
+  </div>
+  <p class="text-muted">
+    Every published announcement is POSTed to each active webhook below. See the
+    <%= link_to "integration guide", docs_admin_webhooks_path %> for the payload shape and how to
+    verify the signature.
+  </p>
+
+  <% if @webhooks.any? %>
+    <table class="data-table">
+      <thead>
+        <tr>
+          <th>Description</th>
+          <th>URL</th>
+          <th>Status</th>
+          <th>Recent deliveries</th>
+          <th></th>
+        </tr>
+      </thead>
+      <tbody>
+        <% @webhooks.each do |webhook| %>
+          <tr>
+            <td><%= webhook.description %></td>
+            <td class="font-mono text-muted" style="word-break: break-all;"><%= webhook.url %></td>
+            <td>
+              <% if webhook.active? %>
+                <span class="badge badge--success">Active</span>
+              <% else %>
+                <span class="badge">Disabled</span>
+              <% end %>
+            </td>
+            <td>
+              <% recent = webhook.webhook_deliveries.ordered.limit(5) %>
+              <% if recent.any? %>
+                <span class="cluster" style="gap: 4px;">
+                  <% recent.each do |delivery| %>
+                    <span class="badge <%= delivery.success? ? "badge--success" : "badge--error" %>" title="<%= delivery.created_at.to_fs(:long) %>">
+                      <%= delivery.status_code || "✕" %>
+                    </span>
+                  <% end %>
+                </span>
+              <% else %>
+                <span class="text-muted">No deliveries yet</span>
+              <% end %>
+            </td>
+            <td class="cluster">
+              <%= link_to "Edit", edit_admin_webhook_path(webhook), class: "btn btn--text btn--sm" %>
+              <%= button_to "Regenerate secret", regenerate_secret_admin_webhook_path(webhook), method: :post,
+                    data: { turbo_confirm: "Generate a new secret for \"#{webhook.description}\"? Update the receiving end or its signature checks will fail." },
+                    class: "btn btn--text btn--sm" %>
+              <%= button_to "Delete", admin_webhook_path(webhook), method: :delete,
+                    data: { turbo_confirm: "Delete the \"#{webhook.description}\" webhook?" },
+                    class: "btn btn--text btn--sm" %>
+            </td>
+          </tr>
+        <% end %>
+      </tbody>
+    </table>
+  <% else %>
+    <p class="text-muted">No webhooks configured yet.</p>
+  <% end %>
+</div>

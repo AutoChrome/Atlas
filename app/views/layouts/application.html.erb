@@ -62,6 +62,12 @@
       <div class="app-shell__body">
         <div class="sidebar__scrim" data-sidebar-target="scrim" data-action="click->sidebar#close"></div>
         <nav class="sidebar" data-sidebar-target="panel">
+          <% if current_user %>
+            <%= link_to announcements_path, class: "nav-tree__link" do %>
+              <%= fa_icon "bullhorn", css_class: "nav-tree__icon" %>
+              Announcements
+            <% end %>
+          <% end %>
           <%= render "shared/area_nav" %>
         </nav>
 

@@ -18,6 +18,18 @@ module Atlas
 
     config.active_job.queue_adapter = :sidekiq
 
+    # The `audited` gem YAML-serializes changed attribute values into its
+    # `audited_changes` text column. Rails' safe YAML column coder (the
+    # 8.1 default) refuses to dump any class not explicitly permitted here —
+    # Symbol is allowed out of the box, but auditing a datetime attribute
+    # (e.g. Announcement#published_at) also needs Time and its
+    # ActiveSupport::TimeWithZone/TimeZone wrapper classes permitted, or
+    # `Audited::Auditor#audited_changes` blows up with
+    # Psych::DisallowedClass the first time such an attribute changes.
+    config.active_record.yaml_column_permitted_classes = [
+      Symbol, Time, ActiveSupport::TimeWithZone, ActiveSupport::TimeZone
+    ]
+
     # Configuration for the application, engines, and railties goes here.
     #
     # These settings can be overridden in specific environments using the files

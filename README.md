@@ -170,6 +170,24 @@ the admin UI). Responses are paginated (`pagination.page` / `.pages` /
 can read but not write) plus, for scoped tokens, the area grant — touching
 an area outside a token's scope returns `403`.
 
+## Announcements & webhooks
+
+Admins and members can post announcements (title + rich-text body) from the
+**Announcements** link in the sidebar. An announcement starts as a draft;
+publishing it delivers the content to every active webhook configured at
+**Account menu → Webhooks** (admin-only).
+
+Each webhook has a description, a target URL, and an auto-generated signing
+secret. Publishing (or re-publishing) POSTs a JSON payload — the announcement
+as clean HTML plus an `X-Atlas-Signature: sha256=...` HMAC header — to every
+active webhook's URL, independently and in the background (Sidekiq). Atlas
+doesn't validate what the receiving endpoint does with it; it only records
+the HTTP status/response for the delivery log shown on each announcement's
+page and summarized on the webhooks index.
+
+Full payload shape, headers, and signature-verification code samples live at
+`/admin/webhooks/docs` in the running app.
+
 ## Notes / things to know
 
 - The theme-detection inline script (in both layouts, sets `data-theme`
@@ -184,3 +202,8 @@ an area outside a token's scope returns `403`.
   somewhere other than this docker-compose setup. It doesn't currently
   provision Redis/OpenSearch — add those wherever you deploy, and point
   `REDIS_URL` / `OPENSEARCH_URL` at them.
+- Webhook URLs are admin-only configuration, validated only for a well-formed
+  `http(s)://` scheme+host — there's no private-IP/metadata-endpoint
+  blocklist. That's an accepted trust boundary (same model as configuring a
+  Slack/Stripe/GitHub webhook), not an oversight, since admins are already
+  trusted with arbitrary outbound integrations elsewhere in the app.

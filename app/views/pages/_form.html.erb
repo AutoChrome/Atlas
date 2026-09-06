@@ -15,24 +15,7 @@
     <%= f.text_field :title, class: "input", required: true, spellcheck: true %>
   </div>
 
-  <div class="field" data-controller="page-reference" data-page-reference-search-url-value="<%= search_path %>">
-    <%= f.label :content, class: "field__label" %>
-    <%= f.rich_text_area :content, spellcheck: true, data: { page_reference_target: "editor" } %>
-
-    <dialog class="modal" data-page-reference-target="dialog" data-action="click->page-reference#closeOnBackdrop">
-      <div class="modal__header">
-        <h3>Link to a page or area</h3>
-        <button type="button" class="btn btn--icon btn--sm" data-action="page-reference#close" aria-label="Close">
-          <%= icon :close %>
-        </button>
-      </div>
-      <div class="modal__body stack">
-        <input type="search" class="input" placeholder="Search for a page or area…" autocomplete="off"
-               data-page-reference-target="input" data-action="input->page-reference#search">
-        <div class="stack" data-page-reference-target="results" style="max-height: 320px; overflow-y: auto;"></div>
-      </div>
-    </dialog>
-  </div>
+  <%= render "shared/rich_text_field", f: f %>
 
   <%= render "shared/icon_field", f: f %>
 

@@ -1,0 +1,36 @@
+<%= form_with model: webhook, url: webhook.persisted? ? admin_webhook_path(webhook) : admin_webhooks_path, class: "stack", style: "max-width: 560px;" do |f| %>
+  <% if webhook.errors.any? %>
+    <div class="card card--outlined" style="border-color: var(--color-error);">
+      <ul>
+        <% webhook.errors.each do |error| %>
+          <li class="field__error"><%= error.full_message %></li>
+        <% end %>
+      </ul>
+    </div>
+  <% end %>
+
+  <div class="field">
+    <%= f.label :description, class: "field__label" %>
+    <%= f.text_field :description, class: "input", placeholder: "e.g. Intranet home page banner", required: true %>
+  </div>
+
+  <div class="field">
+    <%= f.label :url, "URL to POST to", class: "field__label" %>
+    <%= f.url_field :url, class: "input", placeholder: "https://example.com/webhooks/atlas", required: true %>
+    <p class="field__hint">Every published announcement is sent here as JSON. See the <%= link_to "integration guide", docs_admin_webhooks_path %> for the exact payload.</p>
+  </div>
+
+  <div class="checkbox">
+    <%= f.check_box :active %>
+    <%= f.label :active, "Active — deliver announcements to this webhook" %>
+  </div>
+
+  <% unless webhook.persisted? %>
+    <p class="field__hint">A signing secret is generated automatically — you'll be able to view it once this webhook is created.</p>
+  <% end %>
+
+  <div class="form-actions">
+    <%= f.submit class: "btn btn--filled" %>
+    <%= link_to "Cancel", admin_webhooks_path, class: "btn btn--text" %>
+  </div>
+<% end %>

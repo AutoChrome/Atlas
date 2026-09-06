@@ -1,0 +1,20 @@
+<% content_for :title, "Edit webhook" %>
+
+<div class="stack">
+  <p class="text-muted"><%= link_to "← Back to webhooks", admin_webhooks_path %></p>
+  <h1>Edit webhook</h1>
+
+  <%= render "form", webhook: @webhook %>
+
+  <div class="card card--outlined stack" style="max-width: 560px;">
+    <p class="field__label">Signing secret</p>
+    <p class="text-muted">
+      Used to verify the <code class="font-mono">X-Atlas-Signature</code> header on each delivery —
+      see the <%= link_to "integration guide", docs_admin_webhooks_path %>.
+    </p>
+    <code class="font-mono" style="word-break: break-all;"><%= @webhook.secret %></code>
+    <%= button_to "Regenerate secret", regenerate_secret_admin_webhook_path(@webhook), method: :post,
+          data: { turbo_confirm: "Generate a new secret for \"#{@webhook.description}\"? Update the receiving end or its signature checks will fail." },
+          class: "btn btn--outlined btn--sm" %>
+  </div>
+</div>
