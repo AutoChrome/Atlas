@@ -72,6 +72,12 @@ gem "friendly_id"
 # CORS headers for the JSON API so other applications can call it from the browser
 gem "rack-cors"
 
+# Builds the downloadable Bruno API collection from api_tokens/docs — was
+# already present transitively (capybara/selenium-webdriver, test-only), but
+# a feature that ships in production needs it declared for real, not
+# borrowed from the test group.
+gem "rubyzip", require: "zip"
+
 group :development, :test do
   # See https://guides.rubyonrails.org/debugging_rails_applications.html#debugging-with-the-debug-gem
   gem "debug", platforms: %i[ mri windows ], require: "debug/prelude"

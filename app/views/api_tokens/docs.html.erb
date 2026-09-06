@@ -5,12 +5,20 @@
 <div class="stack container--wide">
   <div>
     <p class="text-muted"><%= link_to "← Back to API tokens", api_tokens_path %></p>
-    <h1>API documentation</h1>
+    <div class="cluster" style="justify-content: space-between; align-items: flex-start;">
+      <h1>API documentation</h1>
+      <div class="cluster">
+        <%= link_to "Download OpenAPI spec", openapi_api_tokens_path, class: "btn btn--outlined btn--sm" %>
+        <%= link_to "Download Bruno collection", bruno_collection_api_tokens_path, class: "btn btn--outlined btn--sm" %>
+      </div>
+    </div>
     <p class="text-muted">
       A full JSON CRUD API for Areas, Pages, and Announcements, plus a read-only view of
       configured Webhooks, so other applications can read and manage Atlas content directly.
       Authenticated with a bearer token — create one from the
-      <%= link_to "API tokens", api_tokens_path %> page.
+      <%= link_to "API tokens", api_tokens_path %> page. Both downloads above are generated
+      from the same endpoint list as this page, so they're never out of sync with it — the
+      OpenAPI spec also powers <a href="#notion">connecting Notion AI</a>.
     </p>
   </div>
 
@@ -19,10 +27,12 @@
     <a href="#conventions" class="btn btn--text btn--sm">Conventions</a>
     <a href="#areas" class="btn btn--text btn--sm">Areas</a>
     <a href="#pages" class="btn btn--text btn--sm">Pages</a>
+    <a href="#search" class="btn btn--text btn--sm">Search</a>
     <a href="#attachments" class="btn btn--text btn--sm">Inline attachments</a>
     <a href="#announcements" class="btn btn--text btn--sm">Announcements</a>
     <a href="#webhooks" class="btn btn--text btn--sm">Webhooks</a>
     <a href="#scoping" class="btn btn--text btn--sm">Token scoping</a>
+    <a href="#notion" class="btn btn--text btn--sm">Connect Notion AI</a>
     <a href="#errors" class="btn btn--text btn--sm">Errors</a>
   </nav>
 
@@ -90,7 +100,55 @@
   -d "description=What shipped, and when." \
   -d "public=true" \
   <%= base %>/api/v1/areas</pre>
-      <p class="field__hint">Accepted fields: <code class="font-mono">name</code> (required), <code class="font-mono">description</code>, <code class="font-mono">icon</code>, <code class="font-mono">public</code>, <code class="font-mono">position</code>, <code class="font-mono">parent_id</code>.</p>
+
+      <table class="data-table">
+        <thead>
+          <tr>
+            <th>Parameter</th>
+            <th>Description</th>
+            <th>Type</th>
+            <th>Validation</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><code class="font-mono">name</code></td>
+            <td>Display name for the area</td>
+            <td>string</td>
+            <td><strong>Required</strong> — can't be blank</td>
+          </tr>
+          <tr>
+            <td><code class="font-mono">description</code></td>
+            <td>Shown under the area's name in the sidebar and on the area page</td>
+            <td>string</td>
+            <td>Optional</td>
+          </tr>
+          <tr>
+            <td><code class="font-mono">icon</code></td>
+            <td>Font Awesome solid icon name, e.g. <code class="font-mono">rocket</code></td>
+            <td>string</td>
+            <td>Optional — free text, not checked against the icon set; an unrecognized name just falls back to the default folder icon in the UI</td>
+          </tr>
+          <tr>
+            <td><code class="font-mono">public</code></td>
+            <td>Visible without signing in (and makes everything nested under it public too)</td>
+            <td>boolean</td>
+            <td>Optional — defaults to <code class="font-mono">false</code></td>
+          </tr>
+          <tr>
+            <td><code class="font-mono">position</code></td>
+            <td>Sort order among sibling areas</td>
+            <td>integer</td>
+            <td>Optional — defaults to <code class="font-mono">0</code></td>
+          </tr>
+          <tr>
+            <td><code class="font-mono">parent_id</code></td>
+            <td>Nests this area under another</td>
+            <td>integer</td>
+            <td>Optional — top-level if omitted; must reference an area the token has access to (see <a href="#scoping">Token scoping</a>)</td>
+          </tr>
+        </tbody>
+      </table>
     </div>
 
     <div>
@@ -98,7 +156,10 @@
         <span class="docs-endpoint__method docs-endpoint__method--patch">PATCH</span>
         <span class="font-mono">/api/v1/areas/:slug</span>
       </div>
-      <p>Update an area. Same fields as create.</p>
+      <p>
+        Update an area. Same fields as create (above) — all optional to include here since this is
+        a partial update, but the same validation applies to any you do send.
+      </p>
       <pre class="code-block">curl -X PATCH -H "Authorization: Bearer YOUR_API_TOKEN" \
   -d "description=Updated description" \
   <%= base %>/api/v1/areas/getting-started</pre>
@@ -150,7 +211,55 @@
   -d "content=&lt;p&gt;Step one: don't panic.&lt;/p&gt;" \
   -d "public=false" \
   <%= base %>/api/v1/pages</pre>
-      <p class="field__hint">Accepted fields: <code class="font-mono">area_id</code> (required), <code class="font-mono">title</code> (required), <code class="font-mono">content</code> (HTML), <code class="font-mono">icon</code>, <code class="font-mono">public</code>, <code class="font-mono">position</code>.</p>
+
+      <table class="data-table">
+        <thead>
+          <tr>
+            <th>Parameter</th>
+            <th>Description</th>
+            <th>Type</th>
+            <th>Validation</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><code class="font-mono">area_id</code></td>
+            <td>The area this page belongs to</td>
+            <td>integer</td>
+            <td><strong>Required</strong> — must reference an existing area the token has access to (see <a href="#scoping">Token scoping</a>)</td>
+          </tr>
+          <tr>
+            <td><code class="font-mono">title</code></td>
+            <td>Page title</td>
+            <td>string</td>
+            <td><strong>Required</strong> — can't be blank</td>
+          </tr>
+          <tr>
+            <td><code class="font-mono">content</code></td>
+            <td>Rich text body</td>
+            <td>string (HTML)</td>
+            <td>Optional</td>
+          </tr>
+          <tr>
+            <td><code class="font-mono">icon</code></td>
+            <td>Font Awesome solid icon name, e.g. <code class="font-mono">rocket</code></td>
+            <td>string</td>
+            <td>Optional — free text, not checked against the icon set</td>
+          </tr>
+          <tr>
+            <td><code class="font-mono">public</code></td>
+            <td>Visible without signing in</td>
+            <td>boolean</td>
+            <td>Optional — defaults to <code class="font-mono">false</code></td>
+          </tr>
+          <tr>
+            <td><code class="font-mono">position</code></td>
+            <td>Sort order among sibling pages</td>
+            <td>integer</td>
+            <td>Optional — defaults to <code class="font-mono">0</code></td>
+          </tr>
+        </tbody>
+      </table>
     </div>
 
     <div>
@@ -158,7 +267,11 @@
         <span class="docs-endpoint__method docs-endpoint__method--patch">PATCH</span>
         <span class="font-mono">/api/v1/pages/:id</span>
       </div>
-      <p>Update a page. Moving it to a different area (by changing <code class="font-mono">area_id</code>) requires access to the destination area too.</p>
+      <p>
+        Update a page. Same fields as create (above), all optional here since it's a partial
+        update. Moving it to a different area (by changing <code class="font-mono">area_id</code>)
+        requires access to the destination area too.
+      </p>
       <pre class="code-block">curl -X PATCH -H "Authorization: Bearer YOUR_API_TOKEN" \
   -d "title=Deploying to production (updated)" \
   <%= base %>/api/v1/pages/42</pre>
@@ -172,6 +285,84 @@
       <p>Delete a page. Returns <code class="font-mono">204 No Content</code>.</p>
       <pre class="code-block">curl -X DELETE -H "Authorization: Bearer YOUR_API_TOKEN" \
   <%= base %>/api/v1/pages/42</pre>
+    </div>
+  </section>
+
+  <section id="search" class="docs-section stack">
+    <h2>Search</h2>
+    <p>
+      The same index and word-start matching behind the in-app search box, scoped to whatever
+      areas the token has access to (see <a href="#scoping">Token scoping</a>) — a scoped token
+      never sees an area or page it wasn't granted, even if it matches the search term.
+    </p>
+
+    <div>
+      <div class="docs-endpoint">
+        <span class="docs-endpoint__method docs-endpoint__method--get">GET</span>
+        <span class="font-mono">/api/v1/search</span>
+      </div>
+      <p>Search across areas and pages.</p>
+      <pre class="code-block">curl -H "Authorization: Bearer YOUR_API_TOKEN" \
+  "<%= base %>/api/v1/search?q=deploy"</pre>
+
+      <table class="data-table">
+        <thead>
+          <tr>
+            <th>Parameter</th>
+            <th>Description</th>
+            <th>Type</th>
+            <th>Validation</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><code class="font-mono">q</code></td>
+            <td>The search term</td>
+            <td>string</td>
+            <td>Required — blank or missing returns an empty <code class="font-mono">results</code> list rather than an error</td>
+          </tr>
+          <tr>
+            <td><code class="font-mono">areas</code></td>
+            <td>Include areas in the results</td>
+            <td>boolean</td>
+            <td>Optional — defaults to <code class="font-mono">true</code></td>
+          </tr>
+          <tr>
+            <td><code class="font-mono">pages</code></td>
+            <td>Include pages in the results</td>
+            <td>boolean</td>
+            <td>Optional — defaults to <code class="font-mono">true</code>. If <code class="font-mono">areas</code> and <code class="font-mono">pages</code> are both <code class="font-mono">false</code>, the result is always an empty list.</td>
+          </tr>
+        </tbody>
+      </table>
+
+      <pre class="code-block">{
+  "results": [
+    {
+      "type": "Area",
+      "id": 3,
+      "slug": "deployments",
+      "title": "Deployments",
+      "public": false,
+      "url": "<%= base %>/api/v1/areas/deployments",
+      "web_url": "<%= base %>/areas/deployments"
+    },
+    {
+      "type": "Page",
+      "id": 42,
+      "title": "Deploying to production",
+      "area": "Engineering",
+      "public": false,
+      "url": "<%= base %>/api/v1/pages/42",
+      "web_url": "<%= base %>/areas/engineering/pages/deploying-to-production"
+    }
+  ]
+}</pre>
+      <p class="field__hint">
+        Each result carries its own <code class="font-mono">type</code> (<code class="font-mono">"Area"</code>
+        or <code class="font-mono">"Page"</code>) since the two are otherwise shaped alike here — fetch
+        <code class="font-mono">url</code> for the full record from the matching endpoint above.
+      </p>
     </div>
   </section>
 
@@ -191,10 +382,29 @@
         <span class="font-mono">/api/v1/attachments</span>
       </div>
       <p>
-        Upload a file (<code class="font-mono">multipart/form-data</code>, field name
-        <code class="font-mono">file</code>). Not tied to any page yet — just registers the file and
-        hands back an <code class="font-mono">html</code> snippet ready to embed.
+        Upload a file. Not tied to any page yet — just registers the file and hands back an
+        <code class="font-mono">html</code> snippet ready to embed.
       </p>
+
+      <table class="data-table">
+        <thead>
+          <tr>
+            <th>Parameter</th>
+            <th>Description</th>
+            <th>Type</th>
+            <th>Validation</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><code class="font-mono">file</code></td>
+            <td>The file to upload</td>
+            <td>file (<code class="font-mono">multipart/form-data</code>)</td>
+            <td><strong>Required</strong></td>
+          </tr>
+        </tbody>
+      </table>
+
       <pre class="code-block">curl -X POST -H "Authorization: Bearer YOUR_API_TOKEN" \
   -F "file=@screenshot.png;type=image/png" \
   <%= base %>/api/v1/attachments</pre>
@@ -281,13 +491,43 @@
   -d "starts_on=2026-09-06" \
   -d "ends_on=2026-09-07" \
   <%= base %>/api/v1/announcements</pre>
-      <p class="field__hint">
-        Accepted fields: <code class="font-mono">title</code> (required), <code class="font-mono">content</code>
-        (HTML), <code class="font-mono">starts_on</code> and <code class="font-mono">ends_on</code>
-        (both required, <code class="font-mono">YYYY-MM-DD</code> — <code class="font-mono">ends_on</code>
-        can't be before <code class="font-mono">starts_on</code>; the same date means one day). Announcements
-        run whole days, never partial ones, so there's no time component to either field.
-      </p>
+
+      <table class="data-table">
+        <thead>
+          <tr>
+            <th>Parameter</th>
+            <th>Description</th>
+            <th>Type</th>
+            <th>Validation</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><code class="font-mono">title</code></td>
+            <td>Headline shown at the top of the announcement</td>
+            <td>string</td>
+            <td><strong>Required</strong> — can't be blank</td>
+          </tr>
+          <tr>
+            <td><code class="font-mono">content</code></td>
+            <td>Rich text body</td>
+            <td>string (HTML)</td>
+            <td>Optional</td>
+          </tr>
+          <tr>
+            <td><code class="font-mono">starts_on</code></td>
+            <td>First day the announcement is live</td>
+            <td>date (<code class="font-mono">YYYY-MM-DD</code>)</td>
+            <td><strong>Required</strong> — must be a real, parseable date. No time component — announcements run whole days.</td>
+          </tr>
+          <tr>
+            <td><code class="font-mono">ends_on</code></td>
+            <td>Last day the announcement is live (inclusive)</td>
+            <td>date (<code class="font-mono">YYYY-MM-DD</code>)</td>
+            <td><strong>Required</strong> — must be a real date, and can't be before <code class="font-mono">starts_on</code>. The same date as <code class="font-mono">starts_on</code> is valid — that's a one-day announcement.</td>
+          </tr>
+        </tbody>
+      </table>
     </div>
 
     <div>
@@ -295,7 +535,12 @@
         <span class="docs-endpoint__method docs-endpoint__method--patch">PATCH</span>
         <span class="font-mono">/api/v1/announcements/:id</span>
       </div>
-      <p>Update an announcement. Same fields as create.</p>
+      <p>
+        Update an announcement. Same fields as create (above) — optional to include here since
+        it's a partial update, but the same validation applies to any you do send, and you can't
+        clear a required field (<code class="font-mono">title</code>, <code class="font-mono">starts_on</code>,
+        <code class="font-mono">ends_on</code>) by sending it blank.
+      </p>
       <pre class="code-block">curl -X PATCH -H "Authorization: Bearer YOUR_API_TOKEN" \
   -d "ends_on=2026-09-08" \
   <%= base %>/api/v1/announcements/42</pre>
@@ -320,7 +565,7 @@
       responses; see it from the webhook's edit page in Atlas instead. To learn how deliveries
       themselves work — payload shape, signature verification — see the
       <% if current_user&.admin? %>
-        <%= link_to "webhook integration guide", admin_webhooks_docs_path %>.
+        <%= link_to "webhook integration guide", docs_admin_webhooks_path %>.
       <% else %>
         webhook integration guide (admin only).
       <% end %>
@@ -351,6 +596,53 @@
       <pre class="code-block">curl -H "Authorization: Bearer YOUR_API_TOKEN" \
   <%= base %>/api/v1/webhooks/1</pre>
     </div>
+  </section>
+
+  <section id="notion" class="docs-section stack">
+    <h2>Connect Notion AI</h2>
+    <p>
+      Notion AI's custom connectors call an external API on your behalf once you give it an
+      <a href="https://swagger.io/specification/">OpenAPI</a> spec describing that API — that's
+      exactly what <%= link_to "the OpenAPI spec above", openapi_api_tokens_path %> is for. Once
+      connected, asking Notion AI to draft or update something can create or edit the matching
+      Atlas page directly, without anyone copying content across by hand.
+    </p>
+
+    <ol style="display: flex; flex-direction: column; gap: 12px; padding-left: 20px;">
+      <li>
+        Create an API token from the <%= link_to "API tokens", api_tokens_path %> page. Give it
+        access to <strong>all areas</strong> if Notion should be able to create pages anywhere,
+        or scope it to specific areas to limit it to those — see
+        <a href="#scoping">Token scoping</a>. It needs to belong to an admin or member to create
+        or edit anything (a guest-role token can only read).
+      </li>
+      <li>
+        Download <%= link_to "the OpenAPI spec", openapi_api_tokens_path %>.
+      </li>
+      <li>
+        In Notion, go to <strong>Settings → Connections → Custom Connector</strong> (or wherever
+        your workspace's AI connector setup lives — Notion has moved this before) and upload the
+        spec file.
+      </li>
+      <li>
+        When Notion asks how to authenticate, choose <strong>Bearer token</strong> and paste in
+        the API token from step 1. Nothing else needs configuring — the spec already describes
+        every endpoint, parameter, and requirement.
+      </li>
+      <li>
+        Ask Notion AI to use it: <em>"Using the Atlas connector, create a page in the Engineering
+        area titled 'Deploying to production' with these steps: ..."</em> Notion AI fills in the
+        request from the spec and your prompt — <code class="font-mono">content</code> arrives at
+        Atlas as HTML either way, whether Notion sends rendered HTML or Notion-flavored markdown
+        it converts first.
+      </li>
+    </ol>
+
+    <p class="field__hint">
+      The spec is regenerated fresh on every download, from the same source as the rest of this
+      page — if the API changes, just re-download and re-upload it to Notion; nothing about the
+      connector's setup (the token, the auth choice) needs to change.
+    </p>
   </section>
 
   <section id="scoping" class="docs-section stack">

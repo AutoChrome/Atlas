@@ -24,7 +24,11 @@ Rails.application.routes.draw do
   resource :profile, only: %i[edit update]
   resource :guest_preview, only: %i[create destroy]
   resources :api_tokens, only: %i[index create destroy] do
-    collection { get :docs }
+    collection do
+      get :docs
+      get :openapi
+      get :bruno_collection
+    end
   end
 
   resources :announcements do
@@ -67,6 +71,7 @@ Rails.application.routes.draw do
       resources :attachments, only: %i[create]
       resources :announcements
       resources :webhooks, only: %i[index show]
+      get "search", to: "search#index"
     end
   end
 end

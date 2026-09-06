@@ -450,6 +450,7 @@ DEPENDENCIES
   rails_performance
   redis
   rubocop-rails-omakase
+  rubyzip
   searchkick
   selenium-webdriver
   sidekiq
