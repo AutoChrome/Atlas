@@ -71,6 +71,8 @@
     "content_html": "&lt;div&gt;&lt;p&gt;We'll be taking the app down...&lt;/p&gt;&lt;/div&gt;",
     "author": "Jordan Blake",
     "published_at": "2026-09-05T18:32:10Z",
+    "starts_on": "2026-09-06",
+    "ends_on": "2026-09-07",
     "url": "https://atlas.example.com/announcements/42"
   }
 }</pre>
@@ -88,6 +90,8 @@
         <tr><td><code class="font-mono">announcement.content_html</code></td><td>string</td><td>The full rich-text body as raw HTML, exactly as authored in Atlas's WYSIWYG editor. Atlas does not sanitize or transform this for your use case — treat it as trusted HTML from your own organization's editors and render or forward it however fits your application.</td></tr>
         <tr><td><code class="font-mono">announcement.author</code></td><td>string or null</td><td>Display name of the user who created it, if any.</td></tr>
         <tr><td><code class="font-mono">announcement.published_at</code></td><td>string (ISO 8601)</td><td>When this publish/re-publish happened.</td></tr>
+        <tr><td><code class="font-mono">announcement.starts_on</code></td><td>string (<code class="font-mono">YYYY-MM-DD</code>)</td><td>First day the announcement should be considered live. Date only, no time — announcements run whole days, at least one.</td></tr>
+        <tr><td><code class="font-mono">announcement.ends_on</code></td><td>string (<code class="font-mono">YYYY-MM-DD</code>)</td><td>Last day the announcement should be considered live (inclusive). Never earlier than <code class="font-mono">starts_on</code> — the same date means a single-day announcement.</td></tr>
         <tr><td><code class="font-mono">announcement.url</code></td><td>string</td><td>Link back to the announcement inside Atlas.</td></tr>
       </tbody>
     </table>

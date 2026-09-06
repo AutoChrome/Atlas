@@ -1,48 +1,51 @@
 // Dark theme. Applies when the viewer's OS prefers dark AND they haven't
 // explicitly chosen light, or when they've explicitly chosen dark via the
 // theme toggle (data-theme="dark" set by javascript/controllers/theme_controller.js).
+//
+// A genuine ink-navy "night map" background rather than a flat near-black —
+// see themes/_light.scss for the rest of the identity this continues.
 
 @mixin dark-tokens {
-  --color-primary: #b9c2ff;
-  --color-on-primary: #1b2679;
-  --color-primary-container: #2d3aa0;
-  --color-on-primary-container: #dde1ff;
+  --color-primary: #8fb4c7;
+  --color-on-primary: #0e1519;
+  --color-primary-container: #24404d;
+  --color-on-primary-container: #c7e0ea;
 
-  --color-secondary: #c4c6dd;
-  --color-on-secondary: #2d3047;
-  --color-secondary-container: #434659;
-  --color-on-secondary-container: #e0e1f9;
+  --color-secondary: #d6a75e;
+  --color-on-secondary: #2a1b08;
+  --color-secondary-container: #4a3b22;
+  --color-on-secondary-container: #f0dbb4;
 
-  --color-error: #ffb4ab;
-  --color-on-error: #690005;
-  --color-error-container: #93000a;
-  --color-on-error-container: #ffdad6;
+  --color-error: #e29187;
+  --color-on-error: #4a140c;
+  --color-error-container: #6b241a;
+  --color-on-error-container: #f6ded9;
 
-  --color-success: #7fdb94;
-  --color-on-success: #00390e;
-  --color-success-container: #00531e;
-  --color-on-success-container: #d3f8dc;
+  --color-success: #8fc79b;
+  --color-on-success: #12301a;
+  --color-success-container: #2b4e34;
+  --color-on-success-container: #dcebdd;
 
-  --color-warning: #ffb95c;
-  --color-on-warning: #472a00;
-  --color-warning-container: #653f00;
-  --color-on-warning-container: #ffddb0;
+  --color-warning: #e0b168;
+  --color-on-warning: #402d06;
+  --color-warning-container: #5c4212;
+  --color-on-warning-container: #f3e4c8;
 
-  --color-background: #131316;
-  --color-on-background: #e4e2e9;
+  --color-background: #0e1519;
+  --color-on-background: #e7e9e4;
 
-  --color-surface: #131316;
-  --color-on-surface: #e4e2e9;
-  --color-on-surface-variant: #c7c5d0;
+  --color-surface: #0e1519;
+  --color-on-surface: #e7e9e4;
+  --color-on-surface-variant: #93a3a9;
 
-  --color-surface-container-lowest: #0d0e11;
-  --color-surface-container-low: #1b1b1f;
-  --color-surface-container: #1f1f24;
-  --color-surface-container-high: #292a2f;
-  --color-surface-container-highest: #34343a;
+  --color-surface-container-lowest: #0a0f12;
+  --color-surface-container-low: #131b1f;
+  --color-surface-container: #162025;
+  --color-surface-container-high: #1d282d;
+  --color-surface-container-highest: #253238;
 
-  --color-outline: #918f9a;
-  --color-outline-variant: #46464f;
+  --color-outline: #6b7a80;
+  --color-outline-variant: #2a383e;
 
   --color-scrim: rgba(0, 0, 0, 0.6);
 

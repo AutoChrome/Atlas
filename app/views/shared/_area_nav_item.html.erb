@@ -35,10 +35,16 @@
   <% if has_children %>
     <div class="nav-tree__children" data-nav-collapse-target="children" data-nav-reorder-target="list" <%= "hidden" unless expanded %>>
       <% pages.each do |page| %>
-        <%= link_to [area, page], class: class_names("nav-tree__link", "is-active" => current_page?([area, page])) do %>
-          <%= record_icon(page, fallback: :page, css_class: "nav-tree__icon") %>
-          <%= page.title %>
-        <% end %>
+        <%# Matches an area row's leading chevron/spacer width so a page
+            and a sibling sub-area line up at the same indent instead of
+            the sub-area appearing to nest inside the page above it. %>
+        <div class="nav-tree__item">
+          <span class="nav-tree__chevron nav-tree__chevron--spacer"></span>
+          <%= link_to [area, page], class: class_names("nav-tree__link", "is-active" => current_page?([area, page])) do %>
+            <%= record_icon(page, fallback: :page, css_class: "nav-tree__icon") %>
+            <%= page.title %>
+          <% end %>
+        </div>
       <% end %>
 
       <% children.each do |child| %>

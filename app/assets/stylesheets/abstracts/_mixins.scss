@@ -26,6 +26,11 @@
   font-size: map.get($props, size);
   line-height: map.get($props, line-height);
   font-weight: map.get($props, weight);
+
+  @if map.get($props, family) == display {
+    font-family: var(--font-family-display);
+    letter-spacing: -0.01em;
+  }
 }
 
 @mixin focus-ring {

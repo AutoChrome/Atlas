@@ -15,6 +15,22 @@
     <%= f.text_field :title, class: "input", required: true, spellcheck: true %>
   </div>
 
+  <div data-controller="date-range">
+    <div class="cluster" style="align-items: flex-start;">
+      <div class="field" style="flex: 1;">
+        <%= f.label :starts_on, "Starts on", class: "field__label" %>
+        <%= f.date_field :starts_on, class: "input", required: true,
+              data: { date_range_target: "start", action: "click->date-range#openPicker change->date-range#syncMin" } %>
+      </div>
+      <div class="field" style="flex: 1;">
+        <%= f.label :ends_on, "Ends on", class: "field__label" %>
+        <%= f.date_field :ends_on, class: "input", required: true,
+              data: { date_range_target: "end", action: "click->date-range#openPicker" } %>
+      </div>
+    </div>
+    <p class="field__hint">Announcements run a whole day at minimum — the end date can be the same as the start date.</p>
+  </div>
+
   <%= render "shared/rich_text_field", f: f %>
 
   <div class="form-actions">

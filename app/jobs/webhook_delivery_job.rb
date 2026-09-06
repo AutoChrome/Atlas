@@ -80,6 +80,10 @@ class WebhookDeliveryJob < ApplicationJob
           content_html: announcement.content.body.fragment.source.to_html,
           author: announcement.user&.name,
           published_at: announcement.published_at&.iso8601,
+          # Date, not DateTime, so this comes out as plain "YYYY-MM-DD" —
+          # announcements run whole days, not exact instants.
+          starts_on: announcement.starts_on&.iso8601,
+          ends_on: announcement.ends_on&.iso8601,
           url: Rails.application.routes.url_helpers.announcement_url(announcement, host: ENV.fetch("SITE_ADDRESS", "localhost")),
         },
       }.to_json

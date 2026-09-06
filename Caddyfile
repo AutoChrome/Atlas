@@ -1,10 +1,20 @@
-# Local dev: http://localhost. In production, set SITE_ADDRESS to your real
-# domain (e.g. docs.example.com) and Caddy will provision TLS automatically.
+# Local dev: https://localhost (Caddy auto-provisions a locally-trusted
+# cert and redirects http -> https). In production, set SITE_ADDRESS to your
+# real domain (e.g. docs.example.com) and Caddy will provision real TLS the
+# same way.
 {$SITE_ADDRESS:localhost} {
 	encode zstd gzip
 
 	@assets path /assets/* /rails/active_storage/*
 	header @assets Cache-Control "public, max-age=31536000, immutable"
 
+	reverse_proxy web:3000
+}
+
+# Plain-HTTP alias for tooling that can't reach the "localhost" hostname
+# directly (some sandboxed browser automation refuses it by name). Explicit
+# http:// scheme keeps Caddy from trying to issue a cert or redirect here —
+# this block is additive and doesn't change the https://localhost block above.
+http://127.0.0.1 {
 	reverse_proxy web:3000
 }

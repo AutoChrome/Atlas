@@ -65,6 +65,8 @@ Rails.application.routes.draw do
       resources :areas, param: :slug
       resources :pages
       resources :attachments, only: %i[create]
+      resources :announcements
+      resources :webhooks, only: %i[index show]
     end
   end
 end

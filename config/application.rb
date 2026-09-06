@@ -23,11 +23,12 @@ module Atlas
     # 8.1 default) refuses to dump any class not explicitly permitted here —
     # Symbol is allowed out of the box, but auditing a datetime attribute
     # (e.g. Announcement#published_at) also needs Time and its
-    # ActiveSupport::TimeWithZone/TimeZone wrapper classes permitted, or
-    # `Audited::Auditor#audited_changes` blows up with
+    # ActiveSupport::TimeWithZone/TimeZone wrapper classes permitted, and a
+    # plain date attribute (e.g. Announcement#starts_on/#ends_on) needs Date,
+    # or `Audited::Auditor#audited_changes` blows up with
     # Psych::DisallowedClass the first time such an attribute changes.
     config.active_record.yaml_column_permitted_classes = [
-      Symbol, Time, ActiveSupport::TimeWithZone, ActiveSupport::TimeZone
+      Symbol, Time, Date, ActiveSupport::TimeWithZone, ActiveSupport::TimeZone
     ]
 
     # Configuration for the application, engines, and railties goes here.

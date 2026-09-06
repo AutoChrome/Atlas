@@ -1,19 +1,26 @@
-// Self-hosted webfonts go here. Drop .woff2 files into
-// app/assets/fonts/ and uncomment the @font-face blocks below to replace
-// the system font fallback with a real typeface (e.g. Inter, or Google's
-// "Roboto Flex" for a closer Material feel). Kept system-first by default
-// so the app renders correctly with no network access and no font licensing
-// to manage.
-
-// @font-face {
-//   font-family: "Inter";
-//   src: font-url("inter-variable.woff2") format("woff2");
-//   font-weight: 100 900;
-//   font-style: normal;
-//   font-display: swap;
-// }
+// Self-hosted webfonts, kept as real files in app/assets/fonts/ (not a
+// Google Fonts CDN link) so the app keeps working with no network access and
+// no external font licensing/tracking to worry about — matching how
+// Font Awesome is self-hosted in app/assets/fontawesome.
+//
+// dartsass-rails compiles this file standalone, with no access to Rails'
+// asset helpers (no `font-url`/`asset_path` inside Sass), and Propshaft only
+// serves assets at their content-digested path — there is no stable
+// undigested URL to fall back on. So the digest below is hardcoded. It only
+// needs updating if fraunces-variable.woff2 itself is ever replaced; get the
+// new one with:
+//   docker compose exec web bin/rails runner \
+//     'puts ApplicationController.helpers.asset_path("fraunces-variable.woff2")'
+@font-face {
+  font-family: "Fraunces";
+  src: url("/assets/fraunces-variable-397b623a.woff2") format("woff2");
+  font-weight: 400 600;
+  font-style: normal;
+  font-display: swap;
+}
 
 :root {
   --font-family-base: "Inter", "Segoe UI", Roboto, -apple-system, BlinkMacSystemFont, system-ui, sans-serif;
+  --font-family-display: "Fraunces", Georgia, "Iowan Old Style", serif;
   --font-family-mono: "SFMono-Regular", Consolas, "Liberation Mono", Menlo, monospace;
 }

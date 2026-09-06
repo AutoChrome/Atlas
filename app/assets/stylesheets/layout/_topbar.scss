@@ -19,7 +19,9 @@
   display: flex;
   align-items: center;
   gap: m.spacer(2);
-  @include m.type(title);
+  font-family: var(--font-family-display);
+  font-size: 1.25rem;
+  font-weight: 500;
   color: var(--color-on-surface);
   margin-right: m.spacer(3);
 }

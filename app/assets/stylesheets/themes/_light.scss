@@ -1,54 +1,61 @@
 // Light theme (default). Dark overrides live in themes/_dark.scss.
+//
+// Atlas' identity: ink and paper, with a single brass accent — drawn from
+// the product's own name (a book of maps) rather than a generic Material
+// palette. Primary = ink (brand actions, links); secondary = brass, spent
+// only on the sidebar's active item and tonal buttons — see _nav_tree.scss
+// and _buttons.scss for where that accent actually lands.
+//
 // To add a new theme: duplicate this file's custom properties under a new
 // `:root[data-theme="yourtheme"]` selector and wire the value into the
 // theme <select> rendered by app/views/shared/_theme_toggle.html.erb.
 
 :root {
   // Brand
-  --color-primary: #3f51b5;
+  --color-primary: #1c3644;
   --color-on-primary: #ffffff;
-  --color-primary-container: #dde1ff;
-  --color-on-primary-container: #0f1a6b;
+  --color-primary-container: #d9e5ea;
+  --color-on-primary-container: #0f262f;
 
-  --color-secondary: #5b5f77;
+  --color-secondary: #8f642e;
   --color-on-secondary: #ffffff;
-  --color-secondary-container: #e0e1f9;
-  --color-on-secondary-container: #181c30;
+  --color-secondary-container: #f3e6d2;
+  --color-on-secondary-container: #4a3013;
 
   // Status
-  --color-error: #ba1a1a;
+  --color-error: #9c3b2e;
   --color-on-error: #ffffff;
-  --color-error-container: #ffdad6;
-  --color-on-error-container: #410002;
+  --color-error-container: #f6ded9;
+  --color-on-error-container: #4a140c;
 
-  --color-success: #1b873f;
+  --color-success: #3f6b4a;
   --color-on-success: #ffffff;
-  --color-success-container: #d3f8dc;
-  --color-on-success-container: #002910;
+  --color-success-container: #dcebdd;
+  --color-on-success-container: #12301a;
 
-  --color-warning: #8a5a00;
+  --color-warning: #8a5a12;
   --color-on-warning: #ffffff;
-  --color-warning-container: #ffddb0;
-  --color-on-warning-container: #2b1700;
+  --color-warning-container: #f3e4c8;
+  --color-on-warning-container: #402d06;
 
   // Neutral surfaces
-  --color-background: #fdfbff;
-  --color-on-background: #1b1b1f;
+  --color-background: #f2f3f0;
+  --color-on-background: #1c3644;
 
-  --color-surface: #fdfbff;
-  --color-on-surface: #1b1b1f;
-  --color-on-surface-variant: #46464f;
+  --color-surface: #f2f3f0;
+  --color-on-surface: #1c3644;
+  --color-on-surface-variant: #5b6b72;
 
   --color-surface-container-lowest: #ffffff;
-  --color-surface-container-low: #f7f5fa;
-  --color-surface-container: #f1eff6;
-  --color-surface-container-high: #ebe9f1;
-  --color-surface-container-highest: #e5e3ec;
+  --color-surface-container-low: #f2f3f0;
+  --color-surface-container: #ececE7;
+  --color-surface-container-high: #e4e7e2;
+  --color-surface-container-highest: #dcdfd9;
 
-  --color-outline: #777680;
-  --color-outline-variant: #c7c5d0;
+  --color-outline: #8b9a9f;
+  --color-outline-variant: #d2d6d0;
 
-  --color-scrim: rgba(0, 0, 0, 0.4);
+  --color-scrim: rgba(14, 21, 25, 0.45);
 
   color-scheme: light;
 }

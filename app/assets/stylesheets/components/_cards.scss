@@ -1,18 +1,24 @@
 @use "../abstracts/variables" as v;
 @use "../abstracts/mixins" as m;
 
+// Flat and rule-bordered rather than shadowed — Atlas leaves box-shadow for
+// things that actually float above the page (modals, dropdowns, the mobile
+// sidebar). A card here reads as an index entry, not a floating tile.
 .card {
-  background-color: var(--color-surface-container-low);
-  border-radius: v.$radius-lg;
+  background-color: var(--color-surface-container-lowest);
+  border: 1px solid var(--color-outline-variant);
+  border-radius: v.$radius-sm;
   padding: m.spacer(5);
-  transition: box-shadow v.$duration-short v.$easing-standard;
+  transition: border-color v.$duration-short v.$easing-standard,
+    background-color v.$duration-short v.$easing-standard;
 }
 
 .card--interactive {
   cursor: pointer;
 
   &:hover {
-    @include m.surface-elevation(2);
+    border-color: var(--color-outline);
+    background-color: var(--color-surface-container-low);
   }
 }
 

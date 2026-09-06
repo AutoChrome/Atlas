@@ -23,6 +23,11 @@
           <p class="card__meta">
             <%= time_ago_in_words(announcement.created_at) %> ago<%= " by #{announcement.user.name}" if announcement.user %>
           </p>
+          <% if announcement.starts_on %>
+            <p class="card__meta">
+              Runs <%= announcement.starts_on.strftime("%b %-d") %><%= " – #{announcement.ends_on.strftime("%b %-d, %Y")}" if announcement.ends_on && announcement.ends_on != announcement.starts_on %>
+            </p>
+          <% end %>
         <% end %>
       <% end %>
     </div>

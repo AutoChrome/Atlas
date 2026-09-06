@@ -103,18 +103,23 @@
   align-items: center;
   gap: m.spacer(3);
   padding: m.spacer(2) m.spacer(3);
-  border-radius: v.$radius-full;
+  border-radius: v.$radius-sm;
+  border-left: 2px solid transparent;
   @include m.type(body);
   color: var(--color-on-surface-variant);
-  transition: background-color v.$duration-short v.$easing-standard;
+  transition: background-color v.$duration-short v.$easing-standard,
+    border-color v.$duration-short v.$easing-standard;
 
   &:hover {
     background-color: var(--color-surface-container-high);
   }
 
+  // A brass tick rather than a filled chip — the sidebar is an index, not a
+  // set of tabs, so the active page is marked, not boxed.
   &.is-active {
-    background-color: var(--color-secondary-container);
-    color: var(--color-on-secondary-container);
+    border-left-color: var(--color-secondary);
+    background-color: color-mix(in srgb, var(--color-secondary) 10%, transparent);
+    color: var(--color-on-surface);
     font-weight: 500;
   }
 }
@@ -134,9 +139,9 @@
 .nav-tree__section-label {
   @include m.type(label);
   color: var(--color-on-surface-variant);
-  padding: m.spacer(4) m.spacer(3) m.spacer(1);
-  text-transform: uppercase;
-  letter-spacing: 0.08em;
+  padding: m.spacer(4) m.spacer(3) m.spacer(2);
+  border-bottom: 1px solid var(--color-outline-variant);
+  margin-bottom: m.spacer(1);
 }
 
 .nav-tree__sort {

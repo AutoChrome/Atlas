@@ -7,8 +7,9 @@
     <p class="text-muted"><%= link_to "← Back to API tokens", api_tokens_path %></p>
     <h1>API documentation</h1>
     <p class="text-muted">
-      A full JSON CRUD API for Areas and Pages, so other applications can read and manage
-      Atlas content directly. Authenticated with a bearer token — create one from the
+      A full JSON CRUD API for Areas, Pages, and Announcements, plus a read-only view of
+      configured Webhooks, so other applications can read and manage Atlas content directly.
+      Authenticated with a bearer token — create one from the
       <%= link_to "API tokens", api_tokens_path %> page.
     </p>
   </div>
@@ -19,6 +20,8 @@
     <a href="#areas" class="btn btn--text btn--sm">Areas</a>
     <a href="#pages" class="btn btn--text btn--sm">Pages</a>
     <a href="#attachments" class="btn btn--text btn--sm">Inline attachments</a>
+    <a href="#announcements" class="btn btn--text btn--sm">Announcements</a>
+    <a href="#webhooks" class="btn btn--text btn--sm">Webhooks</a>
     <a href="#scoping" class="btn btn--text btn--sm">Token scoping</a>
     <a href="#errors" class="btn btn--text btn--sm">Errors</a>
   </nav>
@@ -220,6 +223,133 @@
         use the exact <code class="font-mono">html</code> the upload call returned. Its internal
         format isn't a stable public contract; the upload response is.
       </p>
+    </div>
+  </section>
+
+  <section id="announcements" class="docs-section stack">
+    <h2>Announcements</h2>
+    <p>
+      Unlike Areas and Pages, announcements aren't scoped to a token's areas — any token can read
+      them, and any token belonging to an admin or member can create, update, or delete them.
+      Creating or updating one through the API never publishes it or sends anything to a webhook;
+      publishing stays a deliberate, separate action taken from the Atlas web UI, to keep a typo
+      from immediately going out everywhere.
+    </p>
+
+    <div>
+      <div class="docs-endpoint">
+        <span class="docs-endpoint__method docs-endpoint__method--get">GET</span>
+        <span class="font-mono">/api/v1/announcements</span>
+      </div>
+      <p>List announcements, most recently created first.</p>
+      <pre class="code-block">curl -H "Authorization: Bearer YOUR_API_TOKEN" \
+  "<%= base %>/api/v1/announcements?page=1"</pre>
+    </div>
+
+    <div>
+      <div class="docs-endpoint">
+        <span class="docs-endpoint__method docs-endpoint__method--get">GET</span>
+        <span class="font-mono">/api/v1/announcements/:id</span>
+      </div>
+      <p>Fetch a single announcement.</p>
+      <pre class="code-block">curl -H "Authorization: Bearer YOUR_API_TOKEN" \
+  <%= base %>/api/v1/announcements/42</pre>
+      <pre class="code-block">{
+  "id": 42,
+  "title": "Scheduled maintenance this weekend",
+  "content_html": "&lt;div&gt;&lt;p&gt;We'll be taking the app down...&lt;/p&gt;&lt;/div&gt;",
+  "author": "Jordan Blake",
+  "published_at": "2026-09-05T18:32:10Z",
+  "starts_on": "2026-09-06",
+  "ends_on": "2026-09-07",
+  "created_at": "2026-09-05T18:30:00Z",
+  "updated_at": "2026-09-05T18:32:10Z",
+  "url": "<%= base %>/api/v1/announcements/42",
+  "web_url": "<%= base %>/announcements/42"
+}</pre>
+    </div>
+
+    <div>
+      <div class="docs-endpoint">
+        <span class="docs-endpoint__method docs-endpoint__method--post">POST</span>
+        <span class="font-mono">/api/v1/announcements</span>
+      </div>
+      <p>Create an announcement, as a draft.</p>
+      <pre class="code-block">curl -X POST -H "Authorization: Bearer YOUR_API_TOKEN" \
+  -d "title=Scheduled maintenance this weekend" \
+  -d "content=&lt;p&gt;We'll be taking the app down...&lt;/p&gt;" \
+  -d "starts_on=2026-09-06" \
+  -d "ends_on=2026-09-07" \
+  <%= base %>/api/v1/announcements</pre>
+      <p class="field__hint">
+        Accepted fields: <code class="font-mono">title</code> (required), <code class="font-mono">content</code>
+        (HTML), <code class="font-mono">starts_on</code> and <code class="font-mono">ends_on</code>
+        (both required, <code class="font-mono">YYYY-MM-DD</code> — <code class="font-mono">ends_on</code>
+        can't be before <code class="font-mono">starts_on</code>; the same date means one day). Announcements
+        run whole days, never partial ones, so there's no time component to either field.
+      </p>
+    </div>
+
+    <div>
+      <div class="docs-endpoint">
+        <span class="docs-endpoint__method docs-endpoint__method--patch">PATCH</span>
+        <span class="font-mono">/api/v1/announcements/:id</span>
+      </div>
+      <p>Update an announcement. Same fields as create.</p>
+      <pre class="code-block">curl -X PATCH -H "Authorization: Bearer YOUR_API_TOKEN" \
+  -d "ends_on=2026-09-08" \
+  <%= base %>/api/v1/announcements/42</pre>
+    </div>
+
+    <div>
+      <div class="docs-endpoint">
+        <span class="docs-endpoint__method docs-endpoint__method--delete">DELETE</span>
+        <span class="font-mono">/api/v1/announcements/:id</span>
+      </div>
+      <p>Delete an announcement. Returns <code class="font-mono">204 No Content</code>.</p>
+      <pre class="code-block">curl -X DELETE -H "Authorization: Bearer YOUR_API_TOKEN" \
+  <%= base %>/api/v1/announcements/42</pre>
+    </div>
+  </section>
+
+  <section id="webhooks" class="docs-section stack">
+    <h2>Webhooks</h2>
+    <p>
+      Read-only, and restricted to tokens belonging to an <strong>admin</strong> — same trust
+      boundary as managing webhooks in the web UI. The signing secret is never included in API
+      responses; see it from the webhook's edit page in Atlas instead. To learn how deliveries
+      themselves work — payload shape, signature verification — see the
+      <% if current_user&.admin? %>
+        <%= link_to "webhook integration guide", admin_webhooks_docs_path %>.
+      <% else %>
+        webhook integration guide (admin only).
+      <% end %>
+    </p>
+
+    <div>
+      <div class="docs-endpoint">
+        <span class="docs-endpoint__method docs-endpoint__method--get">GET</span>
+        <span class="font-mono">/api/v1/webhooks</span>
+      </div>
+      <p>List configured webhooks.</p>
+      <pre class="code-block">curl -H "Authorization: Bearer YOUR_API_TOKEN" \
+  "<%= base %>/api/v1/webhooks?page=1"</pre>
+      <pre class="code-block">{
+  "webhooks": [
+    { "id": 1, "description": "Ops Slack relay", "url": "https://...", "active": true, ... }
+  ],
+  "pagination": { "page": 1, "pages": 1, "count": 1 }
+}</pre>
+    </div>
+
+    <div>
+      <div class="docs-endpoint">
+        <span class="docs-endpoint__method docs-endpoint__method--get">GET</span>
+        <span class="font-mono">/api/v1/webhooks/:id</span>
+      </div>
+      <p>Fetch a single webhook.</p>
+      <pre class="code-block">curl -H "Authorization: Bearer YOUR_API_TOKEN" \
+  <%= base %>/api/v1/webhooks/1</pre>
     </div>
   </section>
 

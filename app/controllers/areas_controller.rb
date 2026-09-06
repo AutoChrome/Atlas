@@ -6,6 +6,7 @@ class AreasController < ApplicationController
   def index
     authorize Area
     @areas = policy_scope(Area).top_level.ordered_by(area_sort_mode)
+    @latest_announcement = policy_scope(Announcement).published.includes(webhook_deliveries: :webhook).first
   end
 
   def show

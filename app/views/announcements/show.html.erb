@@ -11,12 +11,19 @@
       <% else %>
         <span class="badge badge--warning">Draft — not yet sent to any webhook</span>
       <% end %>
+      <p class="text-muted mt-1">
+        <% if @announcement.starts_on == @announcement.ends_on %>
+          Runs all day on <%= @announcement.starts_on&.strftime("%B %-d, %Y") %>
+        <% else %>
+          Runs <%= @announcement.starts_on&.strftime("%B %-d, %Y") %> – <%= @announcement.ends_on&.strftime("%B %-d, %Y") %>
+        <% end %>
+      </p>
     </div>
 
     <div class="cluster">
       <% if policy(@announcement).publish? %>
         <%= button_to (@announcement.published? ? "Re-send to webhooks" : "Publish"), publish_announcement_path(@announcement),
-              method: :post, class: "btn btn--filled",
+              method: :post, class: "btn btn--gilt",
               data: { turbo_confirm: @announcement.published? ? "Re-send this announcement to all active webhooks?" : nil } %>
       <% end %>
       <% if policy(@announcement).update? %>

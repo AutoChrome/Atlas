@@ -42,6 +42,19 @@
   }
 }
 
+// The one brass flourish, solid — reserved for the single most consequential
+// action on a screen (e.g. Publish), not routine creates/saves. Everything
+// else stays ink; see components/_nav_tree.scss for the sidebar's brass tick.
+.btn--gilt {
+  background-color: var(--color-secondary);
+  color: var(--color-on-secondary);
+
+  &:hover:not(:disabled) {
+    @include m.surface-elevation(1);
+    filter: brightness(1.06);
+  }
+}
+
 .btn--outlined {
   background-color: transparent;
   color: var(--color-primary);

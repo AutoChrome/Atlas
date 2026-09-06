@@ -8,6 +8,33 @@
     <% end %>
   </div>
 
+  <% if @latest_announcement %>
+    <%= link_to @latest_announcement, class: "card card--interactive" do %>
+      <div class="cluster" style="justify-content: space-between;">
+        <div class="cluster">
+          <%= fa_icon "bullhorn" %>
+          <span class="card__title"><%= @latest_announcement.title %></span>
+        </div>
+        <span class="text-muted"><%= time_ago_in_words(@latest_announcement.published_at) %> ago</span>
+      </div>
+
+      <% if current_user&.admin? %>
+        <div class="cluster mt-3">
+          <% deliveries = @latest_announcement.latest_deliveries %>
+          <% if deliveries.any? %>
+            <% deliveries.each do |delivery| %>
+              <span class="badge <%= delivery.success? ? "badge--success" : "badge--error" %>">
+                <%= delivery.webhook&.description || "(deleted webhook)" %>
+              </span>
+            <% end %>
+          <% else %>
+            <span class="text-muted">Not sent to any webhook yet.</span>
+          <% end %>
+        </div>
+      <% end %>
+    <% end %>
+  <% end %>
+
   <% if @areas.any? %>
     <div class="card-grid">
       <% @areas.each do |area| %>
