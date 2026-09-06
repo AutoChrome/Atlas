@@ -12,6 +12,8 @@ class Project < ApplicationRecord
   validates :name, presence: true
   validates :slug, uniqueness: true
 
+  scope :public_only, -> { where(public: true) }
+
   def should_generate_new_friendly_id?
     name_changed? || super
   end

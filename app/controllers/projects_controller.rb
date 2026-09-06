@@ -1,4 +1,6 @@
 class ProjectsController < ApplicationController
+  allow_unauthenticated_access only: %i[index show]
+
   before_action :set_project, only: %i[show edit update destroy]
 
   def index
@@ -53,6 +55,6 @@ class ProjectsController < ApplicationController
     end
 
     def project_params
-      params.require(:project).permit(:name, :description)
+      params.require(:project).permit(:name, :description, :public)
     end
 end

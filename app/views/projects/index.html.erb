@@ -12,7 +12,12 @@
     <div class="card-grid">
       <% @projects.each do |project| %>
         <%= link_to project, class: "card card--interactive" do %>
-          <div class="card__title cluster"><%= fa_icon "map" %> <%= project.name %></div>
+          <div class="cluster" style="justify-content: space-between;">
+            <div class="card__title cluster"><%= fa_icon "map" %> <%= project.name %></div>
+            <% if current_user && project.public? %>
+              <span class="badge badge--success">Public</span>
+            <% end %>
+          </div>
           <p class="card__meta"><%= truncate(project.description, length: 140) if project.description.present? %></p>
           <p class="card__meta mt-3"><%= pluralize(project.roadmap_sections.count, "section") %></p>
         <% end %>

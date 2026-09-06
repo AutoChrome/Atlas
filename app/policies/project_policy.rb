@@ -2,11 +2,11 @@
 
 class ProjectPolicy < ApplicationPolicy
   def index?
-    user.present?
+    true
   end
 
   def show?
-    user.present?
+    user.present? || record.public?
   end
 
   def create?
@@ -23,7 +23,7 @@ class ProjectPolicy < ApplicationPolicy
 
   class Scope < ApplicationPolicy::Scope
     def resolve
-      user.present? ? scope.all : scope.none
+      user.present? ? scope.all : scope.public_only
     end
   end
 end
