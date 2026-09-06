@@ -1,0 +1,6 @@
+<% content_for :title, "New step in #{@tutorial.title}" %>
+<div class="stack container">
+  <p class="text-muted"><%= link_to "← Back to #{@tutorial.title}", [@area, @tutorial] %></p>
+  <h1>New step</h1>
+  <%= render "form", area: @area, tutorial: @tutorial, tutorial_step: @tutorial_step %>
+</div>

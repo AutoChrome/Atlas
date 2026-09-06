@@ -1,0 +1,29 @@
+<%# locals: f: (a fields_for builder for one TutorialTask), tutorial:, tutorial_step: (the parent step, for excluding itself from its own conditional-step lists) %>
+<div class="card stack" style="gap: 8px;" data-nested-fields-target="item">
+  <%= f.hidden_field :id %>
+  <%= f.hidden_field :_destroy %>
+  <div class="cluster" style="align-items: flex-start;">
+    <%= f.text_field :description, class: "input", placeholder: "Task", style: "flex: 1;", required: true %>
+    <button type="button" class="btn btn--icon btn--sm" data-action="click->nested-fields#remove" aria-label="Remove task">
+      <%= fa_icon "trash" %>
+    </button>
+  </div>
+  <%= f.text_field :hint, class: "input", placeholder: "Hint shown below the task (optional)" %>
+  <% other_steps = tutorial.tutorial_steps.ordered.reject { |s| s == tutorial_step } %>
+  <% if other_steps.any? %>
+    <div class="cluster" style="align-items: flex-start;">
+      <div class="field" style="flex: 1; margin-bottom: 0;">
+        <%= f.label :next_step_if_accepted_id, "If ticked, go to", class: "field__label" %>
+        <%= f.select :next_step_if_accepted_id,
+              options_from_collection_for_select(other_steps, :id, :title, f.object.next_step_if_accepted_id),
+              { include_blank: "Continue as normal" }, class: "select" %>
+      </div>
+      <div class="field" style="flex: 1; margin-bottom: 0;">
+        <%= f.label :next_step_if_rejected_id, "If crossed, go to", class: "field__label" %>
+        <%= f.select :next_step_if_rejected_id,
+              options_from_collection_for_select(other_steps, :id, :title, f.object.next_step_if_rejected_id),
+              { include_blank: "Continue as normal" }, class: "select" %>
+      </div>
+    </div>
+  <% end %>
+</div>

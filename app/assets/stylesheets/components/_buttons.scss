@@ -30,6 +30,15 @@
     opacity: 0.38;
     cursor: not-allowed;
   }
+
+  // Author-stylesheet `display: inline-flex` above would otherwise always
+  // beat the browser's UA-stylesheet `[hidden] { display: none }` — author
+  // rules win over UA rules regardless of specificity — so a JS-toggled
+  // `hidden` attribute (e.g. tutorial_controller.js's Previous button)
+  // would silently have no visual effect without this.
+  &[hidden] {
+    display: none;
+  }
 }
 
 .btn--filled {

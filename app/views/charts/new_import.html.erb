@@ -1,0 +1,59 @@
+<% content_for :title, "Import a chart from SQL" %>
+
+<div class="stack container">
+  <h1>Import a chart from SQL</h1>
+  <p class="text-muted">Upload a schema-only SQL dump, or — if this documents a Rails app — its <code>db/schema.rb</code> directly.</p>
+
+  <% if @chart.errors.any? %>
+    <div class="card card--outlined" style="border-color: var(--color-error);">
+      <% @chart.errors.full_messages.each do |message| %>
+        <p class="field__error"><%= message %></p>
+      <% end %>
+    </div>
+  <% end %>
+
+  <%= form_with url: import_area_charts_path(@area), class: "stack", multipart: true do %>
+    <div class="field">
+      <%= label_tag :title, "Chart title (optional — defaults to the file name)", class: "field__label" %>
+      <%= text_field_tag :title, nil, class: "input" %>
+    </div>
+
+    <div class="field">
+      <%= label_tag :sql_file, "SQL file or schema.rb", class: "field__label" %>
+      <%= file_field_tag :sql_file, accept: ".sql,.rb", required: true %>
+      <p class="field__hint">A schema-only SQL dump (see the export commands below), or a Rails <code>db/schema.rb</code> uploaded as-is.</p>
+    </div>
+
+    <div class="form-actions">
+      <%= submit_tag "Import", class: "btn btn--filled" %>
+      <%= link_to "Cancel", @area, class: "btn btn--text" %>
+    </div>
+  <% end %>
+
+  <section class="card card--outlined stack">
+    <h2>Exporting a schema to import</h2>
+    <p class="text-muted">
+      Already have a Rails app? Just upload its <code>db/schema.rb</code> above — no export step needed. Otherwise, run
+      one of these against your database and upload the resulting file. Only the table/column/key/index structure is
+      read — no data is imported.
+    </p>
+
+    <% [
+         [ "PostgreSQL", "pg_dump --schema-only --no-owner --no-privileges -d your_database > schema.sql" ],
+         [ "MySQL", "mysqldump --no-data your_database > schema.sql" ],
+         [ "SQLite", "sqlite3 your_database.db .schema > schema.sql" ]
+       ].each do |label, command| %>
+      <div class="field">
+        <span class="field__label"><%= label %></span>
+        <div class="cluster" style="align-items: stretch;">
+          <code class="input" style="flex: 1; overflow-x: auto; white-space: pre;"><%= command %></code>
+          <button type="button" class="btn btn--outlined btn--sm"
+                  data-controller="clipboard" data-clipboard-text-value="<%= command %>" data-action="clipboard#copy">
+            <%= fa_icon "copy" %>
+            <span data-clipboard-target="label">Copy</span>
+          </button>
+        </div>
+      </div>
+    <% end %>
+  </section>
+</div>

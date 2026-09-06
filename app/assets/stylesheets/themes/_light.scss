@@ -38,6 +38,13 @@
   --color-warning-container: #f3e4c8;
   --color-on-warning-container: #402d06;
 
+  // Relationship (chart FK badges/connector lines) — the one blue in the
+  // palette, distinct from ink-navy primary, reserved for this single use.
+  --color-relation: #3a6ea5;
+  --color-on-relation: #ffffff;
+  --color-relation-container: #dbe6f3;
+  --color-on-relation-container: #16324f;
+
   // Neutral surfaces
   --color-background: #f2f3f0;
   --color-on-background: #1c3644;

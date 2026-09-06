@@ -1,0 +1,12 @@
+<%# locals: area:, chart:, table: %>
+<div class="modal__header"><h2>New column on <%= table.name %></h2></div>
+
+<%= form_with url: area_chart_chart_columns_path(area, chart), class: "modal__body stack" do %>
+  <%= hidden_field_tag "chart_column[chart_table_id]", table.id %>
+  <%= render "chart_columns/fields", column: ChartColumn.new(nullable: true), table: table %>
+
+  <div class="modal__footer">
+    <button type="button" class="btn btn--text" data-action="click->modal#close">Cancel</button>
+    <%= submit_tag "Add column", class: "btn btn--filled" %>
+  </div>
+<% end %>

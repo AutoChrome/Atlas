@@ -1,0 +1,40 @@
+<%# locals: area:, chart:, table:, column:, can_edit: %>
+<div class="chart-column" data-chart-canvas-target="column">
+  <span class="chart-column__connector<%= " chart-column__connector--interactive" if can_edit %>"
+        data-chart-canvas-target="connector" data-column-id="<%= column.id %>"
+        <%= "data-action=\"pointerdown->chart-canvas#startConnection\"".html_safe if can_edit %>></span>
+
+  <span class="chart-column__name"><%= column.name %></span>
+  <% if column.data_type.present? %>
+    <span class="chart-column__type text-muted"><%= column.data_type %></span>
+  <% end %>
+
+  <span class="chart-column__badges">
+    <% if column.primary_key? %>
+      <span class="chart-badge chart-badge--pk" title="Primary key"><%= fa_icon "key" %> PK</span>
+    <% end %>
+    <% if column.foreign_key? %>
+      <span class="chart-badge chart-badge--fk" title="Foreign key">FK</span>
+    <% end %>
+    <% if column.unique? %>
+      <span class="chart-badge chart-badge--unique" title="Unique constraint">UNIQUE</span>
+    <% end %>
+    <% if column.indexed? %>
+      <span class="badge" title="Indexed"><%= fa_icon "bolt" %></span>
+    <% end %>
+    <% unless column.nullable? %>
+      <span class="chart-column__not-null text-muted">NOT NULL</span>
+    <% end %>
+  </span>
+
+  <% if can_edit %>
+    <div class="cluster" style="gap: 2px;" data-controller="modal">
+      <button type="button" class="btn btn--icon btn--sm" data-action="click->modal#open" aria-label="Edit column">
+        <%= fa_icon "pen" %>
+      </button>
+      <dialog class="modal" data-modal-target="dialog" data-action="click->modal#closeOnBackdrop">
+        <%= render "chart_columns/edit_form", area: area, chart: chart, table: table, column: column %>
+      </dialog>
+    </div>
+  <% end %>
+</div>

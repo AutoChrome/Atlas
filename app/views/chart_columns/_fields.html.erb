@@ -1,0 +1,36 @@
+<%# locals: column:, table: %>
+<% dom = ->(name) { dom_id(column, "table_#{table.id}_#{name}") } %>
+
+<div class="field">
+  <%= label_tag dom.("name"), "Column name", class: "field__label" %>
+  <%= text_field_tag "chart_column[name]", column.name, id: dom.("name"), class: "input", required: true %>
+</div>
+
+<div class="field">
+  <%= label_tag dom.("data_type"), "Data type", class: "field__label" %>
+  <%= text_field_tag "chart_column[data_type]", column.data_type, id: dom.("data_type"), class: "input",
+        placeholder: "e.g. varchar(255), integer, uuid" %>
+</div>
+
+<div class="field">
+  <%= label_tag dom.("default"), "Default value", class: "field__label" %>
+  <%= text_field_tag "chart_column[default_value]", column.default_value, id: dom.("default"), class: "input" %>
+</div>
+
+<div class="stack" style="gap: 8px;">
+  <div class="checkbox">
+    <%= hidden_field_tag "chart_column[primary_key]", "0", id: nil %>
+    <%= check_box_tag "chart_column[primary_key]", "1", column.primary_key?, id: dom.("pk") %>
+    <%= label_tag dom.("pk"), "Primary key" %>
+  </div>
+  <div class="checkbox">
+    <%= hidden_field_tag "chart_column[unique]", "0", id: nil %>
+    <%= check_box_tag "chart_column[unique]", "1", column.unique?, id: dom.("unique") %>
+    <%= label_tag dom.("unique"), "Unique" %>
+  </div>
+  <div class="checkbox">
+    <%= hidden_field_tag "chart_column[nullable]", "0", id: nil %>
+    <%= check_box_tag "chart_column[nullable]", "1", column.nullable?, id: dom.("nullable") %>
+    <%= label_tag dom.("nullable"), "Nullable" %>
+  </div>
+</div>

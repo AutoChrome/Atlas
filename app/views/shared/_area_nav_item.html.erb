@@ -1,6 +1,8 @@
 <% pages = policy_scope(area.pages).ordered %>
+<% charts = policy_scope(area.charts).ordered %>
+<% tutorials = policy_scope(area.tutorials).ordered %>
 <% children = policy_scope(area.children).ordered_by(area_sort_mode) %>
-<% has_children = pages.any? || children.any? %>
+<% has_children = pages.any? || charts.any? || tutorials.any? || children.any? %>
 <% expanded = expanded_area_ids.include?(area.id) %>
 
 <%# The whole subtree (item + its children) is the draggable unit, not just
@@ -43,6 +45,26 @@
           <%= link_to [area, page], class: class_names("nav-tree__link", "is-active" => current_page?([area, page])) do %>
             <%= record_icon(page, fallback: :page, css_class: "nav-tree__icon") %>
             <%= page.title %>
+          <% end %>
+        </div>
+      <% end %>
+
+      <% charts.each do |chart| %>
+        <div class="nav-tree__item">
+          <span class="nav-tree__chevron nav-tree__chevron--spacer"></span>
+          <%= link_to [area, chart], class: class_names("nav-tree__link", "is-active" => current_page?([area, chart])) do %>
+            <%= record_icon(chart, fallback: "diagram-project", fallback_style: :fa, css_class: "nav-tree__icon") %>
+            <%= chart.title %>
+          <% end %>
+        </div>
+      <% end %>
+
+      <% tutorials.each do |tutorial| %>
+        <div class="nav-tree__item">
+          <span class="nav-tree__chevron nav-tree__chevron--spacer"></span>
+          <%= link_to [area, tutorial], class: class_names("nav-tree__link", "is-active" => current_page?([area, tutorial])) do %>
+            <%= record_icon(tutorial, fallback: "route", fallback_style: :fa, css_class: "nav-tree__icon") %>
+            <%= tutorial.title %>
           <% end %>
         </div>
       <% end %>

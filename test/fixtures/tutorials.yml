@@ -1,0 +1,11 @@
+# Read about fixtures at https://api.rubyonrails.org/classes/ActiveRecord/FixtureSet.html
+
+one:
+  area: one
+  title: Tutorial One
+  slug: tutorial-one
+
+two:
+  area: two
+  title: Tutorial Two
+  slug: tutorial-two

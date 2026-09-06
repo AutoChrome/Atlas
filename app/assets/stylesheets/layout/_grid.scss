@@ -37,6 +37,15 @@
   display: flex;
   flex-direction: column;
   gap: m.spacer(4);
+
+  // Author-stylesheet `display: flex` above would otherwise always beat the
+  // browser's UA-stylesheet `[hidden] { display: none }` — author rules win
+  // over UA rules regardless of specificity — so a JS-toggled `hidden`
+  // attribute on an element carrying this class (e.g. a removed nested
+  // fieldset in nested_fields_controller.js) would silently stay visible.
+  &[hidden] {
+    display: none;
+  }
 }
 
 .cluster {
@@ -44,4 +53,8 @@
   flex-wrap: wrap;
   align-items: center;
   gap: m.spacer(3);
+
+  &[hidden] {
+    display: none;
+  }
 }

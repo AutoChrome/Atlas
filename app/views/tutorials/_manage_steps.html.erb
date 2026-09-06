@@ -1,0 +1,48 @@
+<%# locals: area:, tutorial:, target: (true when nested inside the tutorial-viewer controller, so it can be auto expanded/collapsed as the viewer switches between the overview and a step) %>
+<% details_attrs = { class: "tutorial-admin" } %>
+<% details_attrs[:open] = true unless target %>
+<% details_attrs[:data] = { tutorial_target: "manageSteps" } if target %>
+<%= tag.details(**details_attrs) do %>
+  <summary>Manage steps</summary>
+
+  <section class="stack" data-controller="tutorial-steps-reorder"
+            data-tutorial-steps-reorder-url-value="<%= reorder_area_tutorial_tutorial_steps_path(area, tutorial) %>">
+    <div class="cluster" style="justify-content: space-between;">
+      <h2>Steps</h2>
+      <%= link_to new_area_tutorial_tutorial_step_path(area, tutorial), class: "btn btn--filled btn--sm" do %>
+        <%= fa_icon "plus" %> New step
+      <% end %>
+    </div>
+
+    <% if tutorial.tutorial_steps.any? %>
+      <div class="stack" style="gap: 4px;" data-tutorial-steps-reorder-target="list">
+        <% tutorial.tutorial_steps.ordered.each do |step| %>
+          <div class="card cluster" style="justify-content: space-between;"
+               draggable="true" data-tutorial-steps-reorder-target="item" data-step-id="<%= step.id %>"
+               data-action="dragstart->tutorial-steps-reorder#dragStart dragover->tutorial-steps-reorder#dragOver drop->tutorial-steps-reorder#drop dragend->tutorial-steps-reorder#dragEnd">
+            <span class="cluster">
+              <span class="nav-tree__drag-handle" style="display: flex;"><%= fa_icon "grip-vertical" %></span>
+              <%= step.title %>
+              <span class="text-muted"><%= pluralize(step.tutorial_tasks.count, "task") %></span>
+              <% if step.tutorial_tasks.any? { |t| t.next_step_if_accepted_id || t.next_step_if_rejected_id } %>
+                <span class="badge">Conditional</span>
+              <% end %>
+            </span>
+            <div class="cluster" style="gap: 4px;">
+              <%= link_to edit_area_tutorial_tutorial_step_path(area, tutorial, step), class: "btn btn--icon btn--sm", aria: { label: "Edit step" } do %>
+                <%= fa_icon "pen" %>
+              <% end %>
+              <%= button_to area_tutorial_tutorial_step_path(area, tutorial, step), method: :delete,
+                    data: { turbo_confirm: "Delete step \"#{step.title}\"?" }, class: "btn btn--icon btn--sm",
+                    form: { class: "kanban-column__delete-form" }, aria: { label: "Delete step" } do %>
+                <%= fa_icon "trash" %>
+              <% end %>
+            </div>
+          </div>
+        <% end %>
+      </div>
+    <% else %>
+      <p class="text-muted">No steps yet. Add the first one to get started.</p>
+    <% end %>
+  </section>
+<% end %>

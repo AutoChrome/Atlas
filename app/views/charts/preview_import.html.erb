@@ -1,0 +1,123 @@
+<% content_for :title, "Update #{@chart.title} from file" %>
+
+<div class="stack container">
+  <p class="text-muted"><%= link_to "← Back to #{@chart.title}", [ @area, @chart ] %></p>
+  <h1>Review changes</h1>
+  <p class="text-muted">
+    Nothing has been saved yet. Matching is case-insensitive by name — anything named differently is treated as new,
+    and anything in the chart that isn't in this file is left alone.
+  </p>
+
+  <% if @parse_warnings.any? %>
+    <div class="card card--outlined stack" style="border-color: var(--color-warning);">
+      <h2>Warnings</h2>
+      <% @parse_warnings.each do |warning| %>
+        <p class="field__error" style="color: var(--color-warning);"><%= warning %></p>
+      <% end %>
+    </div>
+  <% end %>
+
+  <% @diff.table_plans.each do |table_plan| %>
+    <section class="card card--outlined stack">
+      <div class="cluster" style="justify-content: space-between;">
+        <h2><%= table_plan.name %></h2>
+        <% if table_plan.new? %>
+          <span class="badge badge--success">New table</span>
+        <% end %>
+      </div>
+
+      <% if table_plan.column_plans.any? %>
+        <table class="data-table">
+          <thead>
+            <tr><th>Column</th><th>Status</th><th>Changes</th></tr>
+          </thead>
+          <tbody>
+            <% table_plan.column_plans.each do |cp| %>
+              <% next if !cp.new? && cp.changes.empty? %>
+              <tr>
+                <td><%= cp.name %></td>
+                <td>
+                  <% if cp.new? %>
+                    <span class="badge badge--success">New</span>
+                  <% else %>
+                    <span class="badge badge--warning">Changed</span>
+                  <% end %>
+                </td>
+                <td>
+                  <% if cp.new? %>
+                    <span class="text-muted"><%= cp.attrs[:data_type] %></span>
+                  <% else %>
+                    <% cp.changes.each do |field, (old_value, new_value)| %>
+                      <div><%= field.to_s.humanize %>: <span class="text-muted"><%= old_value.inspect %></span> → <%= new_value.inspect %></div>
+                    <% end %>
+                  <% end %>
+                </td>
+              </tr>
+            <% end %>
+          </tbody>
+        </table>
+      <% end %>
+
+      <% if table_plan.unmatched_columns.any? %>
+        <p class="text-muted">
+          Not in this file, left unchanged: <%= table_plan.unmatched_columns.map(&:name).join(", ") %>
+        </p>
+      <% end %>
+
+      <% index_changes = table_plan.index_plans.select { |ip| ip.new? || ip.changes.any? } %>
+      <% if index_changes.any? %>
+        <div class="stack" style="gap: 4px;">
+          <% index_changes.each do |ip| %>
+            <p>
+              <%= ip.new? ? "New index" : "Changed index" %>
+              <strong><%= ip.name %></strong> (<%= ip.attrs[:columns] %>)<%= " · UNIQUE" if ip.attrs[:unique] %>
+            </p>
+          <% end %>
+        </div>
+      <% end %>
+    </section>
+  <% end %>
+
+  <% new_or_changed_rels = @diff.relationship_plans.select { |rp| rp.new? || rp.changes.any? } %>
+  <% if new_or_changed_rels.any? %>
+    <section class="card card--outlined stack">
+      <h2>Relationships</h2>
+      <% new_or_changed_rels.each do |rp| %>
+        <p>
+          <% if rp.new? %>
+            <span class="badge badge--success">New</span>
+          <% else %>
+            <span class="badge badge--warning">Changed</span>
+          <% end %>
+          <strong><%= rp.from_label %></strong> → <strong><%= rp.to_label %></strong>
+          <% if rp.changes.any? %>
+            <span class="text-muted">
+              (<%= rp.changes.map { |field, (old_value, new_value)| "#{field.to_s.humanize}: #{old_value.inspect} → #{new_value.inspect}" }.join(", ") %>)
+            </span>
+          <% end %>
+        </p>
+      <% end %>
+    </section>
+  <% end %>
+
+  <% if @diff.unmatched_tables.any? %>
+    <section class="card card--outlined stack">
+      <h2>Not in this file</h2>
+      <p class="text-muted">
+        These tables exist on the chart but weren't found in the uploaded file. They'll be left as-is —
+        nothing is ever deleted by an import.
+      </p>
+      <ul>
+        <% @diff.unmatched_tables.each do |table| %>
+          <li><%= table.name %></li>
+        <% end %>
+      </ul>
+    </section>
+  <% end %>
+
+  <%= form_with url: apply_import_area_chart_path(@area, @chart), class: "form-actions" do %>
+    <%= hidden_field_tag :import_payload, @import_payload %>
+    <%= submit_tag "Apply changes", class: "btn btn--filled" %>
+    <%= link_to "Cancel", [ @area, @chart ], class: "btn btn--text" %>
+  <% end %>
+</div>

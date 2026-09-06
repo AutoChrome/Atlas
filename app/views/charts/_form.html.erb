@@ -1,0 +1,34 @@
+<%= form_with model: [area, chart], class: "stack" do |f| %>
+  <% if chart.errors.any? %>
+    <div class="card card--outlined" style="border-color: var(--color-error);">
+      <p class="field__error"><%= pluralize(chart.errors.count, "error") %> prevented this chart from being saved:</p>
+      <ul>
+        <% chart.errors.each do |error| %>
+          <li class="field__error"><%= error.full_message %></li>
+        <% end %>
+      </ul>
+    </div>
+  <% end %>
+
+  <div class="field">
+    <%= f.label :title, class: "field__label" %>
+    <%= f.text_field :title, class: "input", required: true, spellcheck: true %>
+  </div>
+
+  <div class="field">
+    <%= f.label :description, class: "field__label" %>
+    <%= f.text_area :description, class: "textarea", rows: 3, spellcheck: true %>
+  </div>
+
+  <%= render "shared/icon_field", f: f %>
+
+  <div class="checkbox">
+    <%= f.check_box :public %>
+    <%= f.label :public, "Public — visible without signing in" %>
+  </div>
+
+  <div class="form-actions">
+    <%= f.submit class: "btn btn--filled" %>
+    <%= link_to "Cancel", chart.persisted? ? [area, chart] : area, class: "btn btn--text" %>
+  </div>
+<% end %>

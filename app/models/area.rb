@@ -10,6 +10,8 @@ class Area < ApplicationRecord
   belongs_to :parent, class_name: "Area", optional: true
   has_many :children, class_name: "Area", foreign_key: :parent_id, dependent: :destroy
   has_many :pages, -> { order(:position) }, dependent: :destroy
+  has_many :charts, -> { order(:position, :title) }, dependent: :destroy
+  has_many :tutorials, -> { order(:position, :title) }, dependent: :destroy
 
   # word_start on both fields so a partial word like "onbo" matches
   # "Onboarding" whether it's in the name or the description.

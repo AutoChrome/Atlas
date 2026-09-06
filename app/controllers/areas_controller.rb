@@ -13,6 +13,8 @@ class AreasController < ApplicationController
     authorize @area
     @child_areas = policy_scope(@area.children).ordered_by(area_sort_mode)
     @pages = policy_scope(@area.pages).ordered
+    @charts = policy_scope(@area.charts).ordered
+    @tutorials = policy_scope(@area.tutorials).ordered
   end
 
   def new

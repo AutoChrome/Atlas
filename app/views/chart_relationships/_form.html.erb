@@ -1,0 +1,37 @@
+<%# locals: area:, chart:, chart_tables: %>
+<%
+  column_options = chart_tables.flat_map do |table|
+    table.chart_columns.map { |c| [ "#{table.name}.#{c.name}", c.id ] }
+  end
+%>
+<div class="modal__header"><h2>Add relationship</h2></div>
+
+<%= form_with url: area_chart_chart_relationships_path(area, chart), class: "modal__body stack" do %>
+  <div class="field">
+    <%= label_tag "new_rel_from", "From column (the foreign key)", class: "field__label" %>
+    <%= select_tag "chart_relationship[from_chart_column_id]", options_for_select(column_options),
+          id: "new_rel_from", class: "select", include_blank: "Choose a column", required: true %>
+  </div>
+
+  <div class="field">
+    <%= label_tag "new_rel_to", "To column (the referenced key)", class: "field__label" %>
+    <%= select_tag "chart_relationship[to_chart_column_id]", options_for_select(column_options),
+          id: "new_rel_to", class: "select", include_blank: "Choose a column", required: true %>
+  </div>
+
+  <div class="cluster" style="align-items: flex-start;">
+    <div class="field" style="flex: 1;">
+      <%= label_tag "new_rel_on_delete", "On delete", class: "field__label" %>
+      <%= text_field_tag "chart_relationship[on_delete]", nil, id: "new_rel_on_delete", class: "input", placeholder: "e.g. CASCADE" %>
+    </div>
+    <div class="field" style="flex: 1;">
+      <%= label_tag "new_rel_on_update", "On update", class: "field__label" %>
+      <%= text_field_tag "chart_relationship[on_update]", nil, id: "new_rel_on_update", class: "input", placeholder: "e.g. CASCADE" %>
+    </div>
+  </div>
+
+  <div class="modal__footer">
+    <button type="button" class="btn btn--text" data-action="click->modal#close">Cancel</button>
+    <%= submit_tag "Add relationship", class: "btn btn--filled" %>
+  </div>
+<% end %>

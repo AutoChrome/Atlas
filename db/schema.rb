@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_09_06_135321) do
+ActiveRecord::Schema[8.1].define(version: 2026_09_06_213840) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
 
@@ -123,6 +123,71 @@ ActiveRecord::Schema[8.1].define(version: 2026_09_06_135321) do
     t.index ["user_id", "user_type"], name: "user_index"
   end
 
+  create_table "chart_columns", force: :cascade do |t|
+    t.bigint "chart_table_id", null: false
+    t.datetime "created_at", null: false
+    t.string "data_type"
+    t.string "default_value"
+    t.string "name", null: false
+    t.boolean "nullable", default: true, null: false
+    t.integer "position", default: 0, null: false
+    t.boolean "primary_key", default: false, null: false
+    t.boolean "unique", default: false, null: false
+    t.datetime "updated_at", null: false
+    t.index ["chart_table_id", "name"], name: "index_chart_columns_on_chart_table_id_and_name", unique: true
+    t.index ["chart_table_id"], name: "index_chart_columns_on_chart_table_id"
+  end
+
+  create_table "chart_indices", force: :cascade do |t|
+    t.bigint "chart_table_id", null: false
+    t.string "columns", null: false
+    t.datetime "created_at", null: false
+    t.string "name", null: false
+    t.boolean "unique", default: false, null: false
+    t.datetime "updated_at", null: false
+    t.index ["chart_table_id"], name: "index_chart_indices_on_chart_table_id"
+  end
+
+  create_table "chart_relationships", force: :cascade do |t|
+    t.bigint "chart_id", null: false
+    t.datetime "created_at", null: false
+    t.bigint "from_chart_column_id", null: false
+    t.string "on_delete"
+    t.string "on_update"
+    t.bigint "to_chart_column_id", null: false
+    t.datetime "updated_at", null: false
+    t.index ["chart_id"], name: "index_chart_relationships_on_chart_id"
+    t.index ["from_chart_column_id"], name: "index_chart_relationships_on_from_chart_column_id"
+    t.index ["to_chart_column_id"], name: "index_chart_relationships_on_to_chart_column_id"
+  end
+
+  create_table "chart_tables", force: :cascade do |t|
+    t.bigint "chart_id", null: false
+    t.datetime "created_at", null: false
+    t.string "name", null: false
+    t.text "notes"
+    t.integer "position_x", default: 0, null: false
+    t.integer "position_y", default: 0, null: false
+    t.datetime "updated_at", null: false
+    t.index ["chart_id", "name"], name: "index_chart_tables_on_chart_id_and_name", unique: true
+    t.index ["chart_id"], name: "index_chart_tables_on_chart_id"
+  end
+
+  create_table "charts", force: :cascade do |t|
+    t.bigint "area_id", null: false
+    t.datetime "created_at", null: false
+    t.text "description"
+    t.string "icon"
+    t.integer "position", default: 0, null: false
+    t.boolean "public", default: false, null: false
+    t.string "slug", null: false
+    t.string "title", null: false
+    t.datetime "updated_at", null: false
+    t.index ["area_id", "slug"], name: "index_charts_on_area_id_and_slug", unique: true
+    t.index ["area_id"], name: "index_charts_on_area_id"
+    t.index ["public"], name: "index_charts_on_public"
+  end
+
   create_table "friendly_id_slugs", force: :cascade do |t|
     t.datetime "created_at"
     t.string "scope"
@@ -190,6 +255,54 @@ ActiveRecord::Schema[8.1].define(version: 2026_09_06_135321) do
     t.index ["user_id"], name: "index_sessions_on_user_id"
   end
 
+  create_table "tutorial_steps", force: :cascade do |t|
+    t.datetime "created_at", null: false
+    t.integer "position", default: 0, null: false
+    t.string "title", null: false
+    t.bigint "tutorial_id", null: false
+    t.datetime "updated_at", null: false
+    t.index ["tutorial_id"], name: "index_tutorial_steps_on_tutorial_id"
+  end
+
+  create_table "tutorial_task_responses", force: :cascade do |t|
+    t.boolean "accepted", default: true, null: false
+    t.datetime "created_at", null: false
+    t.bigint "tutorial_task_id", null: false
+    t.datetime "updated_at", null: false
+    t.bigint "user_id", null: false
+    t.index ["tutorial_task_id", "user_id"], name: "index_tutorial_task_responses_on_tutorial_task_id_and_user_id", unique: true
+    t.index ["tutorial_task_id"], name: "index_tutorial_task_responses_on_tutorial_task_id"
+    t.index ["user_id"], name: "index_tutorial_task_responses_on_user_id"
+  end
+
+  create_table "tutorial_tasks", force: :cascade do |t|
+    t.datetime "created_at", null: false
+    t.string "description", null: false
+    t.text "hint"
+    t.bigint "next_step_if_accepted_id"
+    t.bigint "next_step_if_rejected_id"
+    t.integer "position", default: 0, null: false
+    t.bigint "tutorial_step_id", null: false
+    t.datetime "updated_at", null: false
+    t.index ["next_step_if_accepted_id"], name: "index_tutorial_tasks_on_next_step_if_accepted_id"
+    t.index ["next_step_if_rejected_id"], name: "index_tutorial_tasks_on_next_step_if_rejected_id"
+    t.index ["tutorial_step_id"], name: "index_tutorial_tasks_on_tutorial_step_id"
+  end
+
+  create_table "tutorials", force: :cascade do |t|
+    t.bigint "area_id", null: false
+    t.datetime "created_at", null: false
+    t.string "icon"
+    t.integer "position", default: 0, null: false
+    t.boolean "public", default: false, null: false
+    t.string "slug", null: false
+    t.string "title", null: false
+    t.datetime "updated_at", null: false
+    t.index ["area_id", "slug"], name: "index_tutorials_on_area_id_and_slug", unique: true
+    t.index ["area_id"], name: "index_tutorials_on_area_id"
+    t.index ["public"], name: "index_tutorials_on_public"
+  end
+
   create_table "users", force: :cascade do |t|
     t.datetime "created_at", null: false
     t.string "email_address", null: false
@@ -231,11 +344,25 @@ ActiveRecord::Schema[8.1].define(version: 2026_09_06_135321) do
   add_foreign_key "api_token_areas", "areas"
   add_foreign_key "api_tokens", "users"
   add_foreign_key "areas", "areas", column: "parent_id"
+  add_foreign_key "chart_columns", "chart_tables"
+  add_foreign_key "chart_indices", "chart_tables"
+  add_foreign_key "chart_relationships", "chart_columns", column: "from_chart_column_id"
+  add_foreign_key "chart_relationships", "chart_columns", column: "to_chart_column_id"
+  add_foreign_key "chart_relationships", "charts"
+  add_foreign_key "chart_tables", "charts"
+  add_foreign_key "charts", "areas"
   add_foreign_key "pages", "areas"
   add_foreign_key "pages", "users"
   add_foreign_key "roadmap_cards", "roadmap_sections"
   add_foreign_key "roadmap_sections", "projects"
   add_foreign_key "sessions", "users"
+  add_foreign_key "tutorial_steps", "tutorials"
+  add_foreign_key "tutorial_task_responses", "tutorial_tasks"
+  add_foreign_key "tutorial_task_responses", "users"
+  add_foreign_key "tutorial_tasks", "tutorial_steps"
+  add_foreign_key "tutorial_tasks", "tutorial_steps", column: "next_step_if_accepted_id"
+  add_foreign_key "tutorial_tasks", "tutorial_steps", column: "next_step_if_rejected_id"
+  add_foreign_key "tutorials", "areas"
   add_foreign_key "webhook_deliveries", "announcements"
   add_foreign_key "webhook_deliveries", "webhooks"
 end

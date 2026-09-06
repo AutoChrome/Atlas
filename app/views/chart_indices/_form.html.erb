@@ -1,0 +1,29 @@
+<%# locals: area:, chart:, table: %>
+<div class="modal__header"><h2>New index on <%= table.name %></h2></div>
+
+<%= form_with url: area_chart_chart_indices_path(area, chart), class: "modal__body stack" do %>
+  <%= hidden_field_tag "chart_index[chart_table_id]", table.id %>
+
+  <div class="field">
+    <%= label_tag "chart_index_name_#{table.id}", "Index name", class: "field__label" %>
+    <%= text_field_tag "chart_index[name]", nil, id: "chart_index_name_#{table.id}", class: "input", required: true %>
+  </div>
+
+  <div class="field">
+    <%= label_tag "chart_index_columns_#{table.id}", "Columns", class: "field__label" %>
+    <%= text_field_tag "chart_index[columns]", nil, id: "chart_index_columns_#{table.id}", class: "input", required: true,
+          placeholder: "e.g. user_id, created_at" %>
+    <p class="field__hint">Comma-separated column names covered by this index.</p>
+  </div>
+
+  <div class="checkbox">
+    <%= hidden_field_tag "chart_index[unique]", "0", id: nil %>
+    <%= check_box_tag "chart_index[unique]", "1", false, id: "chart_index_unique_#{table.id}" %>
+    <%= label_tag "chart_index_unique_#{table.id}", "Unique" %>
+  </div>
+
+  <div class="modal__footer">
+    <button type="button" class="btn btn--text" data-action="click->modal#close">Cancel</button>
+    <%= submit_tag "Add index", class: "btn btn--filled" %>
+  </div>
+<% end %>

@@ -1,0 +1,5 @@
+<% content_for :title, "New chart in #{@area.name}" %>
+<div class="stack container">
+  <h1>New chart</h1>
+  <%= render "form", area: @area, chart: @chart %>
+</div>

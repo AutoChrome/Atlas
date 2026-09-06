@@ -19,6 +19,36 @@ Rails.application.routes.draw do
         patch :move
       end
     end
+
+    resources :charts, param: :slug do
+      collection { get :new_import; post :import }
+      member { post :preview_import; post :apply_import }
+
+      resources :chart_tables, path: "tables", only: %i[create update destroy] do
+        member { patch :reposition }
+      end
+      resources :chart_columns, path: "columns", only: %i[create update destroy]
+      resources :chart_relationships, path: "relationships", only: %i[create update destroy]
+      resources :chart_indices, path: "indexes", only: %i[create update destroy]
+    end
+
+    resources :tutorials, param: :slug do
+      resources :tutorial_steps, path: "steps", only: %i[new create edit update destroy] do
+        collection { patch :reorder }
+      end
+
+      # Keyed by tutorial_task_id (query param), not a response's own id —
+      # the viewer only ever knows "did I tick or cross this task," not any
+      # particular response row's id. `accepted` (also a query param, on
+      # create) carries which one.
+      post "task_responses", to: "tutorial_task_responses#create"
+      delete "task_responses", to: "tutorial_task_responses#destroy"
+
+      # "Start over" — clears every one of the current user's responses
+      # across the whole tutorial in one request, distinct from destroy's
+      # single-task undo above.
+      delete "progress", to: "tutorial_task_responses#reset_all"
+    end
   end
 
   resource :profile, only: %i[edit update]

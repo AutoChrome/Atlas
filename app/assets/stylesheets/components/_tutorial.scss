@@ -1,0 +1,96 @@
+@use "../abstracts/variables" as v;
+@use "../abstracts/mixins" as m;
+
+.tutorial-viewer {
+  display: flex;
+  flex-direction: column;
+  gap: m.spacer(4);
+}
+
+.tutorial-viewer__progress {
+  display: flex;
+  flex-direction: column;
+  gap: m.spacer(1);
+
+  // Toggled via tutorial_controller.js while the overview screen is
+  // showing — see the .tutorial-step note above for why this is needed.
+  &[hidden] {
+    display: none;
+  }
+}
+
+.tutorial-viewer__progress-bar {
+  height: 8px;
+  border-radius: v.$radius-full;
+  background-color: var(--color-surface-container-high);
+  overflow: hidden;
+}
+
+.tutorial-viewer__progress-fill {
+  height: 100%;
+  width: 0%;
+  background-color: var(--color-secondary);
+  transition: width v.$duration-medium v.$easing-standard;
+}
+
+.tutorial-step {
+  display: flex;
+  flex-direction: column;
+  gap: m.spacer(4);
+  background-color: var(--color-surface-container-lowest);
+  border: 1px solid var(--color-outline-variant);
+  border-radius: v.$radius-sm;
+  padding: m.spacer(5);
+
+  // Author-stylesheet `display: flex` above would otherwise always beat the
+  // browser's UA-stylesheet `[hidden] { display: none }` — author rules win
+  // over UA rules regardless of specificity — so tutorial_controller.js's
+  // step.hidden = true/false toggling would silently do nothing without this.
+  &[hidden] {
+    display: none;
+  }
+}
+
+.tutorial-step__tasks {
+  border-top: 1px solid var(--color-outline-variant);
+  border-bottom: 1px solid var(--color-outline-variant);
+  padding: m.spacer(4) 0;
+}
+
+.tutorial-task__hint {
+  margin: m.spacer(1) 0 0;
+  @include m.type(label);
+}
+
+.tutorial-task__accept.is-active {
+  background-color: var(--color-success-container);
+  color: var(--color-on-success-container);
+}
+
+.tutorial-task__reject.is-active {
+  background-color: var(--color-error-container);
+  color: var(--color-on-error-container);
+}
+
+.tutorial-overview-screen {
+  border: 1px solid var(--color-outline-variant);
+  border-radius: v.$radius-sm;
+  padding: m.spacer(5);
+  background-color: var(--color-surface-container-lowest);
+}
+
+.tutorial-overview__steps {
+  padding-left: m.spacer(5);
+
+  ul {
+    padding-left: m.spacer(5);
+    color: var(--color-on-surface-variant);
+  }
+}
+
+.tutorial-admin {
+  summary {
+    cursor: pointer;
+    color: var(--color-on-surface-variant);
+  }
+}

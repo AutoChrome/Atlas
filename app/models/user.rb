@@ -4,6 +4,7 @@ class User < ApplicationRecord
   has_many :api_tokens, dependent: :destroy
   has_many :pages, dependent: :nullify
   has_many :announcements, dependent: :nullify
+  has_many :tutorial_task_responses, dependent: :destroy
 
   audited except: [ :password_digest ]
 

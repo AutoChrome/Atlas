@@ -1,0 +1,5 @@
+<% content_for :title, "New tutorial in #{@area.name}" %>
+<div class="stack container">
+  <h1>New tutorial</h1>
+  <%= render "form", area: @area, tutorial: @tutorial %>
+</div>

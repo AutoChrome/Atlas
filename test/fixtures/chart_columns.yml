@@ -1,0 +1,23 @@
+# Read about fixtures at https://api.rubyonrails.org/classes/ActiveRecord/FixtureSet.html
+
+users_id:
+  chart_table: one
+  name: id
+  data_type: uuid
+  primary_key: true
+  nullable: false
+  position: 0
+
+posts_user_id:
+  chart_table: two
+  name: user_id
+  data_type: uuid
+  nullable: false
+  position: 0
+
+other_chart_column:
+  chart_table: other_chart_table
+  name: id
+  data_type: integer
+  primary_key: true
+  position: 0

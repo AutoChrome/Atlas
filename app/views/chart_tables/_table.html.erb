@@ -1,0 +1,65 @@
+<%# locals: area:, chart:, table:, can_edit: %>
+<div class="chart-table" data-chart-canvas-target="table" data-chart-table-id="<%= table.id %>"
+     data-reposition-url="<%= reposition_area_chart_chart_table_path(area, chart, table) %>"
+     style="left: <%= table.position_x %>px; top: <%= table.position_y %>px;">
+  <div class="chart-table__header"<%= " data-action=\"pointerdown->chart-canvas#startDragTable\"".html_safe if can_edit %>>
+    <%= fa_icon "table", css_class: "chart-table__icon" %>
+    <span class="chart-table__name"><%= table.name %></span>
+
+    <% if can_edit %>
+      <div class="cluster" style="gap: 2px;">
+        <div data-controller="modal">
+          <button type="button" class="btn btn--icon btn--sm" data-action="click->modal#open" aria-label="Add column">
+            <%= fa_icon "plus" %>
+          </button>
+          <dialog class="modal" data-modal-target="dialog" data-action="click->modal#closeOnBackdrop">
+            <%= render "chart_columns/new_form", area: area, chart: chart, table: table %>
+          </dialog>
+        </div>
+
+        <%= button_to area_chart_chart_table_path(area, chart, table), method: :delete,
+              data: { turbo_confirm: "Delete table \"#{table.name}\" and all its columns?" },
+              class: "btn btn--icon btn--sm", form: { class: "kanban-column__delete-form" }, aria: { label: "Delete table" } do %>
+          <%= fa_icon "trash" %>
+        <% end %>
+      </div>
+    <% end %>
+  </div>
+
+  <div class="chart-table__columns">
+    <% table.chart_columns.each do |column| %>
+      <%= render "chart_columns/column", area: area, chart: chart, table: table, column: column, can_edit: can_edit %>
+    <% end %>
+  </div>
+
+  <% if table.chart_indices.any? || table.notes.present? %>
+    <div class="chart-table__footer">
+      <% table.chart_indices.each do |index| %>
+        <div class="chart-table__index text-muted cluster" style="justify-content: space-between;">
+          <span><%= fa_icon "list" %> <%= index.name %> (<%= index.columns %>)<%= " · UNIQUE" if index.unique? %></span>
+          <% if can_edit %>
+            <%= button_to area_chart_chart_index_path(area, chart, index), method: :delete,
+                  data: { turbo_confirm: "Delete index \"#{index.name}\"?" }, class: "btn btn--icon btn--sm",
+                  form: { class: "kanban-column__delete-form" }, aria: { label: "Delete index" } do %>
+              <%= fa_icon "trash" %>
+            <% end %>
+          <% end %>
+        </div>
+      <% end %>
+      <% if table.notes.present? %>
+        <p class="chart-table__notes text-muted"><%= table.notes %></p>
+      <% end %>
+    </div>
+  <% end %>
+
+  <% if can_edit %>
+    <div data-controller="modal">
+      <button type="button" class="btn btn--text btn--sm" data-action="click->modal#open">
+        <%= fa_icon "plus" %> Add index
+      </button>
+      <dialog class="modal" data-modal-target="dialog" data-action="click->modal#closeOnBackdrop">
+        <%= render "chart_indices/form", area: area, chart: chart, table: table %>
+      </dialog>
+    </div>
+  <% end %>
+</div>

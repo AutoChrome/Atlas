@@ -1,0 +1,16 @@
+# Read about fixtures at https://api.rubyonrails.org/classes/ActiveRecord/FixtureSet.html
+
+one:
+  tutorial: one
+  title: Step One
+  position: 0
+
+two:
+  tutorial: one
+  title: Step Two
+  position: 1
+
+other_tutorial_step:
+  tutorial: two
+  title: Other Step
+  position: 0

@@ -1,0 +1,175 @@
+@use "../abstracts/variables" as v;
+@use "../abstracts/mixins" as m;
+
+.chart-canvas {
+  overflow: auto;
+  border: 1px solid var(--color-outline-variant);
+  border-radius: v.$radius-sm;
+  background-color: var(--color-surface-container-lowest);
+  max-height: 70vh;
+}
+
+.chart-canvas__content {
+  position: relative;
+  width: 3000px;
+  height: 2000px;
+}
+
+.chart-canvas__svg {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+  overflow: visible;
+}
+
+.chart-relationship {
+  fill: none;
+  stroke: var(--color-relation);
+  stroke-width: 2px;
+  pointer-events: stroke;
+  cursor: pointer;
+
+  &:hover {
+    stroke-width: 3px;
+  }
+}
+
+.chart-relationship--pending {
+  stroke-dasharray: 4 4;
+  pointer-events: none;
+}
+
+.chart-table {
+  position: absolute;
+  display: flex;
+  flex-direction: column;
+  gap: m.spacer(2);
+  width: 260px;
+  background-color: var(--color-surface-container-low);
+  border: 1px solid var(--color-outline-variant);
+  border-radius: v.$radius-sm;
+  padding: m.spacer(3);
+  @include m.surface-elevation(1);
+
+  &.is-dragging {
+    opacity: 0.6;
+    z-index: 10;
+  }
+}
+
+.chart-table__header {
+  display: flex;
+  align-items: center;
+  gap: m.spacer(2);
+  cursor: grab;
+  padding-bottom: m.spacer(2);
+  border-bottom: 1px solid var(--color-outline-variant);
+
+  &:active {
+    cursor: grabbing;
+  }
+}
+
+.chart-table__icon {
+  color: var(--color-on-surface-variant);
+  flex-shrink: 0;
+}
+
+.chart-table__name {
+  flex: 1;
+  min-width: 0;
+  @include m.type(title);
+}
+
+.chart-table__columns {
+  display: flex;
+  flex-direction: column;
+  gap: m.spacer(1);
+}
+
+.chart-column {
+  display: flex;
+  align-items: center;
+  gap: m.spacer(2);
+  padding: m.spacer(1) 0;
+}
+
+.chart-column__connector {
+  width: 10px;
+  height: 10px;
+  flex-shrink: 0;
+  border-radius: v.$radius-full;
+  background-color: var(--color-outline);
+}
+
+.chart-column__connector--interactive {
+  cursor: crosshair;
+
+  &:hover {
+    background-color: var(--color-relation);
+  }
+}
+
+.chart-column__name {
+  @include m.type(body);
+  white-space: nowrap;
+}
+
+.chart-column__type {
+  @include m.type(label);
+  white-space: nowrap;
+}
+
+.chart-column__badges {
+  display: flex;
+  align-items: center;
+  gap: m.spacer(1);
+  flex-wrap: wrap;
+  margin-left: auto;
+}
+
+.chart-column__not-null {
+  @include m.type(label);
+}
+
+.chart-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  height: 20px;
+  padding: 0 m.spacer(2);
+  border-radius: v.$radius-full;
+  @include m.type(label);
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.chart-badge--pk {
+  background-color: var(--color-secondary-container);
+  color: var(--color-on-secondary-container);
+}
+
+.chart-badge--fk {
+  background-color: var(--color-relation-container);
+  color: var(--color-on-relation-container);
+}
+
+.chart-badge--unique {
+  background-color: var(--color-primary-container);
+  color: var(--color-on-primary-container);
+}
+
+.chart-table__footer {
+  border-top: 1px solid var(--color-outline-variant);
+  padding-top: m.spacer(2);
+  display: flex;
+  flex-direction: column;
+  gap: m.spacer(1);
+}
+
+.chart-table__index,
+.chart-table__notes {
+  @include m.type(label);
+}

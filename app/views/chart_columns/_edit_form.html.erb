@@ -1,0 +1,14 @@
+<%# locals: area:, chart:, table:, column: %>
+<div class="modal__header"><h2>Edit <%= column.name %></h2></div>
+
+<%= form_with url: area_chart_chart_column_path(area, chart, column), method: :patch, class: "modal__body stack" do %>
+  <%= render "chart_columns/fields", column: column, table: table %>
+
+  <div class="modal__footer">
+    <%= button_to "Delete", area_chart_chart_column_path(area, chart, column), method: :delete,
+          data: { turbo_confirm: "Delete column \"#{column.name}\"?" }, class: "btn btn--danger",
+          form: { class: "kanban-column__delete-form", style: "margin-right: auto;" } %>
+    <button type="button" class="btn btn--text" data-action="click->modal#close">Cancel</button>
+    <%= submit_tag "Save", class: "btn btn--filled" %>
+  </div>
+<% end %>

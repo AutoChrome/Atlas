@@ -1,0 +1,152 @@
+<% content_for :title, @tutorial.title %>
+
+<% can_edit = policy(@tutorial).update? %>
+
+<div class="stack container">
+  <%= render "shared/breadcrumbs", area: @area, page: @tutorial %>
+
+  <div class="cluster" style="justify-content: space-between; align-items: flex-start;">
+    <div>
+      <h1 class="cluster"><%= record_icon(@tutorial, fallback: "route", fallback_style: :fa) %> <%= @tutorial.title %></h1>
+      <% if current_user && @tutorial.public? %>
+        <span class="badge badge--success">Public — visible without signing in</span>
+      <% end %>
+    </div>
+
+    <div class="cluster">
+      <%= render "shared/share_button", url: area_tutorial_url(@area, @tutorial) %>
+      <% if current_user %>
+        <% if can_edit %>
+          <%= link_to "Edit", edit_area_tutorial_path(@area, @tutorial), class: "btn btn--outlined" %>
+        <% end %>
+        <% if policy(@tutorial).destroy? %>
+          <%= button_to "Delete", area_tutorial_path(@area, @tutorial), method: :delete,
+                data: { turbo_confirm: "Delete this tutorial and everything in it?" }, class: "btn btn--danger" %>
+        <% end %>
+      <% end %>
+    </div>
+  </div>
+
+  <% if @steps.any? %>
+    <section class="tutorial-viewer" data-controller="tutorial"
+              data-tutorial-signed-in-value="<%= current_user.present? %>"
+              data-tutorial-storage-key-value="tutorial_<%= @tutorial.id %>"
+              data-tutorial-response-url-value="<%= area_tutorial_task_responses_path(@area, @tutorial) %>"
+              data-tutorial-progress-url-value="<%= area_tutorial_progress_path(@area, @tutorial) %>"
+              <% if @linear %>data-tutorial-total-steps-value="<%= @total_steps %>"<% end %>>
+
+      <div class="tutorial-overview-screen stack" data-tutorial-target="overview">
+        <% if @tutorial.description.present? %>
+          <div class="trix-content"><%= @tutorial.description %></div>
+        <% end %>
+
+        <h3>What's covered</h3>
+        <ol class="tutorial-overview__steps stack">
+          <% @steps.each do |step| %>
+            <li>
+              <strong><%= step.title %></strong>
+              <% if step.tutorial_tasks.any? %>
+                <ul>
+                  <% step.tutorial_tasks.ordered.each do |task| %>
+                    <li><%= task.description %></li>
+                  <% end %>
+                </ul>
+              <% end %>
+            </li>
+          <% end %>
+        </ol>
+
+        <div class="cluster">
+          <button type="button" class="btn btn--filled" data-action="click->tutorial#start">Start</button>
+          <button type="button" class="btn btn--text" data-action="click->tutorial#resetProgress">Reset progress</button>
+        </div>
+      </div>
+
+      <div class="tutorial-viewer__progress" data-tutorial-target="progressSection" hidden>
+        <div class="cluster" style="justify-content: space-between;">
+          <div class="tutorial-viewer__progress-bar" style="flex: 1;">
+            <div class="tutorial-viewer__progress-fill" data-tutorial-target="progressFill"></div>
+          </div>
+          <button type="button" class="btn btn--text btn--sm" data-action="click->tutorial#resetProgress">Reset progress</button>
+        </div>
+        <p class="text-muted" data-tutorial-target="progressLabel"></p>
+      </div>
+
+      <% @steps.each do |step| %>
+        <div class="tutorial-step" data-tutorial-target="step" data-step-id="<%= step.id %>"
+             data-default-next-step-id="<%= step.default_next_step&.id %>" hidden>
+          <h3><%= step.title %></h3>
+
+          <div class="trix-content"><%= step.content %></div>
+
+          <% if step.attachments.attached? %>
+            <div class="stack">
+              <% step.attachments.each do |attachment| %>
+                <div class="card cluster" style="justify-content: space-between;">
+                  <span><%= attachment.filename %></span>
+                  <%= link_to "Download", rails_blob_path(attachment, disposition: "attachment"), class: "btn btn--text btn--sm" %>
+                </div>
+              <% end %>
+            </div>
+          <% end %>
+
+          <% if step.tutorial_tasks.any? %>
+            <div class="tutorial-step__tasks stack" style="gap: 8px;">
+              <% step.tutorial_tasks.ordered.each do |task| %>
+                <% response = @responses[task.id] %>
+                <div class="tutorial-task cluster" style="justify-content: space-between; align-items: flex-start;" data-task-id="<%= task.id %>"
+                     data-next-step-if-accepted-id="<%= task.next_step_if_accepted_id %>"
+                     data-next-step-if-rejected-id="<%= task.next_step_if_rejected_id %>">
+                  <div>
+                    <span><%= task.description %></span>
+                    <% if task.hint.present? %>
+                      <p class="text-muted tutorial-task__hint"><%= task.hint %></p>
+                    <% end %>
+                  </div>
+                  <div class="cluster" style="gap: 4px;">
+                    <button type="button" class="btn btn--icon btn--sm tutorial-task__accept <%= "is-active" if response&.accepted == true %>"
+                            data-tutorial-target="acceptButton" data-task-id="<%= task.id %>"
+                            data-action="click->tutorial#accept" data-tutorial-task-id-param="<%= task.id %>"
+                            aria-label="Accept">
+                      <%= fa_icon "check" %>
+                    </button>
+                    <button type="button" class="btn btn--icon btn--sm tutorial-task__reject <%= "is-active" if response&.accepted == false %>"
+                            data-tutorial-target="rejectButton" data-task-id="<%= task.id %>"
+                            data-action="click->tutorial#reject" data-tutorial-task-id-param="<%= task.id %>"
+                            aria-label="Reject">
+                      <%= fa_icon "xmark" %>
+                    </button>
+                  </div>
+                </div>
+              <% end %>
+            </div>
+          <% end %>
+
+          <div class="tutorial-step__nav cluster" style="justify-content: space-between;">
+            <button type="button" class="btn btn--text" data-action="click->tutorial#goToPrevious">
+              <%= fa_icon "arrow-left" %> Previous
+            </button>
+            <button type="button" class="btn btn--filled" data-action="click->tutorial#continue">
+              <%= step.default_next_step ? "Next" : "Finish" %>
+            </button>
+          </div>
+        </div>
+      <% end %>
+
+      <div class="tutorial-step" data-tutorial-target="finished" hidden>
+        <h3>You're done!</h3>
+        <p class="text-muted">You've reached the end of this path.</p>
+      </div>
+
+      <% if can_edit %>
+        <%= render "manage_steps", area: @area, tutorial: @tutorial, target: true %>
+      <% end %>
+    </section>
+  <% else %>
+    <p class="text-muted">No steps yet<%= ". Add one below to build this tutorial out." if can_edit %></p>
+
+    <% if can_edit %>
+      <%= render "manage_steps", area: @area, tutorial: @tutorial, target: false %>
+    <% end %>
+  <% end %>
+</div>

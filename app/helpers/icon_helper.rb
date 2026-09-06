@@ -19,9 +19,15 @@ module IconHelper
     tag.i class: [ "fa-solid", "fa-#{name}", "icon-fa", css_class ].compact.join(" "), aria: { hidden: "true" }
   end
 
-  # An Area/Page's own chosen icon (see Iconable), falling back to one of
-  # our default SVGs when it hasn't set one.
-  def record_icon(record, fallback:, css_class: nil)
-    record.icon.present? ? fa_icon(record.icon, css_class: css_class) : icon(fallback, css_class: css_class)
+  # A record's own chosen icon (see Iconable), falling back to a default
+  # when it hasn't set one. The default is one of our own hand-drawn SVGs
+  # by default (`fallback_style: :svg`, matching Area/Page's folder/page
+  # glyphs) — pass `fallback_style: :fa` for a plain Font Awesome name
+  # instead, for types (Chart, Tutorial) that don't have a bespoke SVG of
+  # their own and just want a sensible FA icon as the un-set default.
+  def record_icon(record, fallback:, css_class: nil, fallback_style: :svg)
+    return fa_icon(record.icon, css_class: css_class) if record.icon.present?
+
+    fallback_style == :fa ? fa_icon(fallback, css_class: css_class) : icon(fallback, css_class: css_class)
   end
 end
