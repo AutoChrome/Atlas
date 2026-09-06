@@ -84,6 +84,20 @@ jobs:
       #     - 6379:6379
       #   options: --health-cmd "redis-cli ping" --health-interval 10s --health-timeout 5s --health-retries 5
 
+      # Backs search (searchkick) — Area/Page/Chart/Tutorial all reindex on
+      # save, so without this every test that creates one of those fails
+      # with a connection-refused to the default localhost:9200 instead of
+      # exercising the model logic being tested.
+      opensearch:
+        image: opensearchproject/opensearch:2
+        env:
+          discovery.type: single-node
+          plugins.security.disabled: "true"
+          OPENSEARCH_JAVA_OPTS: "-Xms512m -Xmx512m"
+        ports:
+          - 9200:9200
+        options: --health-cmd="curl -sf http://localhost:9200/_cluster/health || exit 1" --health-interval=10s --health-timeout=5s --health-retries=20
+
     steps:
       - name: Install packages
         run: sudo apt-get update && sudo apt-get install --no-install-recommends -y libpq-dev libvips
@@ -102,6 +116,7 @@ jobs:
           DATABASE_URL: postgres://postgres:postgres@localhost:5432
           # RAILS_MASTER_KEY: ${{ secrets.RAILS_MASTER_KEY }}
           # REDIS_URL: redis://localhost:6379/0
+          OPENSEARCH_URL: http://localhost:9200
           # Test-only values, not real secrets — Webhook#secret (encrypts
           # :secret) needs these configured or fixture loading and any test
           # touching a Webhook raises a missing-encryption-key error.
@@ -129,6 +144,17 @@ jobs:
       #     - 6379:6379
       #   options: --health-cmd "redis-cli ping" --health-interval 10s --health-timeout 5s --health-retries 5
 
+      # See the "test" job above — searchkick reindexes on save.
+      opensearch:
+        image: opensearchproject/opensearch:2
+        env:
+          discovery.type: single-node
+          plugins.security.disabled: "true"
+          OPENSEARCH_JAVA_OPTS: "-Xms512m -Xmx512m"
+        ports:
+          - 9200:9200
+        options: --health-cmd="curl -sf http://localhost:9200/_cluster/health || exit 1" --health-interval=10s --health-timeout=5s --health-retries=20
+
     steps:
       - name: Install packages
         run: sudo apt-get update && sudo apt-get install --no-install-recommends -y libpq-dev libvips
@@ -147,6 +173,7 @@ jobs:
           DATABASE_URL: postgres://postgres:postgres@localhost:5432
           # RAILS_MASTER_KEY: ${{ secrets.RAILS_MASTER_KEY }}
           # REDIS_URL: redis://localhost:6379/0
+          OPENSEARCH_URL: http://localhost:9200
           # Test-only values, not real secrets — see the "test" job above.
           AR_ENCRYPTION_PRIMARY_KEY: WW1AeDRUf17rSVsMlZsKs8blTOqTIYk4
           AR_ENCRYPTION_DETERMINISTIC_KEY: MMfkqhmh775hoEtddlYArzqcr92CsD50
