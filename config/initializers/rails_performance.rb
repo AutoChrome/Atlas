@@ -1,4 +1,16 @@
-if defined?(RailsPerformance)
+# Skipped entirely in test — it's a Redis-backed request-performance monitor
+# with nothing to do with correctness, and connecting eagerly here would
+# make every controller/integration test require a real Redis (CI's test
+# job doesn't run one, matching Sidekiq's own :test queue adapter override
+# in config/environments/test.rb — nothing in test should need Redis at all).
+#
+# The gem defaults RailsPerformance.enabled to true at load time (before
+# this initializer even runs), independent of whether .setup below ever
+# executes — its middleware-insertion Railtie checks that module-level flag
+# directly, so it has to be set explicitly rather than just skipping .setup.
+if Rails.env.test?
+  RailsPerformance.enabled = false if defined?(RailsPerformance)
+elsif defined?(RailsPerformance)
   RailsPerformance.setup do |config|
     config.redis = Redis.new(url: ENV["REDIS_URL"].presence || "redis://redis:6379/0")
 
