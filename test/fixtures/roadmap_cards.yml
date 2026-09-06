@@ -1,0 +1,15 @@
+# Read about fixtures at https://api.rubyonrails.org/classes/ActiveRecord/FixtureSet.html
+
+one:
+  roadmap_section: one
+  title: Card One
+  description: MyText
+  estimated_release_on: 2026-12-25
+  position: 1
+
+two:
+  roadmap_section: two
+  title: Card Two
+  description: MyText
+  estimated_release_on: 2026-12-25
+  position: 1

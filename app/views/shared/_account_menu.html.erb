@@ -17,6 +17,7 @@
       <% if current_user.admin? %>
         <%= link_to "Manage users", admin_users_path, class: "dropdown__item" %>
         <%= link_to "Webhooks", admin_webhooks_path, class: "dropdown__item" %>
+        <%= link_to "Basecamp integration", admin_integrations_basecamp_path, class: "dropdown__item" %>
         <%= link_to "Audit log", admin_audits_path, class: "dropdown__item" %>
       <% end %>
       <div class="dropdown__divider"></div>

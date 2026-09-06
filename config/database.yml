@@ -88,11 +88,16 @@ test:
 # for a full overview on how database connection configuration can be specified.
 #
 production:
+  # No username/password override here — inherit from `default` above,
+  # same as development/test, so this reads DATABASE_USERNAME/
+  # DATABASE_PASSWORD like every other part of this app does (.env,
+  # docker-compose.yml, docker-compose.prod.yml). Rails' own generated
+  # template points this at a differently-named APP_DATABASE_PASSWORD var
+  # that nothing else here ever sets — a real deploy would otherwise fail
+  # to authenticate against Postgres.
   primary: &primary_production
     <<: *default
     database: documentation_production
-    username: <%= ENV.fetch("DATABASE_USERNAME", "app") %>
-    password: <%= ENV["APP_DATABASE_PASSWORD"] %>
   cache:
     <<: *primary_production
     database: documentation_production_cache

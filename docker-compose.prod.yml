@@ -1,0 +1,134 @@
+# Production compose file — a standalone counterpart to docker-compose.yml,
+# not an override layered on top of it (Compose's list-merge rules make
+# overriding things like the dev bind-mount more fragile than just keeping
+# the two files separate and readable on their own).
+#
+# Differences from the dev file: builds from the real `Dockerfile` (not
+# Dockerfile.dev) with no source bind-mount — a deploy rebuilds the image
+# with the new code baked in, it doesn't live-mount it; db/redis/opensearch
+# don't publish ports to the host, only the internal network needs them;
+# Caddy gets a real SITE_ADDRESS (no "localhost" fallback), so its
+# automatic-HTTPS actually provisions a real certificate.
+#
+# Asset precompilation happens automatically at image build time (see
+# Dockerfile — `assets:precompile` runs there already), and database
+# migrations happen automatically on every web container start (see
+# bin/docker-entrypoint — `db:prepare` runs before the server boots). The
+# deploy workflow (.github/workflows/deploy.yml) also runs both explicitly
+# for clear, visible pass/fail in the Actions log — the entrypoint's own
+# migration-on-boot is a safety net, not the only place it happens.
+name: atlas
+
+services:
+  db:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${DATABASE_USERNAME:-postgres}
+      POSTGRES_PASSWORD: ${DATABASE_PASSWORD:?DATABASE_PASSWORD must be set in production}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${DATABASE_USERNAME:-postgres}"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  redis:
+    image: redis:7-alpine
+    restart: unless-stopped
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  opensearch:
+    image: opensearchproject/opensearch:2
+    restart: unless-stopped
+    environment:
+      discovery.type: single-node
+      plugins.security.disabled: "true"
+      OPENSEARCH_JAVA_OPTS: "-Xms512m -Xmx512m"
+      OPENSEARCH_INITIAL_ADMIN_PASSWORD: ${OPENSEARCH_ADMIN_PASSWORD:?OPENSEARCH_ADMIN_PASSWORD must be set in production}
+    volumes:
+      - opensearch_data:/usr/share/opensearch/data
+    healthcheck:
+      test: ["CMD-SHELL", "curl -sf http://localhost:9200/_cluster/health || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 20
+
+  web:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: atlas:latest
+    restart: unless-stopped
+    env_file:
+      - .env
+    environment:
+      DATABASE_HOST: db
+      DATABASE_PORT: 5432
+      REDIS_URL: redis://redis:6379/0
+      OPENSEARCH_URL: http://opensearch:9200
+    depends_on:
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      opensearch:
+        condition: service_healthy
+    volumes:
+      - storage_data:/rails/storage
+
+  # Runs ActiveJob jobs (webhook deliveries, account-setup emails, ...) via
+  # Sidekiq. Same image as `web`; only the command differs.
+  worker:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: atlas:latest
+    restart: unless-stopped
+    command: bundle exec sidekiq
+    env_file:
+      - .env
+    environment:
+      DATABASE_HOST: db
+      DATABASE_PORT: 5432
+      REDIS_URL: redis://redis:6379/0
+      OPENSEARCH_URL: http://opensearch:9200
+    depends_on:
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      opensearch:
+        condition: service_healthy
+    volumes:
+      - storage_data:/rails/storage
+
+  caddy:
+    image: caddy:2-alpine
+    restart: unless-stopped
+    depends_on:
+      - web
+    environment:
+      SITE_ADDRESS: ${SITE_ADDRESS:?SITE_ADDRESS must be your real domain in production, e.g. docs.example.com}
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile
+      - caddy_data:/data
+      - caddy_config:/config
+
+volumes:
+  postgres_data:
+  redis_data:
+  opensearch_data:
+  storage_data:
+  caddy_data:
+  caddy_config:

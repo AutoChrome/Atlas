@@ -35,6 +35,16 @@ Rails.application.routes.draw do
     member { post :publish }
   end
 
+  resources :projects, param: :slug do
+    resources :roadmap_sections, path: "sections", only: %i[create update destroy] do
+      collection { patch :reorder }
+    end
+
+    resources :roadmap_cards, path: "cards", only: %i[create update destroy] do
+      collection { patch :move }
+    end
+  end
+
   admin_only = lambda do |request|
     Session.find_by(id: request.cookie_jar.signed[:session_id])&.user&.admin?
   end
@@ -51,6 +61,18 @@ Rails.application.routes.draw do
       collection { get :docs }
       member { post :regenerate_secret }
     end
+
+    namespace :integrations do
+      get "basecamp", to: "basecamp#show"
+    end
+  end
+
+  # Inbound — Basecamp posts to this when a Message is created, no session
+  # or CSRF token involved. :token is the shared secret from
+  # BASECAMP_WEBHOOK_TOKEN (see Integrations::BasecampController); Basecamp
+  # doesn't sign its webhooks, so the URL itself is what's kept secret.
+  namespace :integrations do
+    post "basecamp/webhook/:token", to: "basecamp#webhook", as: :basecamp_webhook
   end
 
   constraints admin_only do

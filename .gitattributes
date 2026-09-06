@@ -6,10 +6,11 @@ db/schema.rb linguist-generated
 # Mark any vendored files as having been vendored.
 vendor/* linguist-vendored
 
-# bin/* scripts are invoked directly (via their #! shebang) inside Linux
-# containers — a CRLF line ending breaks that (`env: 'ruby\r': No such file
-# or directory`) even though the script still "looks" fine on Windows.
+# bin/* and scripts/* are invoked directly (via their #! shebang) inside
+# Linux containers — a CRLF line ending breaks that (`env: 'ruby\r': No such
+# file or directory`) even though the script still "looks" fine on Windows.
 # Force LF regardless of platform or a contributor's core.autocrlf setting.
 bin/* text eol=lf
+scripts/* text eol=lf
 config/credentials/*.yml.enc diff=rails_credentials
 config/credentials.yml.enc diff=rails_credentials

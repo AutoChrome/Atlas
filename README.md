@@ -28,13 +28,26 @@ log.
 ## Getting started
 
 ```bash
+./scripts/setup.sh
+```
+
+Interactive first-time setup: asks the things that actually need a decision
+(local disk or S3 storage, an existing Rails master key if you have one,
+whether to wire up the optional Basecamp integration now), generates
+whatever secrets it can generate for you, writes `.env`, then builds the
+Docker images and prepares the database. Safe to re-run later — an existing
+`.env` is never overwritten without asking first.
+
+Prefer doing it by hand? Skip the script and:
+
+```bash
 cp .env.example .env
 ```
 
 Fill in `RAILS_MASTER_KEY` in `.env` with the contents of `config/master.key`
 (generated locally, not committed — ask whoever generated it, or delete it
-and run `bin/rails credentials:edit` inside the web container to make a new
-one).
+and let `scripts/setup.sh` generate a new one, or run
+`bin/rails credentials:edit` inside the web container yourself).
 
 ```bash
 docker compose up -d
@@ -188,6 +201,68 @@ page and summarized on the webhooks index.
 Full payload shape, headers, and signature-verification code samples live at
 `/admin/webhooks/docs` in the running app.
 
+### Basecamp → Announcements
+
+A Basecamp project can be configured to post its new message-board posts into Atlas as draft
+announcements, via an inbound webhook (`Integrations::BasecampController`) rather than the
+outbound one above. Setup, the webhook URL to paste into Basecamp, and what ends up in the draft
+are all documented at **Account menu → Basecamp integration** (admin-only) — it needs
+`BASECAMP_WEBHOOK_TOKEN` set in the environment first, since Basecamp doesn't sign its webhook
+payloads and that token is what stands in for verification instead.
+
+## Production deployment (CI/CD)
+
+Pushing to `main` — including a merge — runs the full CI suite (`.github/workflows/ci.yml`:
+security scans, lint, tests, system tests) and, only if every one of those passes, a `deploy` job
+builds the production image, runs database migrations, and restarts the app with the new code.
+Asset compilation isn't a separate step: it happens as part of the image build itself (see the
+`Dockerfile`, which runs `assets:precompile` while building), so a broken asset build fails the
+build step directly rather than a later one. A pull request only ever runs the checks — `deploy`
+is gated to `push` events on `main` specifically, and won't run at all if any earlier job failed.
+
+Deploying like this — rather than to a cloud host — means the workflow has to run *on* your actual
+production server, since that's what has to end up with new containers running. That's what a
+**self-hosted runner** is: instead of GitHub spinning up a throwaway VM, your own server registers
+itself with GitHub and picks up jobs targeted at it — here, that's every `deploy` job, via
+`runs-on: [self-hosted, production]`.
+
+### One-time server setup
+
+Needed once, before the first deploy can succeed:
+
+1. **Install Docker + the Compose plugin** on the server, if it isn't already there — see
+   [Docker's install docs](https://docs.docker.com/engine/install/). Confirm with `docker compose version`.
+2. **Register the runner.** In this repo on GitHub: **Settings → Actions → Runners → New
+   self-hosted runner**, choose the server's OS/architecture, and follow the commands GitHub shows
+   you (download, extract, then `./config.sh --url ... --token ...`). When `config.sh` asks for
+   labels, add `production` (the workflow targets `self-hosted` *and* `production` together, so a
+   runner registered without that label won't pick up the `deploy` job).
+3. **Run it as a service**, not a foreground terminal session, so it survives reboots and keeps
+   listening after you disconnect:
+   ```bash
+   sudo ./svc.sh install
+   sudo ./svc.sh start
+   ```
+4. **Give the runner's user Docker access** — add it to the `docker` group (`sudo usermod -aG
+   docker <runner-user>`) so the deploy steps can actually run `docker compose` without `sudo`.
+5. **Create `.env` on the server**, in the same directory the runner checks this repo out into
+   (typically `_work/<repo>/<repo>` under wherever you installed the runner). Copy
+   `.env.example`, fill in real production values, and set `RAILS_ENV=production`. This file is
+   gitignored and the checkout step is deliberately configured not to clean it, so it persists
+   across every deploy — the pipeline never generates or overwrites it. `docker-compose.prod.yml`
+   fails loudly and immediately (before touching anything) if `DATABASE_PASSWORD`,
+   `OPENSEARCH_ADMIN_PASSWORD`, or `SITE_ADDRESS` are missing from it.
+
+From here, every push to `main` that passes CI deploys itself — no further manual steps.
+
+### What's actually different from the dev setup
+
+`docker-compose.prod.yml` is a separate, standalone file (not an override layered on the dev
+`docker-compose.yml`) — `web`/`worker` build from the real `Dockerfile` instead of
+`Dockerfile.dev`, with no source bind-mount (a deploy rebuilds the image with the new code baked
+in, it doesn't live-mount it the way local dev does), and `db`/`redis`/`opensearch` don't publish
+any ports to the host — only the app containers on the same Docker network can reach them.
+
 ## Notes / things to know
 
 - The theme-detection inline script (in both layouts, sets `data-theme`
@@ -198,10 +273,9 @@ Full payload shape, headers, and signature-verification code samples live at
   container start, so a fresh `docker compose up` always has an up-to-date
   schema.
 - The `Dockerfile` in the repo root (not `Dockerfile.dev`) is Rails' default
-  Kamal/production build — untouched, for when you're ready to deploy
-  somewhere other than this docker-compose setup. It doesn't currently
-  provision Redis/OpenSearch — add those wherever you deploy, and point
-  `REDIS_URL` / `OPENSEARCH_URL` at them.
+  Kamal-style production build, used by `docker-compose.prod.yml` — see
+  "Production deployment" above. It's unrelated to Kamal itself; nothing
+  here uses `bin/kamal`.
 - Webhook URLs are admin-only configuration, validated only for a well-formed
   `http(s)://` scheme+host — there's no private-IP/metadata-endpoint
   blocklist. That's an accepted trust boundary (same model as configuring a

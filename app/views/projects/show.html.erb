@@ -1,0 +1,73 @@
+<% content_for :title, @project.name %>
+
+<% can_manage_layout = policy(RoadmapSection.new).create? %>
+<% can_move_cards = policy(RoadmapCard.new).move? %>
+<% board_controllers = [ (can_manage_layout ? "roadmap-sections" : nil), (can_move_cards ? "roadmap-cards" : nil) ].compact %>
+
+<div class="stack">
+  <p class="text-muted"><%= link_to "← Back to projects", projects_path %></p>
+
+  <div class="cluster" style="justify-content: space-between; align-items: flex-start;">
+    <div>
+      <h1><%= @project.name %></h1>
+      <% if @project.description.present? %>
+        <p class="text-muted mt-1"><%= @project.description %></p>
+      <% end %>
+    </div>
+
+    <div class="cluster">
+      <% if policy(@project).update? %>
+        <%= link_to "Edit project", edit_project_path(@project), class: "btn btn--outlined" %>
+      <% end %>
+      <% if policy(@project).destroy? %>
+        <%= button_to "Delete", project_path(@project), method: :delete,
+              data: { turbo_confirm: "Delete this project? All sections and cards will be removed too." },
+              class: "btn btn--danger" %>
+      <% end %>
+    </div>
+  </div>
+
+  <div class="stack"
+       data-controller="<%= board_controllers.join(" ") %>"
+       <% if can_manage_layout %>data-roadmap-sections-url-value="<%= reorder_project_roadmap_sections_path(@project) %>"<% end %>
+       <% if can_move_cards %>data-roadmap-cards-move-url-value="<%= move_project_roadmap_cards_path(@project) %>"<% end %>>
+    <% if can_manage_layout %>
+      <div class="cluster" style="justify-content: flex-end;">
+        <button type="button" class="btn btn--outlined btn--sm" data-roadmap-sections-target="toggleButton"
+                data-action="roadmap-sections#toggle" aria-pressed="false" title="Reorder sections">
+          <%= fa_icon "arrows-up-down" %> Edit layout
+        </button>
+
+        <div data-controller="modal">
+          <button type="button" class="btn btn--filled btn--sm" data-action="click->modal#open">
+            <%= fa_icon "plus" %> Add section
+          </button>
+          <dialog class="modal" data-modal-target="dialog" data-action="click->modal#closeOnBackdrop">
+            <div class="modal__header"><h2>New section</h2></div>
+            <%= form_with url: project_roadmap_sections_path(@project), class: "modal__body stack" do %>
+              <div class="field">
+                <%= label_tag "new_section_name", "Section name", class: "field__label" %>
+                <%= text_field_tag "roadmap_section[name]", nil, id: "new_section_name", class: "input", required: true %>
+              </div>
+              <div class="modal__footer">
+                <button type="button" class="btn btn--text" data-action="click->modal#close">Cancel</button>
+                <%= submit_tag "Add section", class: "btn btn--filled" %>
+              </div>
+            <% end %>
+          </dialog>
+        </div>
+      </div>
+    <% end %>
+
+    <% if @roadmap_sections.any? %>
+      <div class="kanban-board" data-roadmap-sections-target="list">
+        <% @roadmap_sections.each do |section| %>
+          <%= render "roadmap_sections/section", project: @project, section: section,
+                can_manage_layout: can_manage_layout, can_move_cards: can_move_cards %>
+        <% end %>
+      </div>
+    <% else %>
+      <p class="text-muted">No sections yet<%= ". Add the first one to start mapping this project out." if can_manage_layout %></p>
+    <% end %>
+  </div>
+</div>

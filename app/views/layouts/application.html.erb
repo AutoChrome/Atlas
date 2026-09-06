@@ -67,6 +67,10 @@
               <%= fa_icon "bullhorn", css_class: "nav-tree__icon" %>
               Announcements
             <% end %>
+            <%= link_to projects_path, class: "nav-tree__link" do %>
+              <%= fa_icon "map", css_class: "nav-tree__icon" %>
+              Roadmaps
+            <% end %>
           <% end %>
           <%= render "shared/area_nav" %>
         </nav>

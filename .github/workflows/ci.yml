@@ -160,3 +160,44 @@ jobs:
           name: screenshots
           path: ${{ github.workspace }}/tmp/screenshots
           if-no-files-found: ignore
+
+  # Runs only after every check above has passed, and only for a real push
+  # to main (never for a pull request) — see README's "Production
+  # deployment (CI/CD)" section for how the self-hosted runner this targets
+  # gets set up, and what has to already be sitting on that server (a
+  # filled-in .env, Docker + the Compose plugin) before the first deploy
+  # can succeed.
+  deploy:
+    needs: [scan_ruby, scan_js, lint, test, system-test]
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    runs-on: [self-hosted, production]
+    concurrency:
+      group: production-deploy
+      cancel-in-progress: false
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v6
+        with:
+          # .env lives untracked in this same directory, filled in by hand
+          # once on the server — the default `clean: true` would otherwise
+          # delete it before every single deploy.
+          clean: false
+
+      # Also precompiles assets: the Dockerfile runs `assets:precompile` as
+      # part of the image build itself (see Dockerfile), so there's no
+      # separate step for that below — it either happens here, as part of
+      # this build, or the build fails and nothing after this step runs.
+      - name: Build the production images
+        run: docker compose -f docker-compose.prod.yml build web worker
+
+      # db:prepare, not db:migrate — creates the database(s) too, so this
+      # works identically for the very first deploy and every one after.
+      - name: Run database migrations
+        run: docker compose -f docker-compose.prod.yml run --rm web bin/rails db:prepare
+
+      - name: Deploy the new images
+        run: docker compose -f docker-compose.prod.yml up -d --remove-orphans
+
+      - name: Remove now-unused images
+        run: docker image prune -f

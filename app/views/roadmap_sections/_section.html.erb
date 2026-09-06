@@ -1,0 +1,77 @@
+<div class="kanban-column"
+     <% if can_manage_layout %>
+       data-roadmap-sections-target="column" data-section-id="<%= section.id %>"
+       data-action="dragstart->roadmap-sections#dragStart dragover->roadmap-sections#dragOver drop->roadmap-sections#drop dragend->roadmap-sections#dragEnd"
+     <% end %>>
+  <div class="kanban-column__header">
+    <% if can_manage_layout %>
+      <span class="kanban-column__drag-handle"><%= fa_icon "grip-vertical" %></span>
+    <% end %>
+
+    <h3 class="kanban-column__title"><%= section.name %></h3>
+
+    <% if can_manage_layout %>
+      <div data-controller="modal">
+        <button type="button" class="btn btn--icon btn--sm" data-action="click->modal#open" aria-label="Rename section">
+          <%= fa_icon "pen" %>
+        </button>
+        <dialog class="modal" data-modal-target="dialog" data-action="click->modal#closeOnBackdrop">
+          <div class="modal__header"><h2>Rename section</h2></div>
+          <%= form_with url: project_roadmap_section_path(project, section), method: :patch, class: "modal__body stack" do %>
+            <div class="field">
+              <%= label_tag "section_name_#{section.id}", "Section name", class: "field__label" %>
+              <%= text_field_tag "roadmap_section[name]", section.name, id: "section_name_#{section.id}", class: "input", required: true %>
+            </div>
+            <div class="modal__footer">
+              <button type="button" class="btn btn--text" data-action="click->modal#close">Cancel</button>
+              <%= submit_tag "Save", class: "btn btn--filled" %>
+            </div>
+          <% end %>
+        </dialog>
+      </div>
+
+      <%= button_to project_roadmap_section_path(project, section), method: :delete,
+            data: { turbo_confirm: "Delete \"#{section.name}\"? Its cards will be removed too." },
+            class: "btn btn--icon btn--sm", form: { class: "kanban-column__delete-form" }, aria: { label: "Delete section" } do %>
+        <%= fa_icon "trash" %>
+      <% end %>
+    <% end %>
+  </div>
+
+  <div class="kanban-column__cards" data-roadmap-cards-target="list" data-section-id="<%= section.id %>"
+       <% if can_move_cards %>data-action="dragover->roadmap-cards#dragOverList drop->roadmap-cards#drop"<% end %>>
+    <% section.roadmap_cards.ordered.each do |card| %>
+      <%= render "roadmap_cards/card", project: project, card: card, can_move_cards: can_move_cards %>
+    <% end %>
+  </div>
+
+  <% if can_move_cards %>
+    <div data-controller="modal">
+      <button type="button" class="btn btn--text btn--sm" data-action="click->modal#open">
+        <%= fa_icon "plus" %> Add card
+      </button>
+      <dialog class="modal" data-modal-target="dialog" data-action="click->modal#closeOnBackdrop">
+        <div class="modal__header"><h2>New card</h2></div>
+        <%= form_with url: project_roadmap_cards_path(project), class: "modal__body stack" do %>
+          <%= hidden_field_tag "roadmap_card[roadmap_section_id]", section.id %>
+          <div class="field">
+            <%= label_tag "new_card_title_#{section.id}", "Title", class: "field__label" %>
+            <%= text_field_tag "roadmap_card[title]", nil, id: "new_card_title_#{section.id}", class: "input", required: true %>
+          </div>
+          <div class="field">
+            <%= label_tag "new_card_description_#{section.id}", "Description", class: "field__label" %>
+            <%= text_area_tag "roadmap_card[description]", nil, id: "new_card_description_#{section.id}", class: "textarea", rows: 3 %>
+          </div>
+          <div class="field">
+            <%= label_tag "new_card_release_#{section.id}", "Estimated release", class: "field__label" %>
+            <%= date_field_tag "roadmap_card[estimated_release_on]", nil, id: "new_card_release_#{section.id}", class: "input" %>
+          </div>
+          <div class="modal__footer">
+            <button type="button" class="btn btn--text" data-action="click->modal#close">Cancel</button>
+            <%= submit_tag "Add card", class: "btn btn--filled" %>
+          </div>
+        <% end %>
+      </dialog>
+    </div>
+  <% end %>
+</div>

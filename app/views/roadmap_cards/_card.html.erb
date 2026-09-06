@@ -1,0 +1,54 @@
+<div class="kanban-card"
+     <% if can_move_cards %>
+       draggable="true" data-roadmap-cards-target="card" data-card-id="<%= card.id %>"
+       data-action="dragstart->roadmap-cards#dragStart dragover->roadmap-cards#dragOver dragend->roadmap-cards#dragEnd"
+     <% end %>>
+  <% if can_move_cards %>
+    <span class="kanban-card__drag-handle"><%= fa_icon "grip-vertical" %></span>
+  <% end %>
+
+  <div class="kanban-card__body" data-controller="modal">
+    <button type="button" class="kanban-card__title-btn" data-action="click->modal#open"><%= card.title %></button>
+
+    <% if card.estimated_release_on %>
+      <span class="badge badge--primary"><%= card.estimated_release_on.strftime("%b %-d, %Y") %></span>
+    <% end %>
+
+    <dialog class="modal" data-modal-target="dialog" data-action="click->modal#closeOnBackdrop">
+      <div class="modal__header"><h2><%= card.title %></h2></div>
+
+      <div class="modal__body stack">
+        <% unless can_move_cards %>
+          <% if card.description.present? %>
+            <p><%= simple_format(card.description) %></p>
+          <% end %>
+          <% if card.estimated_release_on %>
+            <p class="text-muted">Estimated release: <%= card.estimated_release_on.strftime("%B %-d, %Y") %></p>
+          <% end %>
+        <% else %>
+          <%= form_with model: card, url: project_roadmap_card_path(project, card), method: :patch, class: "stack" do |f| %>
+            <div class="field">
+              <%= f.label :title, class: "field__label" %>
+              <%= f.text_field :title, class: "input", required: true %>
+            </div>
+            <div class="field">
+              <%= f.label :description, class: "field__label" %>
+              <%= f.text_area :description, class: "textarea", rows: 4 %>
+            </div>
+            <div class="field">
+              <%= f.label :estimated_release_on, "Estimated release", class: "field__label" %>
+              <%= f.date_field :estimated_release_on, class: "input" %>
+            </div>
+            <div class="modal__footer">
+              <%= button_to "Delete", project_roadmap_card_path(project, card), method: :delete,
+                    data: { turbo_confirm: "Delete this card?" }, class: "btn btn--danger",
+                    form: { class: "kanban-column__delete-form", style: "margin-right: auto;" } %>
+              <button type="button" class="btn btn--text" data-action="click->modal#close">Cancel</button>
+              <%= f.submit "Save", class: "btn btn--filled" %>
+            </div>
+          <% end %>
+        <% end %>
+      </div>
+    </dialog>
+  </div>
+</div>

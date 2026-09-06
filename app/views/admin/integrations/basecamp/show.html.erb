@@ -1,0 +1,64 @@
+<% content_for :title, "Basecamp integration" %>
+
+<div class="stack container--wide">
+  <div>
+    <h1>Basecamp integration</h1>
+    <p class="text-muted">
+      Turns a new post on a Basecamp message board into a draft announcement here — nothing
+      publishes or gets sent to a platform automatically, someone still reviews and hits Publish
+      from the announcement's page, same as any other announcement.
+    </p>
+  </div>
+
+  <% if @token.blank? %>
+    <div class="card card--outlined" style="border-color: var(--color-error);">
+      <p class="field__error">
+        <code class="font-mono">BASECAMP_WEBHOOK_TOKEN</code> isn't set, so this integration can't
+        work yet. Generate one (any long random string — <code class="font-mono">SecureRandom.hex(32)</code>
+        works) and set it in the environment Atlas runs in, then reload this page.
+      </p>
+    </div>
+  <% else %>
+    <section class="docs-section stack">
+      <h2>Webhook URL</h2>
+      <p>Paste this into a Basecamp project's webhook settings — see below for exactly where.</p>
+      <pre class="code-block" style="word-break: break-all; white-space: pre-wrap;"><%= @webhook_url %></pre>
+      <p class="field__hint">
+        The token in this URL is what stands in for verification — Basecamp doesn't sign its
+        webhook payloads the way Atlas's own outbound webhooks do (see the
+        <%= link_to "webhook integration guide", docs_admin_webhooks_path %>). Keep this URL as
+        private as a password; anyone with it can create draft announcements here. To rotate it,
+        change <code class="font-mono">BASECAMP_WEBHOOK_TOKEN</code> and update every Basecamp
+        project using the old URL.
+      </p>
+    </section>
+
+    <section class="docs-section stack">
+      <h2>Setup, in Basecamp</h2>
+      <ol style="display: flex; flex-direction: column; gap: 12px; padding-left: 20px;">
+        <li>Open the Basecamp project you want posts from, then <strong>⚙️ → Webhooks</strong> (project settings).</li>
+        <li>Click <strong>Add a new webhook</strong>.</li>
+        <li>Paste the URL above into <strong>Payload URL</strong>.</li>
+        <li>Under <strong>Active for</strong>, choose <strong>Only these events</strong> and check <strong>Message</strong> — no other event type is used, so leave the rest unchecked.</li>
+        <li>Save. Basecamp sends a test ping right away; a real one arrives whenever someone posts a new message on that project's message board.</li>
+      </ol>
+      <p class="field__hint">Repeat for every Basecamp project that should feed announcements into Atlas — the same URL works for all of them.</p>
+    </section>
+
+    <section class="docs-section stack">
+      <h2>What ends up in the draft</h2>
+      <ul class="stack" style="gap: 8px;">
+        <li><strong>Title:</strong> the Basecamp post's subject line.</li>
+        <li><strong>Content:</strong> the post's body, with a line appended noting which Basecamp project and person it came from and a link back to the original post.</li>
+        <li><strong>Dates:</strong> starts today, ends one month out — Basecamp posts don't carry a date range, so these are just the same defaults as creating an announcement by hand; edit them before publishing if they don't fit.</li>
+        <li><strong>Author:</strong> left blank — there's no Atlas account to attribute it to, so the Basecamp poster's name only appears in the content line above, not as this announcement's author.</li>
+      </ul>
+      <p class="field__hint">
+        Only a <strong>new</strong> message being posted creates a draft. Edits, comments, and
+        everything else Basecamp can notify about are ignored — editing the post afterwards in
+        Basecamp doesn't update the Atlas draft, since by then a person may have already changed
+        it here too.
+      </p>
+    </section>
+  <% end %>
+</div>
