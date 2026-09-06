@@ -33,10 +33,22 @@
   }
 }
 
+// Brass, not ink — --color-primary reads as a pale, washed-out halo against
+// the dark theme's near-black surfaces (looks like a stray highlight, not a
+// deliberate mark). Brass is already the one accent this identity spends on
+// "the active thing" elsewhere (the sidebar tick, the Publish button), so a
+// keyboard focus ring earns the same treatment instead of standing out as
+// an inconsistent, seemingly-accidental outline.
+//
+// A brass-filled button (.btn--gilt) needs real breathing room here too — a
+// tight offset lets the ring touch the pill's own rounded edge, and brass
+// next to brass reads as a blurry double edge rather than a distinct ring.
+// A wider gap keeps the ring floating on the page/card background instead,
+// where it stays crisp regardless of what color the button itself is.
 @mixin focus-ring {
   &:focus-visible {
-    outline: 2px solid var(--color-primary);
-    outline-offset: 2px;
+    outline: 2px solid var(--color-secondary);
+    outline-offset: 3px;
   }
 }
 

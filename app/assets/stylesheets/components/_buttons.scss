@@ -2,6 +2,14 @@
 @use "../abstracts/mixins" as m;
 
 .btn {
+  // .btn is applied to <a>, <button>, and <input type="submit"> alike
+  // (link_to, button_to, submit_tag) — the latter two carry a native
+  // browser border/bevel that isn't part of any variant below, so without
+  // resetting it here it shows through as a stray light edge on every
+  // button that doesn't define its own border (.btn--filled, .btn--gilt,
+  // .btn--danger, .btn--tonal), visible at rest, not just on focus.
+  appearance: none;
+  border: none;
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -12,6 +20,7 @@
   @include m.type(label);
   letter-spacing: 0.02em;
   white-space: nowrap;
+  cursor: pointer;
   transition: background-color v.$duration-short v.$easing-standard,
     box-shadow v.$duration-short v.$easing-standard,
     color v.$duration-short v.$easing-standard;

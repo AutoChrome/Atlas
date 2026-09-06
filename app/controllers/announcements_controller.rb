@@ -8,10 +8,11 @@ class AnnouncementsController < ApplicationController
 
   def show
     authorize @announcement
+    @webhooks = Webhook.active.ordered if policy(@announcement).publish?
   end
 
   def new
-    @announcement = Announcement.new
+    @announcement = Announcement.new(starts_on: Date.current, ends_on: Date.current + 1.month)
     authorize @announcement
   end
 
@@ -49,9 +50,12 @@ class AnnouncementsController < ApplicationController
 
   def publish
     authorize @announcement, :publish?
+    webhook_ids = Array(params[:webhook_ids]).map(&:to_i)
     already_published = @announcement.published?
-    @announcement.publish!
-    notice = already_published ? "Re-sent to all active webhooks." : "Published — sending to all active webhooks now."
+    @announcement.publish!(webhook_ids: webhook_ids, by: current_user)
+
+    count = "#{webhook_ids.size} platform#{"s" unless webhook_ids.size == 1}"
+    notice = already_published ? "Re-sent to #{count}." : "Published — sending to #{count} now."
     redirect_to @announcement, notice: notice
   end
 

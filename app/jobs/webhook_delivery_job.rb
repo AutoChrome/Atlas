@@ -1,7 +1,9 @@
-# Fans a published Announcement out to every active Webhook. Runs in the
-# background (Sidekiq) so publishing doesn't block on a slow or unreachable
-# receiver, and each delivery is independent — one webhook failing doesn't
-# stop the others, or get retried into a pile of duplicate deliveries.
+# Fans a published Announcement out to a set of Webhooks — whichever ones
+# were checked on the publish/re-publish form (Announcement#publish!).
+# Runs in the background (Sidekiq) so publishing doesn't block on a slow or
+# unreachable receiver, and each delivery is independent — one webhook
+# failing doesn't stop the others, or get retried into a pile of duplicate
+# deliveries.
 #
 # We don't validate or care what the receiving endpoint does with the
 # payload — this only cares that the HTTP request was made and records
@@ -13,13 +15,18 @@ class WebhookDeliveryJob < ApplicationJob
   OPEN_TIMEOUT = 5
   READ_TIMEOUT = 10
 
-  def perform(announcement_id)
+  # webhook_ids nil (rather than []) means "every active webhook" — only
+  # relevant for a job already serialized and waiting when this argument
+  # didn't exist yet; every new call passes an explicit array, even an
+  # empty one for "publish, but don't deliver anywhere this time".
+  def perform(announcement_id, webhook_ids = nil)
     announcement = Announcement.find_by(id: announcement_id)
     return unless announcement
 
+    webhooks = webhook_ids.nil? ? Webhook.active : Webhook.active.where(id: webhook_ids)
     body = payload_json(announcement)
 
-    Webhook.active.find_each do |webhook|
+    webhooks.find_each do |webhook|
       deliver(webhook, announcement, body)
     end
   end

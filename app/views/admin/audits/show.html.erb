@@ -8,6 +8,10 @@
     <%= @audit.user.respond_to?(:name) ? @audit.user.name : (@audit.user || "System") %>
   </p>
 
+  <% if @audit.comment.present? %>
+    <p><%= @audit.comment %></p>
+  <% end %>
+
   <table class="data-table">
     <thead>
       <tr>

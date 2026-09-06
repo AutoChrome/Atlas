@@ -29,11 +29,30 @@ class Announcement < ApplicationRecord
   end
 
   # Safe to call more than once — publishing again (e.g. after fixing a
-  # typo) re-sends to every active webhook, but published_at only gets set
-  # the first time.
-  def publish!
-    update!(published_at: Time.current) unless published?
-    WebhookDeliveryJob.perform_later(id)
+  # typo) re-sends to whichever webhooks are selected this time, but
+  # published_at only gets set the first time. webhook_ids lets the caller
+  # choose which active webhooks actually get this delivery (see
+  # AnnouncementsController#publish, where that's a checkbox list) rather
+  # than always fanning out to every one of them.
+  #
+  # The `audited` gem only records a change when a tracked attribute
+  # actually changes, so a first publish gets an audit entry for free
+  # (published_at goes from nil to a real time) but a re-publish wouldn't —
+  # nothing on the record itself changes. This writes an explicit audit
+  # entry either way, so "who (re-)published this, and to which webhooks"
+  # is always in the trail, not just the first time.
+  def publish!(webhook_ids: Webhook.active.pluck(:id), by: nil)
+    first_publish = !published?
+    update!(published_at: Time.current) if first_publish
+    WebhookDeliveryJob.perform_later(id, webhook_ids)
+
+    Audited::Audit.create!(
+      auditable: self,
+      action: first_publish ? "publish" : "republish",
+      user: by,
+      audited_changes: { "webhook_ids" => webhook_ids },
+      comment: "#{first_publish ? "Published" : "Re-published"} to #{webhook_ids.size} webhook#{"s" unless webhook_ids.size == 1}."
+    )
   end
 
   private

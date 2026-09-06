@@ -24,11 +24,11 @@
           <% if deliveries.any? %>
             <% deliveries.each do |delivery| %>
               <span class="badge <%= delivery.success? ? "badge--success" : "badge--error" %>">
-                <%= delivery.webhook&.description || "(deleted webhook)" %>
+                <%= delivery.webhook&.description || "(deleted platform)" %>
               </span>
             <% end %>
           <% else %>
-            <span class="text-muted">Not sent to any webhook yet.</span>
+            <span class="text-muted">Not sent to any platform yet.</span>
           <% end %>
         </div>
       <% end %>

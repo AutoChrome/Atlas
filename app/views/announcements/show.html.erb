@@ -9,7 +9,7 @@
       <% if @announcement.published? %>
         <span class="badge badge--success">Published <%= time_ago_in_words(@announcement.published_at) %> ago</span>
       <% else %>
-        <span class="badge badge--warning">Draft — not yet sent to any webhook</span>
+        <span class="badge badge--warning">Draft — not yet sent to any platform</span>
       <% end %>
       <p class="text-muted mt-1">
         <% if @announcement.starts_on == @announcement.ends_on %>
@@ -21,11 +21,6 @@
     </div>
 
     <div class="cluster">
-      <% if policy(@announcement).publish? %>
-        <%= button_to (@announcement.published? ? "Re-send to webhooks" : "Publish"), publish_announcement_path(@announcement),
-              method: :post, class: "btn btn--gilt",
-              data: { turbo_confirm: @announcement.published? ? "Re-send this announcement to all active webhooks?" : nil } %>
-      <% end %>
       <% if policy(@announcement).update? %>
         <%= link_to "Edit", edit_announcement_path(@announcement), class: "btn btn--outlined" %>
       <% end %>
@@ -44,6 +39,34 @@
     Created <%= time_ago_in_words(@announcement.created_at) %> ago<%= " by #{@announcement.user.name}" if @announcement.user %>.
   </p>
 
+  <% if policy(@announcement).publish? %>
+    <section class="card card--outlined stack" style="max-width: 480px;">
+      <h2><%= @announcement.published? ? "Re-send to platforms" : "Publish" %></h2>
+
+      <%= form_with url: publish_announcement_path(@announcement), method: :post, class: "stack" do %>
+        <% if @webhooks.any? %>
+          <div class="field">
+            <span class="field__label">Send to</span>
+            <div class="stack" style="gap: 8px;">
+              <% @webhooks.each do |webhook| %>
+                <div class="checkbox">
+                  <%= check_box_tag "webhook_ids[]", webhook.id, true, id: "webhook_#{webhook.id}" %>
+                  <%= label_tag "webhook_#{webhook.id}", webhook.description %>
+                </div>
+              <% end %>
+            </div>
+          </div>
+        <% else %>
+          <p class="text-muted">
+            No active platforms configured — this will mark the announcement as published, but nothing will be delivered anywhere.
+          </p>
+        <% end %>
+
+        <%= submit_tag @announcement.published? ? "Re-send to platforms" : "Publish", class: "btn btn--gilt" %>
+      <% end %>
+    </section>
+  <% end %>
+
   <% if @announcement.webhook_deliveries.any? %>
     <section class="stack">
       <h2>Delivery log</h2>
@@ -51,7 +74,7 @@
         <thead>
           <tr>
             <th>When</th>
-            <th>Webhook</th>
+            <th>Platform</th>
             <th>Result</th>
           </tr>
         </thead>
@@ -59,7 +82,7 @@
           <% @announcement.webhook_deliveries.ordered.each do |delivery| %>
             <tr>
               <td><%= delivery.created_at.to_fs(:long) %></td>
-              <td><%= delivery.webhook&.description || "(deleted webhook)" %></td>
+              <td><%= delivery.webhook&.description || "(deleted platform)" %></td>
               <td>
                 <% if delivery.success? %>
                   <span class="badge badge--success"><%= delivery.status_code %> OK</span>
