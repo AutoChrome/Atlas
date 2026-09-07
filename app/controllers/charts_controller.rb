@@ -6,7 +6,20 @@ class ChartsController < ApplicationController
 
   def show
     authorize @chart
-    @chart_tables = @chart.chart_tables.includes(chart_columns: %i[outgoing_relationships incoming_relationships], chart_indices: [])
+    # The nested to/from_chart_column: :chart_table preloads are for each
+    # column's own "referenced by / references" panel; outgoing/incoming
+    # on their own would be enough for the table-level list below.
+    @chart_tables = @chart.chart_tables.includes(
+      chart_columns: [
+        { outgoing_relationships: { to_chart_column: :chart_table } },
+        { incoming_relationships: { from_chart_column: :chart_table } }
+      ],
+      chart_indices: []
+    )
+    # Loaded once here rather than separately by the toolbox's global list
+    # and (per table) the "what does this connect to" panel — both views
+    # filter/iterate this same preloaded set, no extra queries.
+    @relationships = @chart.chart_relationships.includes(from_chart_column: :chart_table, to_chart_column: :chart_table)
   end
 
   def new

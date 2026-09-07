@@ -24,9 +24,7 @@ Rails.application.routes.draw do
       collection { get :new_import; post :import }
       member { post :preview_import; post :apply_import }
 
-      resources :chart_tables, path: "tables", only: %i[create update destroy] do
-        member { patch :reposition }
-      end
+      resources :chart_tables, path: "tables", only: %i[create update destroy]
       resources :chart_columns, path: "columns", only: %i[create update destroy]
       resources :chart_relationships, path: "relationships", only: %i[create update destroy]
       resources :chart_indices, path: "indexes", only: %i[create update destroy]

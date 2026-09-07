@@ -23,6 +23,10 @@ dialog.modal {
   }
 }
 
+dialog.modal--wide {
+  width: min(640px, calc(100vw - #{m.spacer(6)}));
+}
+
 .modal__body {
   padding: m.spacer(5);
 }

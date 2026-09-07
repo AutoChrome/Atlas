@@ -63,7 +63,8 @@ module SchemaRbParser
         end
       end
 
-      { tables: tables, table_order: table_order, pending_fks: pending_fks, warnings: warnings }
+      inference = ForeignKeyInference.infer(tables: tables, pending_fks: pending_fks)
+      { tables: tables, table_order: table_order, pending_fks: inference[:pending_fks], warnings: warnings + inference[:warnings] }
     end
 
     def import(ruby:, area:, title:)
@@ -93,8 +94,29 @@ module SchemaRbParser
         return nil if options[:id] == false
 
         name = options[:primary_key].is_a?(String) ? options[:primary_key] : "id"
-        type = options[:id].is_a?(String) ? options[:id] : "bigint"
-        { name: name, data_type: type, nullable: false, primary_key: true, unique: false, default_value: nil }
+        id_option = options[:id]
+        type =
+          case id_option
+          when Hash then id_option[:type] || "bigint"
+          when String then id_option
+          else "bigint"
+          end
+
+        # An explicit `default: nil` on the id column (either nested in the
+        # `id: { ... }` hash, or as a plain create_table option alongside
+        # `id: :integer`) means this table's key isn't auto-generated — the
+        # standard sign of a table built to share another table's primary
+        # key (a 1:1 "annotation"/extension table) rather than being an
+        # independently-keyed entity. See ForeignKeyInference for why that
+        # matters: a same-named primary key elsewhere should never resolve
+        # to this kind of table.
+        manual_key = explicit_nil_default?(id_option) || explicit_nil_default?(options)
+
+        { name: name, data_type: type, nullable: false, primary_key: true, unique: false, default_value: nil, manual_key: manual_key }
+      end
+
+      def explicit_nil_default?(options)
+        options.is_a?(Hash) && options.key?(:default) && options[:default].nil?
       end
 
       def parse_column_line(match, table, pending_fks, table_name)
@@ -181,6 +203,7 @@ module SchemaRbParser
         when "true" then true
         when "false" then false
         when "nil" then nil
+        when /\A\{(.*)\}\z/m then parse_ruby_options($1)
         when /\A:(\w+)\z/ then $1
         else token
         end

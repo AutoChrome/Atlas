@@ -39,9 +39,9 @@ module ChartImportSync
     # even if some time has passed since the file was uploaded.
     def apply!(chart:, tables:, table_order:, pending_fks:)
       ActiveRecord::Base.transaction do
-        table_order.each_with_index do |name, index|
+        table_order.each do |name|
           table = chart.chart_tables.find { |t| t.name.casecmp?(name) } ||
-                  chart.chart_tables.create!(name: name, position_x: (index % 4) * 320, position_y: (index / 4) * 360)
+                  chart.chart_tables.create!(name: name)
 
           apply_columns!(table, tables[name][:columns])
           apply_indexes!(table, tables[name][:indexes])

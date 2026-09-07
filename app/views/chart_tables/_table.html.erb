@@ -1,29 +1,37 @@
-<%# locals: area:, chart:, table:, can_edit: %>
-<div class="chart-table" data-chart-canvas-target="table" data-chart-table-id="<%= table.id %>"
-     data-reposition-url="<%= reposition_area_chart_chart_table_path(area, chart, table) %>"
-     style="left: <%= table.position_x %>px; top: <%= table.position_y %>px;">
-  <div class="chart-table__header"<%= " data-action=\"pointerdown->chart-canvas#startDragTable\"".html_safe if can_edit %>>
-    <%= fa_icon "table", css_class: "chart-table__icon" %>
-    <span class="chart-table__name"><%= table.name %></span>
+<%# locals: area:, chart:, table:, can_edit:, relationships: (the chart's full, preloaded relationship set — filtered here to just the ones touching this table) %>
+<% table_relationships = relationships.select { |rel| rel.from_chart_table.id == table.id || rel.to_chart_table.id == table.id } %>
+<% related_table_ids = table_relationships.flat_map { |rel| [ rel.from_chart_table.id, rel.to_chart_table.id ] }.uniq - [ table.id ] %>
+<% search_text = ([ table.name ] + table.chart_columns.map(&:name)).join(" ").downcase %>
+<div class="chart-table" data-chart-table-id="<%= table.id %>" data-chart-search-target="table"
+     data-search-text="<%= search_text %>" data-related-table-ids="<%= related_table_ids.join(",") %>">
+  <div class="chart-table__header">
+    <div class="chart-table__header-top">
+      <%= fa_icon "table", css_class: "chart-table__icon" %>
 
-    <% if can_edit %>
-      <div class="cluster" style="gap: 2px;">
-        <div data-controller="modal">
-          <button type="button" class="btn btn--icon btn--sm" data-action="click->modal#open" aria-label="Add column">
-            <%= fa_icon "plus" %>
-          </button>
-          <dialog class="modal" data-modal-target="dialog" data-action="click->modal#closeOnBackdrop">
-            <%= render "chart_columns/new_form", area: area, chart: chart, table: table %>
-          </dialog>
+      <% if can_edit %>
+        <div class="cluster" style="gap: 2px;">
+          <div data-controller="modal">
+            <button type="button" class="btn btn--icon btn--sm" data-action="click->modal#open" aria-label="Add column">
+              <%= fa_icon "plus" %>
+            </button>
+            <dialog class="modal" data-modal-target="dialog" data-action="click->modal#closeOnBackdrop">
+              <%= render "chart_columns/new_form", area: area, chart: chart, table: table %>
+            </dialog>
+          </div>
+
+          <%= button_to area_chart_chart_table_path(area, chart, table), method: :delete,
+                data: { turbo_confirm: "Delete table \"#{table.name}\" and all its columns?" },
+                class: "btn btn--icon btn--sm", form: { class: "kanban-column__delete-form" }, aria: { label: "Delete table" } do %>
+            <%= fa_icon "trash" %>
+          <% end %>
         </div>
+      <% end %>
+    </div>
 
-        <%= button_to area_chart_chart_table_path(area, chart, table), method: :delete,
-              data: { turbo_confirm: "Delete table \"#{table.name}\" and all its columns?" },
-              class: "btn btn--icon btn--sm", form: { class: "kanban-column__delete-form" }, aria: { label: "Delete table" } do %>
-          <%= fa_icon "trash" %>
-        <% end %>
-      </div>
-    <% end %>
+    <%# safe_join + <wbr> so a long name wraps at its underscores first —
+        overflow-wrap: anywhere (see _chart_canvas.scss) is just the
+        fallback for the rare name with no underscore to break on at all. %>
+    <span class="chart-table__name"><%= safe_join(table.name.split("_"), "_".html_safe + tag.wbr) %></span>
   </div>
 
   <div class="chart-table__columns">
@@ -36,7 +44,7 @@
     <div class="chart-table__footer">
       <% table.chart_indices.each do |index| %>
         <div class="chart-table__index text-muted cluster" style="justify-content: space-between;">
-          <span><%= fa_icon "list" %> <%= index.name %> (<%= index.columns %>)<%= " · UNIQUE" if index.unique? %></span>
+          <span><%= fa_icon "list" %> <%= safe_join(index.name.split("_"), "_".html_safe + tag.wbr) %> (<%= index.columns %>)<%= " · UNIQUE" if index.unique? %></span>
           <% if can_edit %>
             <%= button_to area_chart_chart_index_path(area, chart, index), method: :delete,
                   data: { turbo_confirm: "Delete index \"#{index.name}\"?" }, class: "btn btn--icon btn--sm",
@@ -61,5 +69,26 @@
         <%= render "chart_indices/form", area: area, chart: chart, table: table %>
       </dialog>
     </div>
+  <% end %>
+
+  <% if table_relationships.any? %>
+    <details class="chart-table__relationships">
+      <summary>Relationships (<%= table_relationships.size %>)</summary>
+      <ul class="chart-table__relationships-list">
+        <% table_relationships.each do |rel| %>
+          <li>
+            <% if rel.from_chart_table.id == table.id %>
+              <strong><%= rel.from_chart_column.name %></strong>
+              <%= fa_icon "arrow-right" %>
+              <%= rel.to_chart_table.name %>.<strong><%= rel.to_chart_column.name %></strong>
+            <% else %>
+              <strong><%= rel.to_chart_column.name %></strong>
+              <%= fa_icon "arrow-left" %>
+              <%= rel.from_chart_table.name %>.<strong><%= rel.from_chart_column.name %></strong>
+            <% end %>
+          </li>
+        <% end %>
+      </ul>
+    </details>
   <% end %>
 </div>

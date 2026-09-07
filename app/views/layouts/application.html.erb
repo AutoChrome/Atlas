@@ -31,8 +31,9 @@
     <%= javascript_importmap_tags %>
   </head>
 
-  <body>
-    <div class="app-shell" data-controller="sidebar">
+  <body class="<%= content_for(:body_class) %>">
+    <div class="app-shell" data-controller="sidebar"
+         data-sidebar-start-closed-value="<%= content_for?(:sidebar_start_closed) %>">
       <header class="topbar">
         <button type="button" class="btn btn--icon topbar__sidebar-toggle" data-action="sidebar#toggle" aria-label="Toggle navigation">
           <%= icon :menu %>

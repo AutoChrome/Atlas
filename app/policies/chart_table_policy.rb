@@ -12,8 +12,4 @@ class ChartTablePolicy < ApplicationPolicy
   def destroy?
     user&.admin? || user&.member?
   end
-
-  def reposition?
-    update?
-  end
 end

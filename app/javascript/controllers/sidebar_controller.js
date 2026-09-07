@@ -7,10 +7,14 @@ import { Controller } from "@hotwired/stimulus"
 // viewport width.
 export default class extends Controller {
   static targets = ["panel", "scrim"]
+  static values = { startClosed: Boolean }
 
   connect() {
     this.desktopQuery = window.matchMedia("(min-width: 1200px)")
-    this.open = this.desktopQuery.matches
+    // A page can opt into starting collapsed even on desktop (e.g. a
+    // chart's full-screen canvas, where the site nav would otherwise eat
+    // into the one thing the page is for) — the toggle still opens it.
+    this.open = this.startClosedValue ? false : this.desktopQuery.matches
     this.desktopQuery.addEventListener("change", this.onBreakpointChange)
     this.render()
   }
@@ -30,7 +34,7 @@ export default class extends Controller {
   }
 
   onBreakpointChange = (event) => {
-    this.open = event.matches
+    this.open = this.startClosedValue ? false : event.matches
     this.render()
   }
 

@@ -29,6 +29,18 @@
     top: 64px;
     height: calc(100vh - 64px);
     box-shadow: none;
+
+    // Without this, "closed" only ever meant the off-canvas transform
+    // above — which slides the sidebar out of view but (being in normal
+    // flow here, not fixed like the mobile case) still reserves its full
+    // 280px in the layout. A page that starts closed even at desktop
+    // (chart_canvas.scss's fullscreen mode) needs that space back.
+    &:not(.is-open) {
+      width: 0;
+      padding: 0;
+      border-right: none;
+      overflow: hidden;
+    }
   }
 }
 

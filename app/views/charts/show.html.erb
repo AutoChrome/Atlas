@@ -1,22 +1,42 @@
 <% content_for :title, @chart.title %>
+<% content_for :body_class, "body--chart-fullscreen" %>
+<% content_for :sidebar_start_closed, true %>
 
 <% can_edit = policy(@chart).update? %>
 
-<div class="stack container">
-  <%= render "shared/breadcrumbs", area: @area, page: @chart %>
+<div class="chart-page" data-controller="chart-search">
+  <div class="chart-page__topleft">
+    <div class="chart-page__identity">
+      <%= link_to area_path(@area), class: "chart-page__identity-back", aria: { label: "Back to #{@area.name}" }, title: @area.name do %>
+        <%= fa_icon "arrow-left" %>
+      <% end %>
+      <%= record_icon(@chart, fallback: "diagram-project", fallback_style: :fa) %>
+      <span class="chart-page__identity-title"><%= @chart.title %></span>
+    </div>
 
-  <div class="cluster" style="justify-content: space-between; align-items: flex-start;">
-    <div>
-      <h1 class="cluster"><%= record_icon(@chart, fallback: "diagram-project", fallback_style: :fa) %> <%= @chart.title %></h1>
+    <% if @chart_tables.any? %>
+      <div class="chart-search">
+        <%= fa_icon "magnifying-glass", css_class: "chart-search__icon" %>
+        <input type="search" class="chart-search__input" placeholder="Search tables or columns…"
+               aria-label="Search tables or columns"
+               data-chart-search-target="input" data-action="input->chart-search#search">
+      </div>
+    <% end %>
+  </div>
+
+  <details class="chart-toolbox">
+    <summary class="chart-toolbox__toggle" aria-label="Chart actions">
+      <%= fa_icon "toolbox" %>
+    </summary>
+
+    <div class="chart-toolbox__panel stack">
       <% if @chart.description.present? %>
-        <p class="text-muted mt-1"><%= @chart.description %></p>
+        <p class="text-muted"><%= @chart.description %></p>
       <% end %>
       <% if current_user && @chart.public? %>
         <span class="badge badge--success">Public — visible without signing in</span>
       <% end %>
-    </div>
 
-    <div class="cluster">
       <%= render "shared/share_button", url: area_chart_url(@area, @chart) %>
       <% if current_user %>
         <% if can_edit %>
@@ -27,139 +47,138 @@
                 data: { turbo_confirm: "Delete this chart and everything on it?" }, class: "btn btn--danger" %>
         <% end %>
       <% end %>
-    </div>
-  </div>
 
-  <% if can_edit %>
-    <div class="cluster" style="justify-content: flex-end;">
-      <div data-controller="modal">
-        <button type="button" class="btn btn--outlined btn--sm" data-action="click->modal#open">
-          <%= fa_icon "diagram-project" %> Add relationship
-        </button>
-        <dialog class="modal" data-modal-target="dialog" data-action="click->modal#closeOnBackdrop">
-          <%= render "chart_relationships/form", area: @area, chart: @chart, chart_tables: @chart_tables %>
-        </dialog>
-      </div>
+      <% if can_edit %>
+        <hr class="chart-toolbox__divider">
 
-      <div data-controller="modal">
-        <button type="button" class="btn btn--filled btn--sm" data-action="click->modal#open">
-          <%= fa_icon "plus" %> Add table
-        </button>
-        <dialog class="modal" data-modal-target="dialog" data-action="click->modal#closeOnBackdrop">
-          <div class="modal__header"><h2>New table</h2></div>
-          <%= form_with url: area_chart_chart_tables_path(@area, @chart), class: "modal__body stack" do %>
-            <div class="field">
-              <%= label_tag "new_table_name", "Table name", class: "field__label" %>
-              <%= text_field_tag "chart_table[name]", nil, id: "new_table_name", class: "input", required: true %>
-            </div>
-            <div class="modal__footer">
-              <button type="button" class="btn btn--text" data-action="click->modal#close">Cancel</button>
-              <%= submit_tag "Add table", class: "btn btn--filled" %>
-            </div>
-          <% end %>
-        </dialog>
-      </div>
+        <% if @relationships.any? %>
+          <div data-controller="modal">
+            <button type="button" class="btn btn--outlined" data-action="click->modal#open">
+              <%= fa_icon "list" %> Relationships (<%= @relationships.size %>)
+            </button>
+            <dialog class="modal modal--wide" data-modal-target="dialog" data-action="click->modal#closeOnBackdrop">
+              <div class="modal__header"><h2>Relationships</h2></div>
+              <div class="modal__body stack" style="gap: 8px;">
+                <% @relationships.each do |rel| %>
+                  <div class="card cluster" style="justify-content: space-between;">
+                    <span>
+                      <strong><%= rel.from_chart_table.name %>.<%= rel.from_chart_column.name %></strong>
+                      &rarr;
+                      <strong><%= rel.to_chart_table.name %>.<%= rel.to_chart_column.name %></strong>
+                      <% if rel.on_delete.present? || rel.on_update.present? %>
+                        <span class="text-muted">
+                          (<%= [ rel.on_delete.presence && "ON DELETE #{rel.on_delete}", rel.on_update.presence && "ON UPDATE #{rel.on_update}" ].compact.join(", ") %>)
+                        </span>
+                      <% end %>
+                    </span>
 
-      <div data-controller="modal">
-        <button type="button" class="btn btn--outlined btn--sm" data-action="click->modal#open">
-          <%= fa_icon "upload" %> Update from file
-        </button>
-        <dialog class="modal" data-modal-target="dialog" data-action="click->modal#closeOnBackdrop">
-          <div class="modal__header"><h2>Update from file</h2></div>
-          <%= form_with url: preview_import_area_chart_path(@area, @chart), class: "modal__body stack", multipart: true do %>
-            <div class="field">
-              <%= label_tag "update_sql_file", "SQL file or schema.rb", class: "field__label" %>
-              <%= file_field_tag :sql_file, accept: ".sql,.rb", required: true, id: "update_sql_file" %>
-              <p class="field__hint">
-                You'll see exactly what would change before anything is saved. Matching is case-insensitive by
-                name; nothing already on the chart is ever deleted.
-              </p>
-            </div>
-            <div class="modal__footer">
-              <button type="button" class="btn btn--text" data-action="click->modal#close">Cancel</button>
-              <%= submit_tag "Review changes", class: "btn btn--filled" %>
-            </div>
-          <% end %>
-        </dialog>
-      </div>
-    </div>
-  <% end %>
-
-  <% if @chart_tables.any? %>
-    <div class="chart-canvas" data-controller="chart-canvas"
-         data-chart-canvas-relationships-url-value="<%= area_chart_chart_relationships_path(@area, @chart) %>">
-      <div class="chart-canvas__content" data-chart-canvas-target="content">
-        <svg class="chart-canvas__svg" data-chart-canvas-target="svg">
-          <% @chart_tables.each do |table| %>
-            <% table.chart_columns.each do |column| %>
-              <% column.outgoing_relationships.each do |rel| %>
-                <path class="chart-relationship" data-relationship-id="<%= rel.id %>"
-                      data-from-column-id="<%= rel.from_chart_column_id %>" data-to-column-id="<%= rel.to_chart_column_id %>"
-                      <% if can_edit %>
-                        data-delete-url="<%= area_chart_chart_relationship_path(@area, @chart, rel) %>"
-                        data-action="click->chart-canvas#deleteRelationship"
-                      <% end %>></path>
-              <% end %>
-            <% end %>
-          <% end %>
-        </svg>
-
-        <% @chart_tables.each do |table| %>
-          <%= render "chart_tables/table", area: @area, chart: @chart, table: table, can_edit: can_edit %>
-        <% end %>
-      </div>
-    </div>
-  <% else %>
-    <p class="text-muted">No tables yet<%= ". Add one, or import a schema from a SQL file." if can_edit %></p>
-  <% end %>
-
-  <% if can_edit && @chart.chart_relationships.any? %>
-    <section class="stack">
-      <h2>Relationships</h2>
-      <div class="stack" style="gap: 8px;">
-        <% @chart.chart_relationships.includes(from_chart_column: :chart_table, to_chart_column: :chart_table).each do |rel| %>
-          <div class="card cluster" style="justify-content: space-between;">
-            <span>
-              <strong><%= rel.from_chart_table.name %>.<%= rel.from_chart_column.name %></strong>
-              &rarr;
-              <strong><%= rel.to_chart_table.name %>.<%= rel.to_chart_column.name %></strong>
-              <% if rel.on_delete.present? || rel.on_update.present? %>
-                <span class="text-muted">
-                  (<%= [ rel.on_delete.presence && "ON DELETE #{rel.on_delete}", rel.on_update.presence && "ON UPDATE #{rel.on_update}" ].compact.join(", ") %>)
-                </span>
-              <% end %>
-            </span>
-
-            <div class="cluster" style="gap: 4px;" data-controller="modal">
-              <button type="button" class="btn btn--icon btn--sm" data-action="click->modal#open" aria-label="Edit relationship">
-                <%= fa_icon "pen" %>
-              </button>
-              <dialog class="modal" data-modal-target="dialog" data-action="click->modal#closeOnBackdrop">
-                <div class="modal__header"><h2>Edit relationship</h2></div>
-                <%= form_with url: area_chart_chart_relationship_path(@area, @chart, rel), method: :patch, class: "modal__body stack" do %>
-                  <div class="cluster" style="align-items: flex-start;">
-                    <div class="field" style="flex: 1;">
-                      <%= label_tag "rel_on_delete_#{rel.id}", "On delete", class: "field__label" %>
-                      <%= text_field_tag "chart_relationship[on_delete]", rel.on_delete, id: "rel_on_delete_#{rel.id}", class: "input" %>
+                    <div class="cluster" style="gap: 4px;" data-controller="modal">
+                      <button type="button" class="btn btn--icon btn--sm" data-action="click->modal#open" aria-label="Edit relationship">
+                        <%= fa_icon "pen" %>
+                      </button>
+                      <dialog class="modal" data-modal-target="dialog" data-action="click->modal#closeOnBackdrop">
+                        <div class="modal__header"><h2>Edit relationship</h2></div>
+                        <%= form_with url: area_chart_chart_relationship_path(@area, @chart, rel), method: :patch, class: "modal__body stack" do %>
+                          <div class="cluster" style="align-items: flex-start;">
+                            <div class="field" style="flex: 1;">
+                              <%= label_tag "rel_on_delete_#{rel.id}", "On delete", class: "field__label" %>
+                              <%= text_field_tag "chart_relationship[on_delete]", rel.on_delete, id: "rel_on_delete_#{rel.id}", class: "input" %>
+                            </div>
+                            <div class="field" style="flex: 1;">
+                              <%= label_tag "rel_on_update_#{rel.id}", "On update", class: "field__label" %>
+                              <%= text_field_tag "chart_relationship[on_update]", rel.on_update, id: "rel_on_update_#{rel.id}", class: "input" %>
+                            </div>
+                          </div>
+                          <div class="modal__footer">
+                            <%= button_to "Delete", area_chart_chart_relationship_path(@area, @chart, rel), method: :delete,
+                                  data: { turbo_confirm: "Delete this relationship?" }, class: "btn btn--danger",
+                                  form: { class: "kanban-column__delete-form", style: "margin-right: auto;" } %>
+                            <button type="button" class="btn btn--text" data-action="click->modal#close">Cancel</button>
+                            <%= submit_tag "Save", class: "btn btn--filled" %>
+                          </div>
+                        <% end %>
+                      </dialog>
                     </div>
-                    <div class="field" style="flex: 1;">
-                      <%= label_tag "rel_on_update_#{rel.id}", "On update", class: "field__label" %>
-                      <%= text_field_tag "chart_relationship[on_update]", rel.on_update, id: "rel_on_update_#{rel.id}", class: "input" %>
-                    </div>
-                  </div>
-                  <div class="modal__footer">
-                    <%= button_to "Delete", area_chart_chart_relationship_path(@area, @chart, rel), method: :delete,
-                          data: { turbo_confirm: "Delete this relationship?" }, class: "btn btn--danger",
-                          form: { class: "kanban-column__delete-form", style: "margin-right: auto;" } %>
-                    <button type="button" class="btn btn--text" data-action="click->modal#close">Cancel</button>
-                    <%= submit_tag "Save", class: "btn btn--filled" %>
                   </div>
                 <% end %>
-              </dialog>
-            </div>
+              </div>
+            </dialog>
           </div>
         <% end %>
+
+        <div data-controller="modal">
+          <button type="button" class="btn btn--outlined" data-action="click->modal#open">
+            <%= fa_icon "diagram-project" %> Add relationship
+          </button>
+          <dialog class="modal" data-modal-target="dialog" data-action="click->modal#closeOnBackdrop">
+            <%= render "chart_relationships/form", area: @area, chart: @chart, chart_tables: @chart_tables %>
+          </dialog>
+        </div>
+
+        <div data-controller="modal">
+          <button type="button" class="btn btn--filled" data-action="click->modal#open">
+            <%= fa_icon "plus" %> Add table
+          </button>
+          <dialog class="modal" data-modal-target="dialog" data-action="click->modal#closeOnBackdrop">
+            <div class="modal__header"><h2>New table</h2></div>
+            <%= form_with url: area_chart_chart_tables_path(@area, @chart), class: "modal__body stack" do %>
+              <div class="field">
+                <%= label_tag "new_table_name", "Table name", class: "field__label" %>
+                <%= text_field_tag "chart_table[name]", nil, id: "new_table_name", class: "input", required: true %>
+              </div>
+              <div class="modal__footer">
+                <button type="button" class="btn btn--text" data-action="click->modal#close">Cancel</button>
+                <%= submit_tag "Add table", class: "btn btn--filled" %>
+              </div>
+            <% end %>
+          </dialog>
+        </div>
+
+        <div data-controller="modal">
+          <button type="button" class="btn btn--outlined" data-action="click->modal#open">
+            <%= fa_icon "upload" %> Update from file
+          </button>
+          <dialog class="modal" data-modal-target="dialog" data-action="click->modal#closeOnBackdrop">
+            <div class="modal__header"><h2>Update from file</h2></div>
+            <%# data-turbo="false": this POST renders a brand-new page (the
+                diff review) with a plain 200, not a redirect — Turbo Drive
+                requires a form submission to either redirect on success or
+                return a 4xx/5xx to re-render in place, so a 200 with new
+                content raises "Form responses must redirect to another
+                location" and the submission silently goes nowhere. A real
+                full-page submission has no such requirement. %>
+            <%= form_with url: preview_import_area_chart_path(@area, @chart), class: "modal__body stack",
+                  multipart: true, data: { turbo: false } do %>
+              <div class="field">
+                <%= label_tag "update_sql_file", "SQL file or schema.rb", class: "field__label" %>
+                <%= file_field_tag :sql_file, accept: ".sql,.rb", required: true, id: "update_sql_file" %>
+                <p class="field__hint">
+                  You'll see exactly what would change before anything is saved. Matching is case-insensitive by
+                  name; nothing already on the chart is ever deleted.
+                </p>
+              </div>
+              <div class="modal__footer">
+                <button type="button" class="btn btn--text" data-action="click->modal#close">Cancel</button>
+                <%= submit_tag "Review changes", class: "btn btn--filled" %>
+              </div>
+            <% end %>
+          </dialog>
+        </div>
+      <% end %>
+    </div>
+  </details>
+
+  <% if @chart_tables.any? %>
+    <div class="chart-grid">
+      <div class="chart-grid__divider" data-chart-search-target="divider" hidden>
+        Also connected to your search
       </div>
-    </section>
+
+      <% @chart_tables.each do |table| %>
+        <%= render "chart_tables/table", area: @area, chart: @chart, table: table, can_edit: can_edit, relationships: @relationships %>
+      <% end %>
+    </div>
+  <% else %>
+    <p class="text-muted chart-page__empty">No tables yet<%= ". Add one from the toolbox, or import a schema from a SQL file." if can_edit %></p>
   <% end %>
 </div>

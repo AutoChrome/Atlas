@@ -8,7 +8,7 @@ class Chart < ApplicationRecord
   audited
 
   belongs_to :area
-  has_many :chart_tables, -> { order(:position_x, :position_y) }, dependent: :destroy, inverse_of: :chart
+  has_many :chart_tables, -> { order(:name) }, dependent: :destroy, inverse_of: :chart
   has_many :chart_relationships, dependent: :destroy, inverse_of: :chart
 
   searchkick word_start: [ :title, :description ]

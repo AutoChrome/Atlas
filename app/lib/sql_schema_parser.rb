@@ -21,8 +21,9 @@ module SqlSchemaParser
   NOT_CONSTRAINT_START_RE = /\A(?:PRIMARY\s+KEY\s*\(|FOREIGN\s+KEY\s*\(|UNIQUE\s+KEY\s+|UNIQUE\s+INDEX\s+|UNIQUE\s*\(|CONSTRAINT\s+|CHECK\s*\(|KEY\s+|INDEX\s+)/i
 
   # Splits a full dump into top-level statements/comma-separated items,
-  # tracking parenthesis nesting AND single-quoted string literals so
-  # `NUMERIC(10,2)` and `DEFAULT 'Smith, John'` don't get split apart.
+  # tracking parenthesis/brace nesting AND single-quoted string literals so
+  # `NUMERIC(10,2)`, `DEFAULT 'Smith, John'`, and a Ruby hash-literal option
+  # like `id: { type: :integer, unsigned: true }` don't get split apart.
   module StatementSplitter
     def self.statements(sql)
       split_on(strip_comments(sql), ";").map(&:strip).reject(&:empty?)
@@ -66,8 +67,8 @@ module SqlSchemaParser
 
         case char
         when quote then in_string = true; current << char
-        when "(" then depth += 1; current << char
-        when ")" then depth -= 1; current << char
+        when "(", "{" then depth += 1; current << char
+        when ")", "}" then depth -= 1; current << char
         when separator
           if depth.zero?
             result << current
@@ -142,7 +143,8 @@ module SqlSchemaParser
         end
       end
 
-      { tables: tables, table_order: table_order, pending_fks: pending_fks, warnings: warnings }
+      inference = ForeignKeyInference.infer(tables: tables, pending_fks: pending_fks)
+      { tables: tables, table_order: table_order, pending_fks: inference[:pending_fks], warnings: warnings + inference[:warnings] }
     end
 
     def import(sql:, area:, title:)

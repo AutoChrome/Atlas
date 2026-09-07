@@ -1,75 +1,254 @@
 @use "../abstracts/variables" as v;
 @use "../abstracts/mixins" as m;
 
-.chart-canvas {
-  overflow: auto;
-  border: 1px solid var(--color-outline-variant);
-  border-radius: v.$radius-sm;
-  background-color: var(--color-surface-container-lowest);
-  max-height: 70vh;
-}
+// The chart page is the one place in the app meant to feel like its own
+// full-screen application rather than a page in a document site — the
+// canvas is the point, so it gets the whole viewport below the topbar
+// instead of competing with it for space. The persistent site nav is still
+// one click away via the topbar's burger (see sidebar_controller.js's
+// startClosed value, set from charts/show.html.erb), not removed.
+body.body--chart-fullscreen {
+  overflow: hidden;
 
-.chart-canvas__content {
-  position: relative;
-  width: 3000px;
-  height: 2000px;
-}
+  .app-shell {
+    height: 100vh;
+  }
 
-.chart-canvas__svg {
-  position: absolute;
-  inset: 0;
-  width: 100%;
-  height: 100%;
-  pointer-events: none;
-  overflow: visible;
-}
+  .app-shell__body {
+    overflow: hidden;
+  }
 
-.chart-relationship {
-  fill: none;
-  stroke: var(--color-relation);
-  stroke-width: 2px;
-  pointer-events: stroke;
-  cursor: pointer;
-
-  &:hover {
-    stroke-width: 3px;
+  .app-shell__main {
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
   }
 }
 
-.chart-relationship--pending {
-  stroke-dasharray: 4 4;
-  pointer-events: none;
+.chart-page {
+  position: relative;
+  display: flex;
+  flex: 1;
+  min-height: 0;
+}
+
+.chart-page__empty {
+  padding: m.spacer(5);
+}
+
+// Both the identity pill and the search box float on top of the grid
+// rather than pushing it down a fixed header row — grouped in one
+// absolutely-positioned flex row so they sit side by side without either
+// needing to know the other's width up front.
+.chart-page__topleft {
+  position: absolute;
+  z-index: 5;
+  top: m.spacer(4);
+  left: m.spacer(4);
+  right: 60px; // stays clear of the toolbox toggle at every width
+  display: flex;
+  align-items: center;
+  gap: m.spacer(3);
+}
+
+// Kept to one compact pill (not a full card with breadcrumbs/description —
+// that's all one tap away in the toolbox) since anything bigger here risks
+// permanently blanking out whatever table happens to sit at that spot on
+// the grid underneath it.
+.chart-page__identity {
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  gap: m.spacer(2);
+  height: 44px;
+  max-width: min(280px, 40vw);
+  padding: 0 m.spacer(4) 0 m.spacer(2);
+  border-radius: v.$radius-full;
+  background-color: var(--color-surface-container-lowest);
+  border: 1px solid var(--color-outline-variant);
+  @include m.surface-elevation(2);
+}
+
+.chart-page__identity-back {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  flex-shrink: 0;
+  border-radius: v.$radius-full;
+  color: var(--color-on-surface-variant);
+
+  &:hover {
+    background-color: var(--color-surface-container-high);
+    color: var(--color-on-surface);
+  }
+}
+
+.chart-page__identity-title {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  @include m.type(title);
+}
+
+.chart-search {
+  flex: 1;
+  min-width: 0;
+  max-width: 320px;
+  display: flex;
+  align-items: center;
+  gap: m.spacer(2);
+  height: 44px;
+  padding: 0 m.spacer(4);
+  border-radius: v.$radius-full;
+  background-color: var(--color-surface-container-lowest);
+  border: 1px solid var(--color-outline-variant);
+  @include m.surface-elevation(2);
+}
+
+.chart-search__icon {
+  color: var(--color-on-surface-variant);
+  flex-shrink: 0;
+}
+
+.chart-search__input {
+  flex: 1;
+  min-width: 0;
+  border: none;
+  background: none;
+  color: var(--color-on-surface);
+  @include m.type(body);
+
+  &:focus {
+    outline: none;
+  }
+
+  &::-webkit-search-cancel-button {
+    cursor: pointer;
+  }
+}
+
+.chart-grid__divider {
+  grid-column: 1 / -1;
+  padding-top: m.spacer(3);
+  margin-top: m.spacer(2);
+  border-top: 1px dashed var(--color-outline-variant);
+  color: var(--color-on-surface-variant);
+  @include m.type(label);
+}
+
+.chart-toolbox {
+  position: absolute;
+  z-index: 5;
+  top: m.spacer(4);
+  right: m.spacer(4);
+
+  // The native marker (a triangle in most browsers) reads as a stray
+  // glyph on an icon-only toggle — this is a button, not a text disclosure.
+  summary::-webkit-details-marker {
+    display: none;
+  }
+
+  summary {
+    list-style: none;
+  }
+}
+
+.chart-toolbox__toggle {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 44px;
+  height: 44px;
+  border-radius: v.$radius-full;
+  background-color: var(--color-surface-container-high);
+  border: 1px solid var(--color-outline-variant);
+  color: var(--color-on-surface);
+  cursor: pointer;
+  @include m.surface-elevation(2);
+
+  &:hover {
+    background-color: var(--color-surface-container-highest);
+  }
+}
+
+.chart-toolbox__panel {
+  position: absolute;
+  top: calc(100% + #{m.spacer(2)});
+  right: 0;
+  width: min(320px, calc(100vw - #{m.spacer(8)}));
+  max-height: calc(100vh - 120px);
+  overflow-y: auto;
+  padding: m.spacer(4);
+  border-radius: v.$radius-sm;
+  background-color: var(--color-surface-container-high);
+  border: 1px solid var(--color-outline-variant);
+  @include m.surface-elevation(3);
+
+  .btn {
+    justify-content: flex-start;
+  }
+}
+
+.chart-toolbox__divider {
+  border: none;
+  border-top: 1px solid var(--color-outline-variant);
+  margin: m.spacer(1) 0;
+}
+
+// A plain, browser-laid-out grid — no more freeform x/y canvas (drag
+// positioning, an SVG line overlay, pointer-driven connection drawing).
+// grid-auto-rows sizing each row to its tallest card is exactly the
+// "well structured, no overlaps" behavior the old JS-side height estimate
+// was only ever approximating, for free and exactly right every time.
+.chart-grid {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  padding: 76px m.spacer(5) m.spacer(6);
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: m.spacer(4);
+  align-content: start;
+  background-color: var(--color-surface-container-lowest);
 }
 
 .chart-table {
-  position: absolute;
   display: flex;
   flex-direction: column;
   gap: m.spacer(2);
-  width: 260px;
   background-color: var(--color-surface-container-low);
   border: 1px solid var(--color-outline-variant);
   border-radius: v.$radius-sm;
   padding: m.spacer(3);
   @include m.surface-elevation(1);
 
-  &.is-dragging {
-    opacity: 0.6;
-    z-index: 10;
+  // Author-stylesheet `display: flex` above would otherwise always beat
+  // the browser's UA-stylesheet `[hidden] { display: none }` — author
+  // rules win over UA rules regardless of specificity — so the search
+  // controller's el.hidden = true would silently do nothing without this.
+  &[hidden] {
+    display: none;
   }
 }
 
+// Icon + actions on their own row, the (possibly long) name on a full-
+// width row below — squeezing the name into the same row as the action
+// buttons is what was pushing it toward overflowing in the first place.
 .chart-table__header {
   display: flex;
-  align-items: center;
+  flex-direction: column;
   gap: m.spacer(2);
-  cursor: grab;
   padding-bottom: m.spacer(2);
   border-bottom: 1px solid var(--color-outline-variant);
+}
 
-  &:active {
-    cursor: grabbing;
-  }
+.chart-table__header-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
 }
 
 .chart-table__icon {
@@ -78,8 +257,7 @@
 }
 
 .chart-table__name {
-  flex: 1;
-  min-width: 0;
+  overflow-wrap: anywhere;
   @include m.type(title);
 }
 
@@ -90,31 +268,48 @@
 }
 
 .chart-column {
-  display: flex;
-  align-items: center;
-  gap: m.spacer(2);
   padding: m.spacer(1) 0;
+
+  &:not(:last-child) {
+    border-bottom: 1px solid var(--color-outline-variant);
+  }
 }
 
-.chart-column__connector {
-  width: 10px;
-  height: 10px;
-  flex-shrink: 0;
-  border-radius: v.$radius-full;
-  background-color: var(--color-outline);
+.chart-column__row {
+  display: flex;
+  align-items: flex-start;
+  flex-wrap: wrap;
+  gap: m.spacer(2);
 }
 
-.chart-column__connector--interactive {
-  cursor: crosshair;
+.chart-column__relationships {
+  padding: m.spacer(1) 0 m.spacer(1) m.spacer(5);
 
-  &:hover {
-    background-color: var(--color-relation);
+  summary {
+    cursor: pointer;
+    color: var(--color-on-surface-variant);
+    @include m.type(label);
+  }
+}
+
+.chart-column__relationships-list {
+  list-style: none;
+  padding: m.spacer(1) 0 0;
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  @include m.type(label);
+  color: var(--color-on-surface-variant);
+
+  .icon-fa {
+    margin-right: 2px;
   }
 }
 
 .chart-column__name {
+  overflow-wrap: anywhere;
   @include m.type(body);
-  white-space: nowrap;
 }
 
 .chart-column__type {
@@ -171,5 +366,43 @@
 
 .chart-table__index,
 .chart-table__notes {
+  overflow-wrap: anywhere;
   @include m.type(label);
+}
+
+.chart-table__index {
+  // The index name lives in a plain <span> flex item alongside a delete
+  // button — flex items default to min-width: auto, which floors their
+  // shrink at the text's own unbroken width and defeats overflow-wrap
+  // above without this.
+  > span {
+    flex: 1;
+    min-width: 0;
+  }
+}
+
+.chart-table__relationships {
+  border-top: 1px solid var(--color-outline-variant);
+  padding-top: m.spacer(2);
+
+  summary {
+    cursor: pointer;
+    color: var(--color-on-surface-variant);
+    @include m.type(label);
+  }
+}
+
+.chart-table__relationships-list {
+  list-style: none;
+  padding: m.spacer(2) 0 0;
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: m.spacer(1);
+  @include m.type(label);
+
+  .icon-fa {
+    color: var(--color-on-surface-variant);
+    margin: 0 2px;
+  }
 }

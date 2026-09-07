@@ -3,17 +3,11 @@
 one:
   chart: one
   name: users
-  position_x: 0
-  position_y: 0
 
 two:
   chart: one
   name: posts
-  position_x: 320
-  position_y: 0
 
 other_chart_table:
   chart: two
   name: widgets
-  position_x: 0
-  position_y: 0
