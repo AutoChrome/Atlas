@@ -1,0 +1,15 @@
+# Read about fixtures at https://api.rubyonrails.org/classes/ActiveRecord/FixtureSet.html
+#
+# `data` is jsonb — written as a real YAML array/list here (not a JSON
+# string) so Rails' own fixture-to-jsonb serialization encodes it once,
+# rather than storing a string-that-happens-to-look-like-JSON.
+
+one:
+  data:
+    - - Name
+      - Role
+    - - Alice
+      - Engineer
+
+two:
+  data: []

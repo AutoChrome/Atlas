@@ -1,4 +1,4 @@
-<%# locals: table:, area:, chart:
+<%# locals: table:, area:, chart:, query:
     A read-only preview of a table found in a *different* chart (see
     ChartsController#elsewhere) — reuses the same classes as the real
     chart-table card for visual consistency, but deliberately has no edit
@@ -16,7 +16,7 @@
   <div class="chart-table__header">
     <div class="chart-table__header-top">
       <%= fa_icon "table", css_class: "chart-table__icon" %>
-      <%= link_to area_chart_path(area, chart), class: "chart-table__preview-source" do %>
+      <%= link_to area_chart_path(area, chart, q: query), class: "chart-table__preview-source" do %>
         <%= fa_icon "arrow-up-right-from-square" %> <%= area.name %> · <%= chart.title %>
       <% end %>
     </div>

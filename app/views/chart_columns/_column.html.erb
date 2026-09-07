@@ -1,5 +1,5 @@
 <%# locals: area:, chart:, table:, column:, can_edit: %>
-<div class="chart-column">
+<div class="chart-column" data-column-name="<%= column.name %>" data-primary-key="<%= column.primary_key? %>">
   <div class="chart-column__row">
     <span class="chart-column__name"><%= safe_join(column.name.split("_"), "_".html_safe + tag.wbr) %></span>
     <% if column.data_type.present? %>

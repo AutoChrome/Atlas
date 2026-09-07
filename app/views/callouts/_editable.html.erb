@@ -1,0 +1,21 @@
+<%# locals: callout:
+    The genuinely-editable version, shown in the dialog that opens when
+    you click a callout rendered inside Trix (see
+    rich_text_callout_controller.js). Delivered as an ordinary fetched
+    page fragment — not embedded in Trix's own attachment content — for
+    the same reason as content_tables/_editable.html.erb: contenteditable
+    only actually works here, not there. %>
+<div data-controller="callout" data-callout-url-value="<%= callout_path(callout) %>">
+  <div class="rich-text-callout__variant-picker" role="group" aria-label="Callout type">
+    <% Callout.variants.each_key do |variant| %>
+      <button type="button"
+              class="rich-text-callout__variant-button<%= " is-active" if callout.variant == variant %>"
+              data-variant="<%= variant %>" data-action="callout#setVariant">
+        <%= variant.capitalize %>
+      </button>
+    <% end %>
+  </div>
+
+  <div class="rich-text-callout__body-editor" contenteditable="true"
+       data-callout-target="body" data-action="input->callout#scheduleSave blur->callout#saveNow"><%= callout.body %></div>
+</div>

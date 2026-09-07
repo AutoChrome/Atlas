@@ -44,6 +44,20 @@ export default class extends Controller {
     // one's result overwrites the other's.
     this.lastRelatedCount = 0
     this.lastElsewhereTableCount = 0
+
+    // Every link this controller hands out to a cross-chart hint (see
+    // renderElsewhere and applyElsewhereColumnHints) carries the search
+    // term as ?q=... (see ChartsController#elsewhere_result) specifically
+    // so following it lands here with the SAME search already active —
+    // without this, arriving via that link showed a blank search box and
+    // none of the OTHER chart's own hints pointing back, which made a
+    // genuinely two-way relationship look like it only worked one way.
+    const query = new URLSearchParams(window.location.search).get("q")
+    if (query) {
+      this.inputTarget.value = query
+      this.beginFilter()
+      this.searchElsewhere()
+    }
   }
 
   disconnect() {
@@ -102,6 +116,7 @@ export default class extends Controller {
   renderElsewhere(results) {
     this.lastElsewhereResults = results
     this.insertElsewhereTables(results.map((result) => result.tables_html).join(""))
+    this.applyElsewhereColumnHints(results)
 
     if (!this.hasElsewhereTarget) return
 
@@ -144,6 +159,118 @@ export default class extends Controller {
     }
 
     this.updateDividerVisibility()
+  }
+
+  // A column here can share a name with a column in another chart with no
+  // local ChartRelationship to show it — either direction: a plain column
+  // here whose actual target (the primary key) lives in a different chart,
+  // OR a primary key here whose only pointer lives in a different chart
+  // (e.g. a foreign key with nothing to distinguish it locally). Rather
+  // than a separate block, this folds straight into the column's own real
+  // "Referenced (N)" disclosure (see chart_columns/_column.html.erb) —
+  // creating that disclosure from scratch for a column with no real
+  // relationships at all, or appending into the existing one alongside its
+  // real entries. Clears whatever a previous search injected first, exactly
+  // like insertElsewhereTables does for table previews, so an empty
+  // `results` array (a cleared/too-short query) removes them rather than
+  // leaving stale ones behind — including removing a disclosure this code
+  // created itself, once its last hint is gone.
+  applyElsewhereColumnHints(results) {
+    this.element.querySelectorAll("[data-elsewhere-relationship-hint]").forEach((li) => {
+      const details = li.closest(".chart-column__relationships")
+      li.remove()
+      if (!details) return
+      if (details.dataset.elsewhereCreated) {
+        details.remove()
+      } else {
+        this.updateDisclosureSummary(details, "Referenced")
+      }
+    })
+
+    // A table's own aggregate "Relationships (N)" list (chart_tables/_table)
+    // is a second, independent place the exact same hint needs to show up —
+    // it's the first thing a user checking "does anything reference this
+    // table" looks at, and only listing the hint on the individual column's
+    // own disclosure left it invisible there.
+    this.element.querySelectorAll("[data-elsewhere-table-relationship-hint]").forEach((li) => {
+      const details = li.closest(".chart-table__relationships")
+      li.remove()
+      if (!details) return
+      if (details.dataset.elsewhereCreated) {
+        details.remove()
+      } else {
+        this.updateDisclosureSummary(details, "Relationships")
+      }
+    })
+
+    const candidatesByColumn = new Map()
+    results.forEach((result) => {
+      (result.matched_columns || []).forEach((match) => {
+        const key = match.name.toLowerCase()
+        if (!candidatesByColumn.has(key)) candidatesByColumn.set(key, [])
+        candidatesByColumn.get(key).push({ result, primaryKey: match.primary_key })
+      })
+    })
+
+    if (candidatesByColumn.size === 0) return
+
+    this.element.querySelectorAll(".chart-column[data-column-name]").forEach((columnEl) => {
+      const candidates = candidatesByColumn.get(columnEl.dataset.columnName.toLowerCase())
+      if (!candidates) return
+
+      // Only a genuine FK/PK-shaped pair — exactly one side a primary key,
+      // the other not — is worth surfacing. Two same-named primary keys
+      // (nearly every table has its own "id") or two same-named plain
+      // columns is far more likely coincidence than an actual relationship.
+      const isPrimaryKey = columnEl.dataset.primaryKey === "true"
+      const matches = candidates.filter((c) => c.primaryKey !== isPrimaryKey)
+      if (matches.length === 0) return
+
+      const icon = '<i class="fa-solid fa-arrow-up-right-from-square icon-fa" aria-hidden="true"></i>'
+      const columnName = columnEl.dataset.columnName
+
+      let details = columnEl.querySelector(".chart-column__relationships")
+      if (!details) {
+        details = document.createElement("details")
+        details.className = "chart-column__relationships"
+        details.dataset.elsewhereCreated = "true"
+        details.innerHTML = '<summary>Referenced (0)</summary><ul class="chart-column__relationships-list"></ul>'
+        columnEl.appendChild(details)
+      }
+      const list = details.querySelector(".chart-column__relationships-list")
+      matches.forEach(({ result }) => {
+        const li = document.createElement("li")
+        li.dataset.elsewhereRelationshipHint = ""
+        li.innerHTML = `${icon} <a href="${this.escapeHtml(result.url)}">${this.escapeHtml(result.area_name)} · ${this.escapeHtml(result.chart_title)}</a>`
+        list.appendChild(li)
+      })
+      this.updateDisclosureSummary(details, "Referenced")
+
+      const tableEl = columnEl.closest(".chart-table")
+      if (!tableEl) return
+
+      let tableDetails = tableEl.querySelector(".chart-table__relationships")
+      if (!tableDetails) {
+        tableDetails = document.createElement("details")
+        tableDetails.className = "chart-table__relationships"
+        tableDetails.dataset.elsewhereCreated = "true"
+        tableDetails.innerHTML = '<summary>Relationships (0)</summary><ul class="chart-table__relationships-list"></ul>'
+        tableEl.appendChild(tableDetails)
+      }
+      const tableList = tableDetails.querySelector(".chart-table__relationships-list")
+      matches.forEach(({ result }) => {
+        const li = document.createElement("li")
+        li.dataset.elsewhereTableRelationshipHint = ""
+        li.innerHTML = `<strong>${this.escapeHtml(columnName)}</strong> ${icon} <a href="${this.escapeHtml(result.url)}">${this.escapeHtml(result.area_name)} · ${this.escapeHtml(result.chart_title)}</a>`
+        tableList.appendChild(li)
+      })
+      this.updateDisclosureSummary(tableDetails, "Relationships")
+    })
+  }
+
+  updateDisclosureSummary(details, label) {
+    const count = details.querySelectorAll("li").length
+    details.querySelector("summary").textContent = `${label} (${count})`
   }
 
   // Re-opens the panel with whatever was last found, without re-fetching —

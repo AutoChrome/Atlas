@@ -430,6 +430,23 @@ body.body--chart-fullscreen {
   .icon-fa {
     margin-right: 2px;
   }
+
+  // A same-named primary key found in a *different* chart (see
+  // ChartsController#elsewhere_result's primary_keys and
+  // chart_search_controller.js's applyElsewhereColumnHints) — not a real
+  // ChartRelationship, so it's a link rather than plain text; the
+  // arrow-up-right-from-square icon (same one chart-table__preview-source
+  // uses) is what marks it as pointing outside this chart, sitting
+  // alongside real entries' plain arrow-right/arrow-left icons.
+  a {
+    color: inherit;
+    text-decoration: none;
+
+    &:hover {
+      color: var(--color-on-surface);
+      text-decoration: underline;
+    }
+  }
 }
 
 .chart-column__name {
@@ -529,5 +546,20 @@ body.body--chart-fullscreen {
   .icon-fa {
     color: var(--color-on-surface-variant);
     margin: 0 2px;
+  }
+
+  // A cross-chart hint (see ChartsController#elsewhere_result's
+  // matched_columns and chart_search_controller.js's
+  // applyElsewhereColumnHints) — real entries above are plain text, this
+  // one is a link, distinguished the same way the column-level version is:
+  // the arrow-up-right-from-square icon rather than arrow-left/arrow-right.
+  a {
+    color: var(--color-on-surface-variant);
+    text-decoration: none;
+
+    &:hover {
+      color: var(--color-on-surface);
+      text-decoration: underline;
+    }
   }
 }

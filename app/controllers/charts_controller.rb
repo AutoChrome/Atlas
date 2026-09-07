@@ -152,7 +152,10 @@ class ChartsController < ApplicationController
     # hundreds or thousands of) tables did — filtered at the database
     # level, not by loading the whole chart into memory and scanning it in
     # Ruby, specifically so a match in a *huge* other chart doesn't drag
-    # its entire table/column set into this request just to find 2-3 rows.
+    # its entire table/column set into this request just to find a few rows.
+    # Capped at 25 candidates (rather than unbounded) for the same reason —
+    # generous enough to find a real match in practice, but not "load every
+    # table a common column name touches."
     def elsewhere_result(chart, query)
       like_query = "%#{ActiveRecord::Base.sanitize_sql_like(query)}%"
       matched_tables = chart.chart_tables
@@ -160,16 +163,52 @@ class ChartsController < ApplicationController
         .where("chart_tables.name ILIKE :q OR chart_columns.name ILIKE :q", q: like_query)
         .distinct
         .includes(chart_columns: :outgoing_relationships)
-        .limit(3)
+        .limit(25)
+        .to_a
 
       return nil if matched_tables.empty?
+
+      # Handed back as structured data (name + whether it's a primary key
+      # here) so the searching chart can annotate its OWN matching columns
+      # directly (see chart_search_controller.js's applyElsewhereColumnHints)
+      # rather than only rendering this table's HTML into a side panel.
+      #
+      # Deliberately NOT restricted to primary-key matches only: the point
+      # is to surface the relationship from EITHER side. Standing on the
+      # foreign-key-shaped side (a plain column here, a PK over there) needs
+      # this, but so does standing on the primary-key side itself (a PK
+      # here, a plain same-named column over there) — otherwise the PK
+      # owner never learns anything points at it just because the pointer
+      # happens to live in a different chart. The client does the actual
+      # "does this look like a real FK/PK pair" filtering, by comparing
+      # primary_key here against its own column's primary_key state — two
+      # same-named PKs (e.g. every table's own "id") or two same-named
+      # plain columns is far more likely coincidence than a relationship.
+      downcased_query = query.downcase
+      matched_columns = matched_tables.flat_map { |table|
+        table.chart_columns.select { |c| c.name.downcase.include?(downcased_query) }
+      }
+
+      # Tables with an actual column match (not just a table-name match)
+      # get first billing in the capped preview.
+      tables_with_column_match, other_tables = matched_tables.partition { |table|
+        table.chart_columns.any? { |c| c.name.downcase.include?(downcased_query) }
+      }
+      preview_tables = (tables_with_column_match + other_tables).first(3)
 
       {
         chart_title: chart.title,
         area_name: chart.area.name,
-        url: area_chart_path(chart.area, chart),
-        tables_html: matched_tables.map { |table|
-          render_to_string(partial: "chart_tables/preview", formats: [ :html ], locals: { table: table, area: chart.area, chart: chart })
+        # Carries the search term along so following this link lands on the
+        # other chart with the same query already active (see
+        # chart_search_controller.js's connect) — without it, arriving there
+        # shows a blank search box and none of this chart's own hints back,
+        # which is what made the relationship look one-directional even
+        # though ChartsController#elsewhere is symmetric either way.
+        url: area_chart_path(chart.area, chart, q: query),
+        matched_columns: matched_columns.map { |c| { name: c.name, primary_key: c.primary_key? } }.uniq,
+        tables_html: preview_tables.map { |table|
+          render_to_string(partial: "chart_tables/preview", formats: [ :html ], locals: { table: table, area: chart.area, chart: chart, query: query })
         }.join
       }
     end

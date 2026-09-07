@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_09_07_110721) do
+ActiveRecord::Schema[8.1].define(version: 2026_09_07_222018) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
 
@@ -123,6 +123,13 @@ ActiveRecord::Schema[8.1].define(version: 2026_09_07_110721) do
     t.index ["user_id", "user_type"], name: "user_index"
   end
 
+  create_table "callouts", force: :cascade do |t|
+    t.text "body", default: "", null: false
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.integer "variant", default: 0, null: false
+  end
+
   create_table "chart_columns", force: :cascade do |t|
     t.bigint "chart_table_id", null: false
     t.datetime "created_at", null: false
@@ -184,6 +191,12 @@ ActiveRecord::Schema[8.1].define(version: 2026_09_07_110721) do
     t.index ["area_id", "slug"], name: "index_charts_on_area_id_and_slug", unique: true
     t.index ["area_id"], name: "index_charts_on_area_id"
     t.index ["public"], name: "index_charts_on_public"
+  end
+
+  create_table "content_tables", force: :cascade do |t|
+    t.datetime "created_at", null: false
+    t.jsonb "data", default: [], null: false
+    t.datetime "updated_at", null: false
   end
 
   create_table "friendly_id_slugs", force: :cascade do |t|

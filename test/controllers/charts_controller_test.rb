@@ -72,6 +72,36 @@ class ChartsControllerTest < ActionDispatch::IntegrationTest
     # set on chart_columns(:other_chart_column), its PK badge.
     assert_match "widgets", results.first["tables_html"]
     assert_match "PK", results.first["tables_html"]
+    # The search term rides along in the URL (see chart_search_controller.js's
+    # connect) so following this link lands on the other chart with the same
+    # search already active, showing its own hint pointing back — otherwise
+    # a genuinely two-way relationship only ever shows up from one side.
+    assert_equal "q=widgets", URI.parse(results.first["url"]).query
+  end
+
+  test "elsewhere reports each matched column's name and whether it's a primary key, for the searching chart to annotate its own matching columns" do
+    sign_in_as(users(:one))
+    other_chart = charts(:two) # chart_tables(:other_chart_table) has a PK column named "id"
+
+    with_search_stub(Chart, ->(*) { [ other_chart ] }) do
+      get elsewhere_area_chart_path(@area, @chart), params: { q: "id" }, as: :json
+    end
+
+    assert_response :success
+    results = JSON.parse(response.body)["results"]
+    assert_equal [ { "name" => "id", "primary_key" => true } ], results.first["matched_columns"]
+  end
+
+  test "elsewhere returns no matched_columns when only a table name matched, not any column" do
+    sign_in_as(users(:one))
+    other_chart = charts(:two)
+
+    with_search_stub(Chart, ->(*) { [ other_chart ] }) do
+      get elsewhere_area_chart_path(@area, @chart), params: { q: "widgets" }, as: :json
+    end
+
+    assert_response :success
+    assert_equal [], JSON.parse(response.body)["results"].first["matched_columns"]
   end
 
   test "elsewhere excludes a returned chart whose tables don't actually match by name (a title/description-only hit)" do

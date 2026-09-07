@@ -1,0 +1,34 @@
+<%# locals: content_table:
+    The genuinely-editable table, shown in the dialog that opens when you
+    click a table rendered inside Trix (see rich_text_table_controller.js).
+    Delivered as an ordinary fetched page fragment — not embedded in Trix's
+    own attachment content — which is exactly why contenteditable and
+    data-action actually work here: Trix's client-side sanitizer, which
+    strips both from anything rendered as attachment content, never sees
+    this at all. See content_table_controller.js for what persists an edit. %>
+<% header, *body = content_table.data %>
+<div data-controller="content-table" data-content-table-url-value="<%= content_table_path(content_table) %>">
+  <table class="rich-text-table" data-content-table-target="table">
+    <thead>
+      <tr>
+        <% (header || []).each do |cell| %>
+          <th contenteditable="true" data-action="input->content-table#scheduleSave blur->content-table#saveNow"><%= cell %></th>
+        <% end %>
+      </tr>
+    </thead>
+    <tbody>
+      <% body.each do |row| %>
+        <tr>
+          <% row.each do |cell| %>
+            <td contenteditable="true" data-action="input->content-table#scheduleSave blur->content-table#saveNow"><%= cell %></td>
+          <% end %>
+        </tr>
+      <% end %>
+    </tbody>
+  </table>
+
+  <div class="rich-text-table__toolbar">
+    <button type="button" class="rich-text-table__add-row" data-action="content-table#addRow">+ Row</button>
+    <button type="button" class="rich-text-table__add-column" data-action="content-table#addColumn">+ Column</button>
+  </div>
+</div>

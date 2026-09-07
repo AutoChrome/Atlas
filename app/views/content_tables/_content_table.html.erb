@@ -1,0 +1,25 @@
+<%# locals: content_table:
+    Read-only — no contenteditable, no add row/column controls. Rendered
+    for both the published page AND Trix's own in-editor attachment
+    preview (see ContentTable) — Trix strips everything from an
+    attachment's rendered content except `class`, so that's also the only
+    channel available for the click handler in rich_text_table_controller.js
+    to recover which table was clicked when it's shown inside Trix; the
+    class name is meaningless (just unused CSS) on the published page. %>
+<% header, *body = content_table.data %>
+<table class="rich-text-table rich-text-table--<%= content_table.id %>">
+  <% if header %>
+    <thead>
+      <tr>
+        <% header.each do |cell| %><th><%= cell %></th><% end %>
+      </tr>
+    </thead>
+  <% end %>
+  <tbody>
+    <% body.each do |row| %>
+      <tr>
+        <% row.each do |cell| %><td><%= cell %></td><% end %>
+      </tr>
+    <% end %>
+  </tbody>
+</table>

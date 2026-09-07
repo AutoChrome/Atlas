@@ -14,15 +14,57 @@
   padding-right: m.spacer(2);
 }
 
-.nav-tree__list {
+// One "screen" of the drill-down sidebar — the root's top-level areas, or
+// one area's own contents (see nav_drilldown_controller.js and
+// shared/_area_nav_level.html.erb). Only one is ever visible at a time;
+// author `display: flex` beats the browser's own `[hidden] { display: none }`
+// regardless of specificity, so that needs an explicit override here.
+.nav-tree__level {
   display: flex;
   flex-direction: column;
   gap: 2px;
+
+  &[hidden] {
+    display: none;
+  }
 }
 
-.nav-tree__node {
+.nav-tree__back {
   display: flex;
-  flex-direction: column;
+  align-items: center;
+  gap: m.spacer(2);
+  padding: m.spacer(2) m.spacer(3);
+  margin-bottom: m.spacer(1);
+  border-radius: v.$radius-sm;
+  @include m.type(label);
+  color: var(--color-on-surface-variant);
+
+  &:hover {
+    background-color: var(--color-surface-container-high);
+    color: var(--color-on-surface);
+  }
+}
+
+// The level's own area, shown once you've drilled into it — a heading
+// you can also click straight through to, not just a label.
+.nav-tree__level-title {
+  display: flex;
+  align-items: center;
+  gap: m.spacer(3);
+  padding: m.spacer(2) m.spacer(3) m.spacer(3);
+  margin-bottom: m.spacer(2);
+  border-bottom: 1px solid var(--color-outline-variant);
+  @include m.type(body-lg);
+  font-weight: 600;
+  color: var(--color-on-surface);
+
+  &:hover {
+    background-color: var(--color-surface-container-high);
+  }
+
+  &.is-active {
+    color: var(--color-secondary);
+  }
 }
 
 .nav-tree__item {
@@ -36,28 +78,22 @@
   }
 }
 
-.nav-tree__chevron {
+// Trailing arrow that opens a sub-area's own level — only present on rows
+// that actually have something in them (see shared/_area_nav_row.html.erb).
+.nav-tree__drill {
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 20px;
-  height: 20px;
+  width: 24px;
+  height: 24px;
   flex-shrink: 0;
   color: var(--color-on-surface-variant);
   border-radius: v.$radius-sm;
-  transition: transform v.$duration-short v.$easing-standard;
 
   &:hover {
     background-color: var(--color-surface-container-high);
+    color: var(--color-on-surface);
   }
-}
-
-.nav-tree__chevron--spacer {
-  visibility: hidden;
-}
-
-.nav-tree__node.is-expanded > .nav-tree__item .nav-tree__chevron {
-  transform: rotate(90deg);
 }
 
 // Hidden outside editing mode — not via the `hidden` attribute (an earlier
@@ -88,11 +124,7 @@
     outline-offset: -1px;
   }
 
-  // draggable="true" (and so is-dragging/dragstart/dragover/drop) lives on
-  // .nav-tree__node, not .nav-tree__item — dragging an area has to carry
-  // its children with it, so the whole subtree is the draggable unit, not
-  // just its own row.
-  .nav-tree__node.is-dragging {
+  .nav-tree__item.is-dragging {
     opacity: 0.5;
     cursor: grabbing;
   }
@@ -128,12 +160,6 @@
   width: 20px;
   height: 20px;
   flex-shrink: 0;
-}
-
-.nav-tree__children {
-  margin-left: m.spacer(5);
-  border-left: 1px solid var(--color-outline-variant);
-  padding-left: m.spacer(3);
 }
 
 .nav-tree__section-label {

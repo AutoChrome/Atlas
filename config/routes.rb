@@ -10,6 +10,8 @@ Rails.application.routes.draw do
 
   get "search", to: "search#index"
   get "icon_suggestions", to: "icon_suggestions#index"
+  resources :content_tables, only: %i[create edit update]
+  resources :callouts, only: %i[create edit update]
 
   resources :areas, param: :slug do
     resources :pages, param: :slug do

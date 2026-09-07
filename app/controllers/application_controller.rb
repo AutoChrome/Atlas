@@ -13,7 +13,7 @@ class ApplicationController < ActionController::Base
 
   before_action :remember_area_sort_preference
 
-  helper_method :current_user, :real_current_user, :guest_preview?, :area_sort_mode, :expanded_area_ids
+  helper_method :current_user, :real_current_user, :guest_preview?, :area_sort_mode, :current_drilldown_area_id
 
   AREA_SORT_MODES = %w[sequence alphabetical].freeze
 
@@ -76,19 +76,26 @@ class ApplicationController < ActionController::Base
       cookies[:area_sort] == "alphabetical" ? "alphabetical" : "sequence"
     end
 
-    # Area IDs whose sidebar children should be expanded by default: the
-    # area (or the area of the page) currently being viewed, plus all of
-    # its ancestors — so drilling into a deeply nested area doesn't also
-    # require manually expanding every level down to it.
-    def expanded_area_ids
+    # The one sidebar "level" (see shared/_area_nav_level.html.erb) that
+    # should be showing on load: the area (or the area of the page) you're
+    # currently viewing, so you land already looking at its siblings
+    # instead of the top-level list. nil means the root level.
+    def current_drilldown_area_id
       area = @page&.area || @area
-      ids = []
+      return nil unless area
 
-      while area
-        ids << area.id
-        area = area.parent
-      end
+      # Only an area with something in it gets its own level — if the
+      # current area is an empty leaf, land one level up so it still shows
+      # up as a row in its own parent's list, rather than matching no
+      # rendered level at all and leaving the sidebar blank.
+      area = area.parent until area.nil? || area_has_children?(area)
+      area&.id
+    end
 
-      ids
+    def area_has_children?(area)
+      policy_scope(area.pages).exists? ||
+        policy_scope(area.charts).exists? ||
+        policy_scope(area.tutorials).exists? ||
+        policy_scope(area.children).exists?
     end
 end

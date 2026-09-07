@@ -1,0 +1,15 @@
+<%# locals: callout:
+    Read-only — rendered for both the published page and Trix's own
+    in-editor attachment preview (see Callout). `js-callout-id-<id>` is a
+    class purely so rich_text_callout_controller.js's click handler can
+    recover which callout was clicked: Trix strips everything from an
+    attachment's rendered content except `class`, so a class name is the
+    only surviving channel — same trick as
+    content_tables/_content_table.html.erb. %>
+<% icon_name = { "note" => "circle-info", "warning" => "triangle-exclamation", "tip" => "lightbulb" }.fetch(callout.variant) %>
+<div class="rich-text-callout rich-text-callout--<%= callout.variant %> js-callout-id-<%= callout.id %>">
+  <%= fa_icon icon_name, css_class: "rich-text-callout__icon" %>
+  <div class="rich-text-callout__body">
+    <%= simple_format(callout.body.presence || "Click to edit this #{callout.variant}.") %>
+  </div>
+</div>

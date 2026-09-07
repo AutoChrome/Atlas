@@ -1,4 +1,5 @@
-<div class="nav-tree" data-controller="nav-reorder">
+<div class="nav-tree" data-controller="nav-reorder nav-drilldown"
+     data-nav-drilldown-current-value="<%= current_drilldown_area_id || "root" %>">
   <div class="nav-tree__header">
     <span class="nav-tree__section-label">Areas</span>
 
@@ -20,11 +21,8 @@
     </div>
   </div>
 
-  <div class="nav-tree__list" data-nav-reorder-target="list" data-parent-id="root">
-    <% policy_scope(Area).top_level.ordered_by(area_sort_mode).each do |area| %>
-      <%= render "shared/area_nav_item", area: area %>
-    <% end %>
-  </div>
+  <%= render "shared/area_nav_level", area: nil, pages: [], charts: [], tutorials: [],
+        areas: policy_scope(Area).top_level.ordered_by(area_sort_mode) %>
 
   <% if current_user&.admin? || current_user&.member? %>
     <%= link_to new_area_path, class: "nav-tree__link" do %>

@@ -1,0 +1,26 @@
+<%# locals: area:, has_children:
+    A sub-area's row within its parent's level. The name itself navigates
+    to the area's own page, same as any other row; the trailing arrow (only
+    present when there's actually somewhere to drill into) opens this
+    area's own level instead — see nav_drilldown_controller.js. %>
+<div class="nav-tree__item" data-nav-reorder-target="item" data-area-id="<%= area.id %>"
+     data-action="dragstart->nav-reorder#dragStart dragover->nav-reorder#dragOver drop->nav-reorder#drop dragend->nav-reorder#dragEnd">
+  <span class="nav-tree__drag-handle" data-nav-reorder-target="handle">
+    <%= fa_icon "grip-vertical" %>
+  </span>
+
+  <%= link_to area, class: class_names("nav-tree__link", "is-active" => current_page?(area)),
+        data: { action: "click->nav-reorder#preventNavigationWhileEditing" } do %>
+    <%= record_icon(area, fallback: :folder, css_class: "nav-tree__icon") %>
+    <%= area.name %>
+    <% if current_user && area.public? %>
+      <span class="badge badge--success hide-mobile">Public</span>
+    <% end %>
+  <% end %>
+
+  <% if has_children %>
+    <button type="button" class="nav-tree__drill" data-action="click->nav-drilldown#drillInto" aria-label="Open <%= area.name %>">
+      <%= fa_icon "chevron-right" %>
+    </button>
+  <% end %>
+</div>

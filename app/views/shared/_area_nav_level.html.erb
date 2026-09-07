@@ -1,0 +1,78 @@
+<%# locals: area: (nil for the root level), pages:, charts:, tutorials: (this
+    area's own, already policy-scoped/ordered — empty arrays at root),
+    areas: (this level's sub-areas, same)
+    One "screen" in the drill-down sidebar (see nav_drilldown_controller.js)
+    — this area's own pages/charts/tutorials plus its sub-areas, all as a
+    flat list. Rendered as a sibling panel rather than nested inside the
+    area's own row, so only one level is ever visible/indented at once. %>
+<%
+  # Fetched once per sub-area here (not re-fetched inside the recursive
+  # render below) — needed both to decide whether that area gets a drill-in
+  # arrow/its own level at all, and, if so, as that level's own contents.
+  child_rows = areas.map do |child|
+    {
+      area: child,
+      pages: policy_scope(child.pages).ordered.to_a,
+      charts: policy_scope(child.charts).ordered.to_a,
+      tutorials: policy_scope(child.tutorials).ordered.to_a,
+      areas: policy_scope(child.children).ordered_by(area_sort_mode).to_a
+    }
+  end
+%>
+<div class="nav-tree__level" data-nav-drilldown-target="level" data-nav-reorder-target="list"
+     data-parent-id="<%= area&.id || "root" %>" data-back-to="<%= area&.parent_id || "root" %>">
+  <% if area %>
+    <button type="button" class="nav-tree__back" data-action="click->nav-drilldown#back">
+      <%= fa_icon "chevron-left" %>
+      <%= area.parent ? area.parent.name : "Areas" %>
+    </button>
+
+    <%= link_to area, class: class_names("nav-tree__level-title", "is-active" => current_page?(area)) do %>
+      <%= record_icon(area, fallback: :folder, css_class: "nav-tree__icon") %>
+      <%= area.name %>
+      <% if current_user && area.public? %>
+        <span class="badge badge--success hide-mobile">Public</span>
+      <% end %>
+    <% end %>
+  <% end %>
+
+  <% pages.each do |page| %>
+    <div class="nav-tree__item">
+      <%= link_to [ area, page ], class: class_names("nav-tree__link", "is-active" => current_page?([ area, page ])) do %>
+        <%= record_icon(page, fallback: :page, css_class: "nav-tree__icon") %>
+        <%= page.title %>
+      <% end %>
+    </div>
+  <% end %>
+
+  <% charts.each do |chart| %>
+    <div class="nav-tree__item">
+      <%= link_to [ area, chart ], class: class_names("nav-tree__link", "is-active" => current_page?([ area, chart ])) do %>
+        <%= record_icon(chart, fallback: "diagram-project", fallback_style: :fa, css_class: "nav-tree__icon") %>
+        <%= chart.title %>
+      <% end %>
+    </div>
+  <% end %>
+
+  <% tutorials.each do |tutorial| %>
+    <div class="nav-tree__item">
+      <%= link_to [ area, tutorial ], class: class_names("nav-tree__link", "is-active" => current_page?([ area, tutorial ])) do %>
+        <%= record_icon(tutorial, fallback: "route", fallback_style: :fa, css_class: "nav-tree__icon") %>
+        <%= tutorial.title %>
+      <% end %>
+    </div>
+  <% end %>
+
+  <% child_rows.each do |row| %>
+    <% has_children = row[:pages].any? || row[:charts].any? || row[:tutorials].any? || row[:areas].any? %>
+    <%= render "shared/area_nav_row", area: row[:area], has_children: has_children %>
+  <% end %>
+</div>
+
+<% child_rows.each do |row| %>
+  <% has_children = row[:pages].any? || row[:charts].any? || row[:tutorials].any? || row[:areas].any? %>
+  <% if has_children %>
+    <%= render "shared/area_nav_level", area: row[:area], pages: row[:pages], charts: row[:charts],
+          tutorials: row[:tutorials], areas: row[:areas] %>
+  <% end %>
+<% end %>

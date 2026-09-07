@@ -1,7 +1,11 @@
 <%# locals: f:, label: (optional, defaults to "Content") %>
-<div class="field" data-controller="page-reference" data-page-reference-search-url-value="<%= search_path %>">
+<div class="field" data-controller="page-reference rich-text-table rich-text-callout"
+     data-page-reference-search-url-value="<%= search_path %>"
+     data-rich-text-table-create-url-value="<%= content_tables_path %>"
+     data-rich-text-callout-create-url-value="<%= callouts_path %>">
   <%= f.label :content, local_assigns[:label] || "Content", class: "field__label" %>
-  <%= f.rich_text_area :content, spellcheck: true, data: { page_reference_target: "editor" } %>
+  <%= f.rich_text_area :content, spellcheck: true,
+        data: { page_reference_target: "editor", rich_text_table_target: "editor", rich_text_callout_target: "editor" } %>
 
   <dialog class="modal" data-page-reference-target="dialog" data-action="click->page-reference#closeOnBackdrop">
     <div class="modal__header">
@@ -15,5 +19,25 @@
              data-page-reference-target="input" data-action="input->page-reference#search">
       <div class="stack" data-page-reference-target="results" style="max-height: 320px; overflow-y: auto;"></div>
     </div>
+  </dialog>
+
+  <dialog class="modal modal--wide" data-rich-text-table-target="dialog" data-action="click->rich-text-table#closeOnBackdrop">
+    <div class="modal__header">
+      <h3>Edit table</h3>
+      <button type="button" class="btn btn--icon btn--sm" data-action="rich-text-table#closeDialog" aria-label="Close">
+        <%= icon :close %>
+      </button>
+    </div>
+    <div class="modal__body" data-rich-text-table-target="dialogBody"></div>
+  </dialog>
+
+  <dialog class="modal" data-rich-text-callout-target="dialog" data-action="click->rich-text-callout#closeOnBackdrop">
+    <div class="modal__header">
+      <h3>Edit callout</h3>
+      <button type="button" class="btn btn--icon btn--sm" data-action="rich-text-callout#closeDialog" aria-label="Close">
+        <%= icon :close %>
+      </button>
+    </div>
+    <div class="modal__body" data-rich-text-callout-target="dialogBody"></div>
   </dialog>
 </div>

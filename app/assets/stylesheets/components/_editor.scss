@@ -54,10 +54,12 @@ trix-toolbar {
     }
   }
 
-  // Our own button (page_reference_controller.js), injected into the
-  // toolbar at runtime — a real icon glyph rather than the background-image
-  // data URIs the native buttons use, so it needs its own sizing to match.
-  .page-reference-button {
+  // Our own buttons (page_reference_controller.js, rich_text_table_controller.js),
+  // injected into the toolbar at runtime — real icon glyphs rather than the
+  // background-image data URIs the native buttons use, so they need their
+  // own sizing to match.
+  .page-reference-button,
+  .rich-text-table-button {
     display: inline-flex !important;
     align-items: center;
     justify-content: center;
@@ -106,6 +108,163 @@ trix-editor {
   action-text-attachment .attachment {
     border-radius: v.$radius-md;
     overflow: hidden;
+  }
+}
+
+// Tables (see ContentTable) — a plain, unscoped class rather than nested
+// under trix-editor/.trix-content, because a table actually renders in
+// *three* places: Trix's own in-editor preview, the published page
+// (.trix-content), and the edit dialog opened by clicking one of those
+// (a plain page fragment, inside neither) — scoping this to only the
+// first two, as an earlier version did, left the dialog's own table with
+// no borders or spacing at all.
+.rich-text-table {
+  width: 100%;
+  border-collapse: collapse;
+  margin: m.spacer(4) 0;
+}
+
+.rich-text-table th,
+.rich-text-table td {
+  border: 1px solid var(--color-outline-variant);
+  padding: m.spacer(2) m.spacer(3);
+  text-align: left;
+  vertical-align: top;
+}
+
+.rich-text-table th {
+  background-color: var(--color-surface-container-high);
+  font-weight: 600;
+}
+
+// Only reachable in the edit dialog — Trix's own preview and the published
+// page never have contenteditable cells — but harmless to leave unscoped.
+.rich-text-table th:focus,
+.rich-text-table td:focus {
+  outline: 2px solid var(--color-primary);
+  outline-offset: -2px;
+}
+
+.rich-text-table__toolbar {
+  display: flex;
+  gap: m.spacer(2);
+  margin-top: m.spacer(-2);
+  margin-bottom: m.spacer(4);
+}
+
+.rich-text-table__add-row,
+.rich-text-table__add-column {
+  padding: m.spacer(1) m.spacer(3);
+  border: 1px dashed var(--color-outline-variant);
+  border-radius: v.$radius-sm;
+  color: var(--color-on-surface-variant);
+  @include m.type(label);
+
+  &:hover {
+    background-color: var(--color-surface-container-high);
+    color: var(--color-on-surface);
+  }
+}
+
+// Callout/admonition blocks (see Callout, rich_text_callout_controller.js).
+// A plain, unscoped class — not nested under trix-editor/.trix-content —
+// since a callout renders in three places: Trix's own in-editor preview,
+// the published page, and the edit dialog (see callouts/_editable.html.erb),
+// same reasoning as .rich-text-table.
+.rich-text-callout {
+  display: flex;
+  gap: m.spacer(3);
+  margin: m.spacer(4) 0;
+  padding: m.spacer(3) m.spacer(4);
+  border-radius: v.$radius-sm;
+  border-left: 3px solid;
+  cursor: default;
+
+  > * {
+    margin: 0;
+  }
+}
+
+.rich-text-callout__icon {
+  flex-shrink: 0;
+  margin-top: 2px;
+}
+
+.rich-text-callout__body > *:first-child {
+  margin-top: 0;
+}
+
+.rich-text-callout__body > *:last-child {
+  margin-bottom: 0;
+}
+
+.rich-text-callout--note {
+  background-color: var(--color-primary-container);
+  border-left-color: var(--color-primary);
+  color: var(--color-on-primary-container);
+}
+
+.rich-text-callout--warning {
+  background-color: var(--color-warning-container);
+  border-left-color: var(--color-warning);
+  color: var(--color-on-warning-container);
+}
+
+.rich-text-callout--tip {
+  background-color: var(--color-success-container);
+  border-left-color: var(--color-success);
+  color: var(--color-on-success-container);
+}
+
+.rich-text-callout-group .trix-button {
+  &[data-variant="note"] i {
+    color: var(--color-primary);
+  }
+
+  &[data-variant="warning"] i {
+    color: var(--color-warning);
+  }
+
+  &[data-variant="tip"] i {
+    color: var(--color-success);
+  }
+}
+
+// The callout edit dialog's own contents (callouts/_editable.html.erb).
+.rich-text-callout__variant-picker {
+  display: flex;
+  gap: m.spacer(2);
+  margin-bottom: m.spacer(3);
+}
+
+.rich-text-callout__variant-button {
+  padding: m.spacer(1) m.spacer(3);
+  border: 1px solid var(--color-outline-variant);
+  border-radius: v.$radius-full;
+  color: var(--color-on-surface-variant);
+  @include m.type(label);
+
+  &:hover {
+    background-color: var(--color-surface-container-high);
+  }
+
+  &.is-active {
+    background-color: var(--color-primary-container);
+    border-color: var(--color-primary);
+    color: var(--color-on-primary-container);
+  }
+}
+
+.rich-text-callout__body-editor {
+  min-height: 100px;
+  padding: m.spacer(3);
+  border: 1px solid var(--color-outline-variant);
+  border-radius: v.$radius-sm;
+  @include m.type(body);
+
+  &:focus {
+    outline: 2px solid var(--color-primary);
+    outline-offset: -2px;
   }
 }
 
