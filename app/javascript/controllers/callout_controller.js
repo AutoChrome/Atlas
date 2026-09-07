@@ -41,7 +41,7 @@ export default class extends Controller {
   async save(extra = {}) {
     const payload = { body: this.bodyTarget.innerText.trim(), ...extra }
 
-    await fetch(this.urlValue, {
+    const response = await fetch(this.urlValue, {
       method: "PATCH",
       headers: {
         "Content-Type": "application/json",
@@ -50,5 +50,14 @@ export default class extends Controller {
       },
       body: JSON.stringify(payload),
     })
+    if (!response.ok) return
+
+    // Same reasoning as content_table_controller.js's save(): this dialog
+    // lives outside Trix's own document, so saving here doesn't touch what
+    // Trix has cached as the attachment's preview — bubbles up to
+    // rich_text_callout_controller.js (see _rich_text_field.html.erb),
+    // which has access to the live editor, to push the fresh HTML in.
+    const { id, content } = await response.json()
+    this.dispatch("saved", { detail: { id, content } })
   }
 }

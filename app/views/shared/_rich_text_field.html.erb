@@ -21,7 +21,8 @@
     </div>
   </dialog>
 
-  <dialog class="modal modal--wide" data-rich-text-table-target="dialog" data-action="click->rich-text-table#closeOnBackdrop">
+  <dialog class="modal modal--wide" data-rich-text-table-target="dialog"
+          data-action="click->rich-text-table#closeOnBackdrop content-table:saved->rich-text-table#refreshAttachment">
     <div class="modal__header">
       <h3>Edit table</h3>
       <button type="button" class="btn btn--icon btn--sm" data-action="rich-text-table#closeDialog" aria-label="Close">
@@ -31,7 +32,8 @@
     <div class="modal__body" data-rich-text-table-target="dialogBody"></div>
   </dialog>
 
-  <dialog class="modal" data-rich-text-callout-target="dialog" data-action="click->rich-text-callout#closeOnBackdrop">
+  <dialog class="modal" data-rich-text-callout-target="dialog"
+          data-action="click->rich-text-callout#closeOnBackdrop callout:saved->rich-text-callout#refreshAttachment">
     <div class="modal__header">
       <h3>Edit callout</h3>
       <button type="button" class="btn btn--icon btn--sm" data-action="rich-text-callout#closeDialog" aria-label="Close">

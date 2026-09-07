@@ -83,4 +83,33 @@ export default class extends Controller {
   closeOnBackdrop(event) {
     if (event.target === this.dialogTarget) this.closeDialog()
   }
+
+  // content_table_controller.js dispatches this (see _rich_text_field.html.erb
+  // for the data-action wiring) whenever an edit in the dialog is persisted.
+  // The dialog's own DOM is an ordinary page fragment, not part of Trix's
+  // document, so saving there doesn't touch what Trix has cached as the
+  // attachment's preview — this is what actually refreshes it, so the
+  // change shows up immediately instead of only after the page itself is
+  // saved and reloaded.
+  refreshAttachment(event) {
+    const { id, content } = event.detail
+    const marker = `rich-text-table--${id}`
+
+    this.trixElement.editor.getDocument().getAttachments().forEach((attachment) => {
+      if (attachment.getContent()?.includes(marker)) attachment.setAttributes({ content })
+    })
+
+    // setAttributes above keeps Trix's own document model in sync (what
+    // actually gets saved), but unlike an image attachment — which Trix
+    // does know how to refresh in place — a "content" attachment's DOM
+    // node is only ever built once, at insertion (confirmed directly:
+    // the model updates, the rendered <table> does not). So the visible
+    // node has to be swapped by hand too, or the dialog closing would be
+    // the only thing that ever appeared to do anything.
+    const rendered = this.trixElement.querySelector(`.${marker}`)
+    const template = document.createElement("template")
+    template.innerHTML = content
+    const replacement = template.content.querySelector(`.${marker}`)
+    if (rendered && replacement) rendered.replaceWith(replacement)
+  }
 }

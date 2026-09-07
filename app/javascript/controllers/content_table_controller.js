@@ -62,7 +62,7 @@ export default class extends Controller {
       Array.from(row.children).map((cell) => cell.textContent.trim())
     )
 
-    await fetch(this.urlValue, {
+    const response = await fetch(this.urlValue, {
       method: "PATCH",
       headers: {
         "Content-Type": "application/json",
@@ -71,5 +71,16 @@ export default class extends Controller {
       },
       body: JSON.stringify({ content_table: { data: JSON.stringify(rows) } }),
     })
+    if (!response.ok) return
+
+    // The dialog editing this table lives outside Trix's own document, so
+    // saving here doesn't touch what Trix has cached as the attachment's
+    // preview — bubbles up to rich_text_table_controller.js (see
+    // _rich_text_field.html.erb), which is the one with access to the live
+    // Trix editor, to push the fresh HTML into it. Without this, the page
+    // keeps showing the table as it looked when it was first inserted until
+    // the whole page is saved and reloaded.
+    const { id, content } = await response.json()
+    this.dispatch("saved", { detail: { id, content } })
   }
 }

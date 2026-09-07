@@ -92,4 +92,33 @@ export default class extends Controller {
   closeOnBackdrop(event) {
     if (event.target === this.dialogTarget) this.closeDialog()
   }
+
+  // callout_controller.js dispatches this (see _rich_text_field.html.erb
+  // for the data-action wiring) whenever an edit in the dialog is
+  // persisted — same reasoning as rich_text_table_controller.js's
+  // refreshAttachment: the dialog is an ordinary page fragment outside
+  // Trix's own document, so this is what actually pushes the change into
+  // the live attachment instead of leaving it to only show up once the
+  // page itself is saved and reloaded.
+  refreshAttachment(event) {
+    const { id, content } = event.detail
+    const marker = `js-callout-id-${id}`
+
+    this.trixElement.editor.getDocument().getAttachments().forEach((attachment) => {
+      if (attachment.getContent()?.includes(marker)) attachment.setAttributes({ content })
+    })
+
+    // setAttributes above keeps Trix's own document model in sync (what
+    // actually gets saved), but unlike an image attachment — which Trix
+    // does know how to refresh in place — a "content" attachment's DOM
+    // node is only ever built once, at insertion (confirmed directly:
+    // the model updates, the rendered callout does not). So the visible
+    // node has to be swapped by hand too, or the dialog closing would be
+    // the only thing that ever appeared to do anything.
+    const rendered = this.trixElement.querySelector(`.${marker}`)
+    const template = document.createElement("template")
+    template.innerHTML = content
+    const replacement = template.content.querySelector(`.${marker}`)
+    if (rendered && replacement) rendered.replaceWith(replacement)
+  }
 }

@@ -25,11 +25,19 @@ class CalloutsController < ApplicationController
     render partial: "callouts/editable", formats: [ :html ], locals: { callout: @callout }
   end
 
+  # Returns the freshly-rendered preview (the same partial the in-editor
+  # Trix attachment displays) so rich_text_callout_controller.js can push it
+  # straight into the live attachment — see ContentTablesController#update
+  # for why: otherwise a live edit wouldn't show until the whole page was
+  # saved and reloaded.
   def update
     authorize @callout
 
     if @callout.update(callout_params)
-      head :ok
+      render json: {
+        id: @callout.id,
+        content: render_to_string(partial: "callouts/callout", formats: [ :html ], locals: { callout: @callout })
+      }
     else
       render json: { errors: @callout.errors.full_messages }, status: :unprocessable_entity
     end

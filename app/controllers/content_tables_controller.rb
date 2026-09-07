@@ -30,12 +30,20 @@ class ContentTablesController < ApplicationController
   # and the actual shape is validated by the model regardless (see
   # ContentTable#data_is_a_grid_of_text), so there's nothing extra a
   # permit list would be guarding here.
+  # Returns the freshly-rendered preview (the same partial the in-editor
+  # Trix attachment displays) so rich_text_table_controller.js can push it
+  # straight into the live attachment — otherwise the page keeps showing
+  # whatever was there when the table was inserted until the whole page is
+  # saved and reloaded, even though the edit itself was already persisted.
   def update
     authorize @content_table
 
     data = JSON.parse(params.require(:content_table).require(:data))
     if @content_table.update(data: data)
-      head :ok
+      render json: {
+        id: @content_table.id,
+        content: render_to_string(partial: "content_tables/content_table", formats: [ :html ], locals: { content_table: @content_table })
+      }
     else
       render json: { errors: @content_table.errors.full_messages }, status: :unprocessable_entity
     end

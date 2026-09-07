@@ -47,6 +47,22 @@ class ContentTablesControllerTest < ActionDispatch::IntegrationTest
     assert_equal [ [ "x", "y" ] ], table.reload.data
   end
 
+  # rich_text_table_controller.js uses this to push the edit straight into
+  # the live Trix attachment (see its refreshAttachment) — without it, the
+  # in-editor preview wouldn't change until the page was saved and reloaded.
+  test "update returns the freshly-rendered preview so the live Trix attachment can be refreshed" do
+    sign_in_as(users(:one))
+    table = content_tables(:one)
+
+    patch content_table_path(table),
+      params: { content_table: { data: [ [ "x", "y" ] ].to_json } }, as: :json
+
+    body = JSON.parse(response.body)
+    assert_equal table.id, body["id"]
+    assert_match "x", body["content"]
+    assert_match "rich-text-table--#{table.id}", body["content"]
+  end
+
   test "update rejects malformed JSON" do
     sign_in_as(users(:one))
     table = content_tables(:one)

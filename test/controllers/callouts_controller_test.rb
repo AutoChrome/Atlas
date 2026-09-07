@@ -67,6 +67,21 @@ class CalloutsControllerTest < ActionDispatch::IntegrationTest
     assert_equal "tip", callout.variant
   end
 
+  # rich_text_callout_controller.js uses this to push the edit straight into
+  # the live Trix attachment (see its refreshAttachment) — without it, the
+  # in-editor preview wouldn't change until the page was saved and reloaded.
+  test "update returns the freshly-rendered preview so the live Trix attachment can be refreshed" do
+    sign_in_as(users(:one))
+    callout = callouts(:one)
+
+    patch callout_path(callout), params: { body: "Updated text", variant: "tip" }, as: :json
+
+    body = JSON.parse(response.body)
+    assert_equal callout.id, body["id"]
+    assert_match "Updated text", body["content"]
+    assert_match "js-callout-id-#{callout.id}", body["content"]
+  end
+
   test "update rejects an invalid variant instead of raising" do
     sign_in_as(users(:one))
     callout = callouts(:one)
