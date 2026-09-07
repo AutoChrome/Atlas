@@ -56,17 +56,35 @@ Rails.application.configure do
   # Set this to true and configure the email server for immediate delivery to raise delivery errors.
   # config.action_mailer.raise_delivery_errors = false
 
-  # Set host to be used by links generated in mailer templates.
-  config.action_mailer.default_url_options = { host: ENV.fetch("SITE_ADDRESS", "example.com") }
+  # Set host to be used by links generated in mailer templates. Without an
+  # explicit :protocol here, Action Mailer defaults to "http" — Caddy does
+  # redirect that to https, but a password-reset link (a sensitive token in
+  # the URL) shouldn't transit even that first unencrypted request.
+  config.action_mailer.default_url_options = { host: ENV.fetch("SITE_ADDRESS", "example.com"), protocol: "https" }
 
-  # Specify outgoing SMTP server. Remember to add smtp/* credentials via bin/rails credentials:edit.
-  # config.action_mailer.smtp_settings = {
-  #   user_name: Rails.application.credentials.dig(:smtp, :user_name),
-  #   password: Rails.application.credentials.dig(:smtp, :password),
-  #   address: "smtp.example.com",
-  #   port: 587,
-  #   authentication: :plain
-  # }
+  # Outgoing mail via SMTP (e.g. AWS SES's SMTP interface) — plain env vars
+  # like everything else in this app's config (see .env.example), not Rails
+  # encrypted credentials. Left unconfigured (Action Mailer's own default)
+  # if SMTP_ADDRESS isn't set, so a deploy without email set up yet still
+  # boots — only sending mail fails, not the whole app.
+  if ENV["SMTP_ADDRESS"].present?
+    # SMTP_USE_SSL is for implicit TLS on connect (typically port 465) —
+    # mutually exclusive with STARTTLS (the plain-then-upgrade handshake on
+    # port 587, the default below).
+    smtp_use_ssl = ActiveModel::Type::Boolean.new.cast(ENV["SMTP_USE_SSL"])
+
+    config.action_mailer.delivery_method = :smtp
+    config.action_mailer.smtp_settings = {
+      address: ENV.fetch("SMTP_ADDRESS"),
+      port: ENV.fetch("SMTP_PORT", 587).to_i,
+      domain: ENV["SMTP_DOMAIN"].presence,
+      user_name: ENV.fetch("SMTP_USERNAME"),
+      password: ENV.fetch("SMTP_PASSWORD"),
+      authentication: ENV.fetch("SMTP_AUTHENTICATION", "login").to_sym,
+      enable_starttls_auto: !smtp_use_ssl,
+      ssl: smtp_use_ssl
+    }.compact
+  end
 
   # Enable locale fallbacks for I18n (makes lookups for any locale fall back to
   # the I18n.default_locale when a translation cannot be found).
