@@ -41,4 +41,13 @@ class Area < ApplicationRecord
   def publicly_visible?
     public? || parent&.publicly_visible? || false
   end
+
+  # "Sales > EMEA > Onboarding" — lets a picker (the parent-area dropdown on
+  # the area form, in particular) tell apart two areas that share a name but
+  # live under different parents, which is otherwise completely ambiguous
+  # from the name alone. Duplicate names across the tree are allowed on
+  # purpose (only the slug has to be unique), so this is the disambiguator.
+  def path_name
+    parent ? "#{parent.path_name} > #{name}" : name
+  end
 end

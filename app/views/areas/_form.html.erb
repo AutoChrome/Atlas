@@ -24,7 +24,12 @@
 
   <div class="field">
     <%= f.label :parent_id, "Parent area", class: "field__label" %>
-    <%= f.collection_select :parent_id, Area.where.not(id: area.id).ordered, :id, :name, { include_blank: "None — top level" }, class: "select" %>
+    <%# Sorted by the full "Parent > Child" path (not just each area's own
+        name) so areas under the same parent cluster together, and so two
+        areas that happen to share a name are told apart by where they
+        actually live instead of showing up as identical-looking options. %>
+    <%= f.collection_select :parent_id, Area.where.not(id: area.id).sort_by(&:path_name), :id, :path_name,
+          { include_blank: "None — top level" }, class: "select" %>
   </div>
 
   <div class="checkbox">
