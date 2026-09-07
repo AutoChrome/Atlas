@@ -1,18 +1,23 @@
 import { Controller } from "@hotwired/stimulus"
 
-// Drag-and-drop reordering for areas in the sidebar. Off by default (plain
-// navigation); a toggle button switches into an editing mode where each
-// area becomes draggable within its own sibling group (top-level areas
-// among themselves, each area's sub-areas among themselves) — dragging
-// across groups isn't supported, only reordering within one. Drag-handle
-// visibility is pure CSS (.nav-tree--editing), not JS — see components/_nav_tree.scss.
+// Personal drag-and-drop reordering for areas in the sidebar. This is
+// purely a per-browser preference — saved to localStorage, never sent to
+// the server — so anyone can arrange their own sidebar without touching
+// what anyone else sees. Off by default (plain navigation); a toggle
+// button switches into an editing mode where each area becomes draggable
+// within its own sibling group (top-level areas among themselves, each
+// area's sub-areas among themselves) — dragging across groups isn't
+// supported, only reordering within one. Drag-handle visibility is pure
+// CSS (.nav-tree--editing), not JS — see components/_nav_tree.scss.
+const STORAGE_KEY = "atlas:areaOrder"
+
 export default class extends Controller {
   static targets = ["item", "list", "toggleButton"]
-  static values = { url: String }
 
   connect() {
     this.editing = false
     this.dragged = null
+    this.listTargets.forEach((list) => this.applyOrder(list))
   }
 
   toggle() {
@@ -66,7 +71,7 @@ export default class extends Controller {
     target.parentNode.insertBefore(this.dragged, before ? target : target.nextSibling)
   }
 
-  async drop(event) {
+  drop(event) {
     event.preventDefault()
     if (!this.dragged) return
 
@@ -75,23 +80,59 @@ export default class extends Controller {
       (el) => el.dataset.areaId
     )
 
-    try {
-      await fetch(this.urlValue, {
-        method: "PATCH",
-        headers: {
-          "Content-Type": "application/json",
-          Accept: "application/json",
-          "X-CSRF-Token": document.querySelector('meta[name="csrf-token"]').content,
-        },
-        body: JSON.stringify({ area_ids: ids }),
-      })
-    } finally {
-      this.dragEnd()
-    }
+    this.saveOrder(list.dataset.parentId, ids)
+    this.dragEnd()
   }
 
   dragEnd() {
     this.dragged?.classList.remove("is-dragging")
     this.dragged = null
+  }
+
+  // Rearranges one list's area items (leaving any interspersed page/chart/
+  // tutorial rows untouched) to match a previously-saved order. Areas
+  // created since the order was saved aren't in it — they're left in their
+  // server-rendered position at the end, rather than disappearing.
+  applyOrder(list) {
+    const saved = this.loadOrder(list.dataset.parentId)
+    if (!saved || saved.length === 0) return
+
+    const items = Array.from(list.querySelectorAll(':scope > [data-nav-reorder-target="item"]'))
+    const byId = new Map(items.map((el) => [ el.dataset.areaId, el ]))
+
+    const known = saved.map((id) => byId.get(id)).filter(Boolean)
+    const unknown = items.filter((el) => !saved.includes(el.dataset.areaId))
+
+    // appendChild on an element already in the document moves it — doing
+    // this in the desired order re-sequences just this trailing block of
+    // area items without disturbing the non-area rows before them.
+    ;[ ...known, ...unknown ].forEach((el) => list.appendChild(el))
+  }
+
+  saveOrder(parentId, ids) {
+    const all = this.loadAll()
+    all[parentId] = ids
+    this.persistAll(all)
+  }
+
+  loadOrder(parentId) {
+    return this.loadAll()[parentId]
+  }
+
+  loadAll() {
+    try {
+      return JSON.parse(localStorage.getItem(STORAGE_KEY)) || {}
+    } catch {
+      return {}
+    }
+  }
+
+  persistAll(all) {
+    try {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(all))
+    } catch {
+      // Storage disabled/full/private-browsing — the drag still visually
+      // reordered this page load, it just won't stick next time.
+    }
   }
 }

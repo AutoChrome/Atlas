@@ -1,4 +1,4 @@
-<div class="nav-tree" data-controller="nav-reorder" data-nav-reorder-url-value="<%= reorder_areas_path %>">
+<div class="nav-tree" data-controller="nav-reorder">
   <div class="nav-tree__header">
     <span class="nav-tree__section-label">Areas</span>
 
@@ -6,22 +6,21 @@
       <div class="nav-tree__sort">
         <%= link_to "Sequence", url_for(request.query_parameters.merge(area_sort: "sequence")),
               class: class_names("nav-tree__sort-option", "is-active" => area_sort_mode == "sequence"),
-              title: "Sort areas by their custom order" %>
+              title: "Sort areas by an order you drag yourself" %>
         <%= link_to "A–Z", url_for(request.query_parameters.merge(area_sort: "alphabetical")),
               class: class_names("nav-tree__sort-option", "is-active" => area_sort_mode == "alphabetical"),
               title: "Sort areas alphabetically" %>
       </div>
 
-      <% if current_user&.admin? || current_user&.member? %>
-        <button type="button" class="btn btn--icon btn--sm" data-nav-reorder-target="toggleButton"
-                data-action="nav-reorder#toggle" aria-pressed="false" title="Reorder areas">
-          <%= fa_icon "arrows-up-down" %>
-        </button>
-      <% end %>
+      <button type="button" class="btn btn--icon btn--sm" data-nav-reorder-target="toggleButton"
+              data-action="nav-reorder#toggle" aria-pressed="false"
+              title="Drag areas into your own order — saved on this browser only">
+        <%= fa_icon "arrows-up-down" %>
+      </button>
     </div>
   </div>
 
-  <div class="nav-tree__list" data-nav-reorder-target="list">
+  <div class="nav-tree__list" data-nav-reorder-target="list" data-parent-id="root">
     <% policy_scope(Area).top_level.ordered_by(area_sort_mode).each do |area| %>
       <%= render "shared/area_nav_item", area: area %>
     <% end %>

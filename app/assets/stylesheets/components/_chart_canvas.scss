@@ -111,6 +111,40 @@ body.body--chart-fullscreen {
 .chart-search__icon {
   color: var(--color-on-surface-variant);
   flex-shrink: 0;
+
+  // Swapped for the spinner while a search is actually running (see
+  // .chart-page--searching below) rather than shown alongside it — one
+  // icon slot, not two competing for the same spot.
+  .chart-page--searching & {
+    display: none;
+  }
+}
+
+// Hidden by default; only shown while chart_search_controller.js has
+// classed the page as .chart-page--searching. A search over a small chart
+// finishes within one animation frame and this never gets a chance to
+// paint at all — it only becomes visible once a chunked search (a chart
+// with hundreds of tables) actually takes long enough to need it, which is
+// exactly when a "yes, this is still working" cue matters.
+.chart-search__spinner {
+  display: none;
+  flex-shrink: 0;
+  width: 14px;
+  height: 14px;
+  border: 2px solid var(--color-outline-variant);
+  border-top-color: var(--color-on-surface-variant);
+  border-radius: v.$radius-full;
+  animation: chart-search-spin 0.6s linear infinite;
+
+  .chart-page--searching & {
+    display: block;
+  }
+}
+
+@keyframes chart-search-spin {
+  to {
+    transform: rotate(360deg);
+  }
 }
 
 .chart-search__input {
@@ -213,6 +247,16 @@ body.body--chart-fullscreen {
   gap: m.spacer(4);
   align-content: start;
   background-color: var(--color-surface-container-lowest);
+
+  // Same reasoning as .chart-search__spinner: a fast search never has time
+  // to show this transition at all, but a chunked search on a very large
+  // chart runs across several animation frames while cards are still
+  // settling into their new hidden/visible state — a slight dim signals
+  // that in-between state as "in progress," not "nothing happened yet."
+  .chart-page--searching & {
+    opacity: 0.7;
+    transition: opacity 120ms ease;
+  }
 }
 
 .chart-table {

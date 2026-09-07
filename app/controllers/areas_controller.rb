@@ -53,28 +53,6 @@ class AreasController < ApplicationController
     redirect_to areas_path, notice: "Area deleted.", status: :see_other
   end
 
-  # Persists a drag-and-drop reorder from the sidebar. area_ids is the new
-  # order for one sibling group (all areas sharing the same parent) — moving
-  # an area to a *different* parent isn't supported here, only reordering
-  # within its current one.
-  def reorder
-    areas = Area.where(id: Array(params[:area_ids])).index_by { |area| area.id.to_s }
-    ordered_ids = Array(params[:area_ids]).map(&:to_s) & areas.keys
-    return head :unprocessable_entity if ordered_ids.empty?
-
-    unless ordered_ids.map { |id| areas.fetch(id).parent_id }.uniq.size == 1
-      return head :unprocessable_entity
-    end
-
-    ordered_ids.each { |id| authorize areas.fetch(id), :update? }
-
-    Area.transaction do
-      ordered_ids.each_with_index { |id, index| areas.fetch(id).update!(position: index) }
-    end
-
-    head :ok
-  end
-
   private
     def set_area
       @area = Area.friendly.find(params[:slug])

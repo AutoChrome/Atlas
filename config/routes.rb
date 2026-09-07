@@ -12,8 +12,6 @@ Rails.application.routes.draw do
   get "icon_suggestions", to: "icon_suggestions#index"
 
   resources :areas, param: :slug do
-    collection { patch :reorder }
-
     resources :pages, param: :slug do
       member do
         patch :move

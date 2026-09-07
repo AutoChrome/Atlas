@@ -17,6 +17,7 @@
     <% if @chart_tables.any? %>
       <div class="chart-search">
         <%= fa_icon "magnifying-glass", css_class: "chart-search__icon" %>
+        <span class="chart-search__spinner" aria-hidden="true"></span>
         <input type="search" class="chart-search__input" placeholder="Search tables or columns…"
                aria-label="Search tables or columns"
                data-chart-search-target="input" data-action="input->chart-search#search">

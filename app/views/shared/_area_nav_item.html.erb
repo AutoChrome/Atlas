@@ -35,7 +35,8 @@
   </div>
 
   <% if has_children %>
-    <div class="nav-tree__children" data-nav-collapse-target="children" data-nav-reorder-target="list" <%= "hidden" unless expanded %>>
+    <div class="nav-tree__children" data-nav-collapse-target="children" data-nav-reorder-target="list"
+         data-parent-id="<%= area.id %>" <%= "hidden" unless expanded %>>
       <% pages.each do |page| %>
         <%# Matches an area row's leading chevron/spacer width so a page
             and a sibling sub-area line up at the same indent instead of
