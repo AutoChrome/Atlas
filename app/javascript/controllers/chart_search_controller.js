@@ -8,18 +8,24 @@ import { Controller } from "@hotwired/stimulus"
 // grouped after the divider — following a relationship shouldn't mean
 // losing sight of what you actually searched for.
 //
-// A chart with hundreds of tables makes the actual DOM-mutation pass (the
-// `hidden`/`order` flip on every card) big enough to visibly block the
-// main thread — on a large enough chart, typing could make the tab look
-// frozen for a moment. Two things fix that, matching the general
-// "skeleton + background" pattern: (1) a "searching" indicator is applied
-// on the *next* animation frame after the debounce fires, so the browser
-// actually gets to paint it before any of the heavier work starts, rather
-// than both landing in the same blocked task; (2) the mutation pass itself
-// is chunked across animation frames so a single frame never does more
-// than CHUNK_SIZE cards' worth of writes — the tab stays scrollable and
-// keeps taking keystrokes throughout, even mid-search on a very large chart.
-const CHUNK_SIZE = 40
+// A chart with a lot of tables makes this real work: computing matches AND
+// flipping hidden/order on every card. An earlier version of this file
+// split that into fixed-size batches (e.g. "40 cards, then yield a frame")
+// on the theory that yielding between batches keeps the tab responsive.
+// It doesn't, reliably — a *fixed item count* per batch only stays under a
+// frame budget if you already know how expensive each item is, and on a
+// big enough chart (or a slower machine) it doesn't: Chrome's own
+// performance panel showed keystrokes with ~13ms of actual processing
+// stuck behind ~13 SECONDS of input delay, meaning a train of overrunning
+// "batches" had queued up ahead of the keystroke even though each one was
+// technically yielding in between.
+//
+// runChunked below fixes that by chunking on a *time budget* instead of a
+// count: do real work until FRAME_BUDGET_MS has elapsed, however many (or
+// few) items that turns out to be, then yield a frame and continue. This
+// self-adjusts to whatever the actual per-item cost is on whatever
+// hardware/chart size it's running against, instead of guessing.
+const FRAME_BUDGET_MS = 8
 
 export default class extends Controller {
   static targets = ["input", "table", "divider"]
@@ -47,7 +53,7 @@ export default class extends Controller {
     this.element.classList.add("chart-page--searching")
 
     // A second frame boundary: the class above has to actually get
-    // painted before the (possibly chunky) work below starts, or the
+    // painted before the (possibly slow) work below starts, or the
     // "searching" state and that work would land in the same task and the
     // former would never be visible.
     const query = this.inputTarget.value.trim().toLowerCase()
@@ -58,55 +64,85 @@ export default class extends Controller {
     const tables = this.tableTargets
 
     if (!query) {
-      tables.forEach((el) => {
+      this.runChunked(tables, (el) => {
         el.hidden = false
         el.style.order = ""
+      }, () => {
+        this.setDividerVisible(false)
+        this.finishFilter()
       })
-      this.setDividerVisible(false)
-      this.finishFilter()
       return
     }
 
-    const matchedIds = new Set(
-      tables.filter((el) => el.dataset.searchText.includes(query)).map((el) => el.dataset.chartTableId)
+    const matchedIds = new Set()
+    this.runChunked(
+      tables,
+      (el) => {
+        if (el.dataset.searchText.includes(query)) matchedIds.add(el.dataset.chartTableId)
+      },
+      () => this.computeRelated(tables, query, matchedIds)
     )
-
-    const relatedIds = new Set()
-    tables.forEach((el) => {
-      if (!matchedIds.has(el.dataset.chartTableId)) return
-      this.relatedIdsFor(el).forEach((id) => {
-        if (!matchedIds.has(id)) relatedIds.add(id)
-      })
-    })
-
-    this.applyVisibility(tables, 0, matchedIds, relatedIds)
   }
 
-  // Flips hidden/order on up to CHUNK_SIZE cards, then yields to the
-  // browser via requestAnimationFrame before continuing with the rest.
-  applyVisibility(tables, start, matchedIds, relatedIds) {
-    const end = Math.min(start + CHUNK_SIZE, tables.length)
+  computeRelated(tables, query, matchedIds) {
+    const relatedIds = new Set()
+    this.runChunked(
+      tables,
+      (el) => {
+        if (!matchedIds.has(el.dataset.chartTableId)) return
+        this.relatedIdsFor(el).forEach((id) => {
+          if (!matchedIds.has(id)) relatedIds.add(id)
+        })
+      },
+      () => this.applyVisibility(tables, matchedIds, relatedIds)
+    )
+  }
 
-    for (let i = start; i < end; i++) {
-      const el = tables[i]
-      const id = el.dataset.chartTableId
-      if (matchedIds.has(id)) {
-        el.hidden = false
-        el.style.order = "0"
-      } else if (relatedIds.has(id)) {
-        el.hidden = false
-        el.style.order = "2"
+  applyVisibility(tables, matchedIds, relatedIds) {
+    this.runChunked(
+      tables,
+      (el) => {
+        const id = el.dataset.chartTableId
+        if (matchedIds.has(id)) {
+          el.hidden = false
+          el.style.order = "0"
+        } else if (relatedIds.has(id)) {
+          el.hidden = false
+          el.style.order = "2"
+        } else {
+          el.hidden = true
+        }
+      },
+      () => {
+        this.setDividerVisible(relatedIds.size > 0)
+        this.finishFilter()
+      }
+    )
+  }
+
+  // Runs `work(item)` over every item in `items`, spending at most
+  // FRAME_BUDGET_MS per animation frame before yielding and continuing on
+  // the next one, then calls `done`. Stores the pending frame on
+  // `this.frameHandle` so search()/disconnect() can cancel a run that's
+  // still mid-flight when a new keystroke or a page change comes in.
+  runChunked(items, work, done) {
+    let index = 0
+
+    const step = () => {
+      const deadline = performance.now() + FRAME_BUDGET_MS
+      while (index < items.length && performance.now() < deadline) {
+        work(items[index])
+        index++
+      }
+
+      if (index < items.length) {
+        this.frameHandle = requestAnimationFrame(step)
       } else {
-        el.hidden = true
+        done()
       }
     }
 
-    if (end < tables.length) {
-      this.frameHandle = requestAnimationFrame(() => this.applyVisibility(tables, end, matchedIds, relatedIds))
-    } else {
-      this.setDividerVisible(relatedIds.size > 0)
-      this.finishFilter()
-    }
+    step()
   }
 
   finishFilter() {
