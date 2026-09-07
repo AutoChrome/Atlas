@@ -23,6 +23,13 @@ class TutorialTest < ActiveSupport::TestCase
     assert_not tutorial.reload.linear?
   end
 
+  test "search_data indexes every step's title and content, not just the tutorial's own description" do
+    data = tutorials(:one).search_data
+
+    assert_includes data[:steps_content], "Step One"
+    assert_includes data[:steps_content], "Step Two"
+  end
+
   test "total_tasks_count and answered_tasks_count only count this tutorial's own steps" do
     tutorial = tutorials(:one)
     assert_equal 2, tutorial.total_tasks_count # tasks :one and :two, both under tutorial :one's steps

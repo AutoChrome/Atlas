@@ -1,7 +1,15 @@
 class ChartIndicesController < ApplicationController
   before_action :set_area
   before_action :set_chart
+  before_action :set_chart_table, only: %i[new]
   before_action :set_chart_index, only: %i[update destroy]
+
+  # Rendered on demand (see modal_controller.js's lazy-load support) rather
+  # than inline for every table.
+  def new
+    authorize ChartIndex.new(chart_table: @chart_table), :create?
+    render partial: "chart_indices/form", locals: { area: @area, chart: @chart, table: @chart_table }
+  end
 
   def create
     chart_table = @chart.chart_tables.find(params[:chart_index][:chart_table_id])
@@ -38,6 +46,10 @@ class ChartIndicesController < ApplicationController
 
     def set_chart
       @chart = @area.charts.friendly.find(params[:chart_slug])
+    end
+
+    def set_chart_table
+      @chart_table = @chart.chart_tables.find(params[:chart_table_id])
     end
 
     def set_chart_index

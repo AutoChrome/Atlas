@@ -10,13 +10,11 @@
 
       <% if can_edit %>
         <div class="cluster" style="gap: 2px;">
-          <div data-controller="modal">
+          <div data-controller="modal" data-modal-src-value="<%= new_area_chart_chart_column_path(area, chart, chart_table_id: table.id) %>">
             <button type="button" class="btn btn--icon btn--sm" data-action="click->modal#open" aria-label="Add column">
               <%= fa_icon "plus" %>
             </button>
-            <dialog class="modal" data-modal-target="dialog" data-action="click->modal#closeOnBackdrop">
-              <%= render "chart_columns/new_form", area: area, chart: chart, table: table %>
-            </dialog>
+            <dialog class="modal" data-modal-target="dialog" data-action="click->modal#closeOnBackdrop"></dialog>
           </div>
 
           <%= button_to area_chart_chart_table_path(area, chart, table), method: :delete,
@@ -61,13 +59,11 @@
   <% end %>
 
   <% if can_edit %>
-    <div data-controller="modal">
+    <div data-controller="modal" data-modal-src-value="<%= new_area_chart_chart_index_path(area, chart, chart_table_id: table.id) %>">
       <button type="button" class="btn btn--text btn--sm" data-action="click->modal#open">
         <%= fa_icon "plus" %> Add index
       </button>
-      <dialog class="modal" data-modal-target="dialog" data-action="click->modal#closeOnBackdrop">
-        <%= render "chart_indices/form", area: area, chart: chart, table: table %>
-      </dialog>
+      <dialog class="modal" data-modal-target="dialog" data-action="click->modal#closeOnBackdrop"></dialog>
     </div>
   <% end %>
 

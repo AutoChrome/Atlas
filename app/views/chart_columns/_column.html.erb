@@ -25,13 +25,12 @@
     </span>
 
     <% if can_edit %>
-      <div class="cluster" style="gap: 2px;" data-controller="modal">
+      <div class="cluster" style="gap: 2px;" data-controller="modal"
+           data-modal-src-value="<%= edit_area_chart_chart_column_path(area, chart, column) %>">
         <button type="button" class="btn btn--icon btn--sm" data-action="click->modal#open" aria-label="Edit column">
           <%= fa_icon "pen" %>
         </button>
-        <dialog class="modal" data-modal-target="dialog" data-action="click->modal#closeOnBackdrop">
-          <%= render "chart_columns/edit_form", area: area, chart: chart, table: table, column: column %>
-        </dialog>
+        <dialog class="modal" data-modal-target="dialog" data-action="click->modal#closeOnBackdrop"></dialog>
       </div>
     <% end %>
   </div>

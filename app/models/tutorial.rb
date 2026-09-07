@@ -11,10 +11,20 @@ class Tutorial < ApplicationRecord
   has_rich_text :description
   has_many :tutorial_steps, -> { order(:position) }, dependent: :destroy, inverse_of: :tutorial
 
-  searchkick word_start: [ :title, :description ]
+  # word_start on steps_content too — a tutorial's own description is just
+  # its overview; the actual instructional content lives in its steps, so
+  # without this a search for something a step's body actually says
+  # wouldn't find the tutorial it's in at all.
+  searchkick word_start: [ :title, :description, :steps_content ]
 
   def search_data
-    { title: title, description: description.to_plain_text, area_name: area.name, public: publicly_visible? }
+    {
+      title: title,
+      description: description.to_plain_text,
+      steps_content: tutorial_steps.includes(:rich_text_content).map { |s| "#{s.title} #{s.content.to_plain_text}" }.join(" "),
+      area_name: area.name,
+      public: publicly_visible?
+    }
   end
 
   validates :title, presence: true

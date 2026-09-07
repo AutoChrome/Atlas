@@ -24,4 +24,13 @@ class ChartTest < ActiveSupport::TestCase
     chart.area.update!(public: true)
     assert chart.reload.publicly_visible?
   end
+
+  test "search_data indexes table and column names across all of the chart's tables" do
+    data = charts(:one).search_data
+
+    assert_includes data[:table_names], "users"
+    assert_includes data[:table_names], "posts"
+    assert_includes data[:column_names], "id"
+    assert_includes data[:column_names], "user_id"
+  end
 end
