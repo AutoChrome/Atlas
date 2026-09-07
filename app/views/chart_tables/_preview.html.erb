@@ -1,0 +1,53 @@
+<%# locals: table:, area:, chart:
+    A read-only preview of a table found in a *different* chart (see
+    ChartsController#elsewhere) — reuses the same classes as the real
+    chart-table card for visual consistency, but deliberately has no edit
+    buttons, no modals, no indices/relationships list: you're browsing this
+    from another chart's search box, not editing it from here.
+
+    Rendered directly into the search chart's own grid (alongside its
+    "Also connected to your search" section, not inside the dropdown —
+    see chart_search_controller.js), so it needs its own link back to
+    where it actually lives; `data-elsewhere-preview` marks it so a new
+    search can find and remove the previous batch before inserting the
+    next one, and the inline order keeps it grouped after this chart's own
+    matched/related cards without needing JS to set it per element. %>
+<div class="chart-table chart-table--preview" data-elsewhere-preview style="order: 3;">
+  <div class="chart-table__header">
+    <div class="chart-table__header-top">
+      <%= fa_icon "table", css_class: "chart-table__icon" %>
+      <%= link_to area_chart_path(area, chart), class: "chart-table__preview-source" do %>
+        <%= fa_icon "arrow-up-right-from-square" %> <%= area.name %> · <%= chart.title %>
+      <% end %>
+    </div>
+    <span class="chart-table__name"><%= safe_join(table.name.split("_"), "_".html_safe + tag.wbr) %></span>
+  </div>
+
+  <div class="chart-table__columns">
+    <% table.chart_columns.each do |column| %>
+      <div class="chart-column">
+        <div class="chart-column__row">
+          <span class="chart-column__name"><%= safe_join(column.name.split("_"), "_".html_safe + tag.wbr) %></span>
+          <% if column.data_type.present? %>
+            <span class="chart-column__type text-muted"><%= column.data_type %></span>
+          <% end %>
+
+          <span class="chart-column__badges">
+            <% if column.primary_key? %>
+              <span class="chart-badge chart-badge--pk" title="Primary key"><%= fa_icon "key" %> PK</span>
+            <% end %>
+            <% if column.foreign_key? %>
+              <span class="chart-badge chart-badge--fk" title="Foreign key">FK</span>
+            <% end %>
+            <% if column.unique? %>
+              <span class="chart-badge chart-badge--unique" title="Unique constraint">UNIQUE</span>
+            <% end %>
+            <% unless column.nullable? %>
+              <span class="chart-column__not-null text-muted">NOT NULL</span>
+            <% end %>
+          </span>
+        </div>
+      </div>
+    <% end %>
+  </div>
+</div>

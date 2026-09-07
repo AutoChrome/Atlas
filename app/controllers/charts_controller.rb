@@ -1,8 +1,8 @@
 class ChartsController < ApplicationController
-  allow_unauthenticated_access only: %i[show]
+  allow_unauthenticated_access only: %i[show elsewhere]
 
   before_action :set_area
-  before_action :set_chart, only: %i[show edit update destroy preview_import apply_import]
+  before_action :set_chart, only: %i[show edit update destroy preview_import apply_import elsewhere]
 
   def show
     authorize @chart
@@ -115,7 +115,65 @@ class ChartsController < ApplicationController
     redirect_to [ @area, @chart ], alert: "Couldn't apply those changes: #{e.message}"
   end
 
+  # Backs the chart page's own table search: alongside filtering this
+  # chart's tables client-side, it asks whether the same name shows up in
+  # a *different* chart too — useful because a foreign key can point at a
+  # table someone put in another chart, and ChartRelationship deliberately
+  # can't model that (a relationship is scoped to one chart; letting it
+  # reference another chart's column would need its own visibility check,
+  # not something to bolt on here). This is read-only and non-authoritative
+  # by design — a name match, not a real relationship — so it reuses the
+  # same Chart search index the sitewide search already relies on rather
+  # than adding new data to maintain.
+  def elsewhere
+    authorize @chart, :show?
+    query = params[:q].to_s.strip
+    return render json: { results: [] } if query.blank?
+
+    visibility_filter = current_user ? {} : { public: true }
+    other_charts = Chart.search(
+      query,
+      fields: [ "table_names", "column_names" ],
+      match: :word_start,
+      where: visibility_filter.merge(id: { not: @chart.id }),
+      limit: 8,
+      includes: [ :area ]
+    )
+
+    results = other_charts.filter_map { |c| elsewhere_result(c, query) }
+    render json: { results: results }
+  rescue Searchkick::Error, Faraday::ConnectionFailed => e
+    Rails.logger.error("Chart elsewhere-search unavailable: #{e.message}")
+    render json: { results: [] }
+  end
+
   private
+    # Searchkick tells us the chart matched, not which of its (possibly
+    # hundreds or thousands of) tables did — filtered at the database
+    # level, not by loading the whole chart into memory and scanning it in
+    # Ruby, specifically so a match in a *huge* other chart doesn't drag
+    # its entire table/column set into this request just to find 2-3 rows.
+    def elsewhere_result(chart, query)
+      like_query = "%#{ActiveRecord::Base.sanitize_sql_like(query)}%"
+      matched_tables = chart.chart_tables
+        .left_joins(:chart_columns)
+        .where("chart_tables.name ILIKE :q OR chart_columns.name ILIKE :q", q: like_query)
+        .distinct
+        .includes(chart_columns: :outgoing_relationships)
+        .limit(3)
+
+      return nil if matched_tables.empty?
+
+      {
+        chart_title: chart.title,
+        area_name: chart.area.name,
+        url: area_chart_path(chart.area, chart),
+        tables_html: matched_tables.map { |table|
+          render_to_string(partial: "chart_tables/preview", formats: [ :html ], locals: { table: table, area: chart.area, chart: chart })
+        }.join
+      }
+    end
+
     def set_area
       @area = Area.friendly.find(params[:area_slug])
     end

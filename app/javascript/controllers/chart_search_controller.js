@@ -28,16 +28,28 @@ import { Controller } from "@hotwired/stimulus"
 const FRAME_BUDGET_MS = 8
 
 export default class extends Controller {
-  static targets = ["input", "table", "divider"]
+  static targets = ["input", "table", "divider", "elsewhere"]
+  static values = { elsewhereUrl: String }
 
   connect() {
     this.debounceTimer = null
     this.frameHandle = null
+    this.elsewhereAbortController = null
+    this.lastElsewhereResults = []
+    // The "Also connected to your search" divider covers two independent
+    // sources — this chart's own relationship-related tables, and tables
+    // found in other charts — computed on different schedules (one's a
+    // synchronous local pass, the other a network round trip). Each tracks
+    // its own count and both go through updateDividerVisibility so neither
+    // one's result overwrites the other's.
+    this.lastRelatedCount = 0
+    this.lastElsewhereTableCount = 0
   }
 
   disconnect() {
     clearTimeout(this.debounceTimer)
     if (this.frameHandle) cancelAnimationFrame(this.frameHandle)
+    this.elsewhereAbortController?.abort()
   }
 
   search() {
@@ -46,7 +58,121 @@ export default class extends Controller {
 
     this.debounceTimer = setTimeout(() => {
       this.frameHandle = requestAnimationFrame(() => this.beginFilter())
+      this.searchElsewhere()
     }, 200)
+  }
+
+  // A foreign key can point at a table someone organized into a different
+  // chart entirely, which this chart's own tables obviously can't surface
+  // no matter how the local filter above is tuned. This asks the same
+  // Chart search index the sitewide search uses whether the query also
+  // matches a table/column name in another chart — a small, independent
+  // request (aborting a still-in-flight one on the next keystroke, same
+  // idiom as typeahead_controller.js) that never touches this page's own
+  // DOM size, so it stays cheap regardless of how large this chart is.
+  async searchElsewhere() {
+    if (!this.hasElsewhereUrlValue) return
+
+    const query = this.inputTarget.value.trim()
+    this.elsewhereAbortController?.abort()
+
+    if (query.length < 2) {
+      this.renderElsewhere([])
+      return
+    }
+
+    this.elsewhereAbortController = new AbortController()
+
+    try {
+      const response = await fetch(`${this.elsewhereUrlValue}?q=${encodeURIComponent(query)}`, {
+        headers: { Accept: "application/json" },
+        signal: this.elsewhereAbortController.signal,
+      })
+      const data = await response.json()
+      this.renderElsewhere(data.results || [])
+    } catch (error) {
+      if (error.name !== "AbortError") this.renderElsewhere([])
+    }
+  }
+
+  // The dropdown under the search box is just a quick-jump link list (chart
+  // + area name) — the actual table content goes into this chart's own
+  // grid instead (see insertElsewhereTables), under the same "Also
+  // connected to your search" section as in-chart related tables.
+  renderElsewhere(results) {
+    this.lastElsewhereResults = results
+    this.insertElsewhereTables(results.map((result) => result.tables_html).join(""))
+
+    if (!this.hasElsewhereTarget) return
+
+    if (results.length === 0) {
+      this.elsewhereTarget.innerHTML = ""
+      this.hideElsewherePanel()
+      return
+    }
+
+    this.elsewhereTarget.innerHTML = results
+      .map(
+        (result) => `
+          <a class="chart-search__elsewhere-item" href="${this.escapeHtml(result.url)}">
+            <span class="chart-search__elsewhere-chart">${this.escapeHtml(result.chart_title)}</span>
+            <span class="chart-search__elsewhere-meta">${this.escapeHtml(result.area_name)}</span>
+          </a>
+        `
+      )
+      .join("")
+    this.showElsewherePanel()
+  }
+
+  // Removes whichever cross-chart preview cards a previous search left in
+  // the grid (marked with data-elsewhere-preview — see
+  // chart_tables/_preview.html.erb) and inserts the current batch, which
+  // already carries its own `order` and source-chart link from the
+  // server-rendered partial. The grid element itself isn't a Stimulus
+  // target — the divider's own parent is it, and that's already available.
+  insertElsewhereTables(tablesHtml) {
+    const grid = this.dividerTarget.parentElement
+    grid.querySelectorAll("[data-elsewhere-preview]").forEach((el) => el.remove())
+
+    if (tablesHtml) {
+      const template = document.createElement("template")
+      template.innerHTML = tablesHtml
+      this.lastElsewhereTableCount = template.content.children.length
+      grid.append(...template.content.children)
+    } else {
+      this.lastElsewhereTableCount = 0
+    }
+
+    this.updateDividerVisibility()
+  }
+
+  // Re-opens the panel with whatever was last found, without re-fetching —
+  // clicking back into the search box after having dismissed it (see
+  // closeElsewhereOnOutsideClick) should feel instant, not re-run a search.
+  openElsewhere() {
+    if (this.lastElsewhereResults.length > 0) this.showElsewherePanel()
+  }
+
+  // "Click on the background" dismisses the panel until the search box is
+  // used again — bound to click@document (see the view) so this fires for
+  // a click anywhere on the page, not just within this controller's own
+  // element (which is the whole chart page, grid included).
+  closeElsewhereOnOutsideClick(event) {
+    if (!event.target.closest(".chart-search")) this.hideElsewherePanel()
+  }
+
+  showElsewherePanel() {
+    if (this.hasElsewhereTarget) this.elsewhereTarget.hidden = false
+  }
+
+  hideElsewherePanel() {
+    if (this.hasElsewhereTarget) this.elsewhereTarget.hidden = true
+  }
+
+  escapeHtml(text) {
+    const div = document.createElement("div")
+    div.textContent = text
+    return div.innerHTML
   }
 
   beginFilter() {
@@ -68,7 +194,8 @@ export default class extends Controller {
         el.hidden = false
         el.style.order = ""
       }, () => {
-        this.setDividerVisible(false)
+        this.lastRelatedCount = 0
+        this.updateDividerVisibility()
         this.finishFilter()
       })
       return
@@ -114,7 +241,8 @@ export default class extends Controller {
         }
       },
       () => {
-        this.setDividerVisible(relatedIds.size > 0)
+        this.lastRelatedCount = relatedIds.size
+        this.updateDividerVisibility()
         this.finishFilter()
       }
     )
@@ -153,9 +281,9 @@ export default class extends Controller {
     return (el.dataset.relatedTableIds || "").split(",").filter(Boolean)
   }
 
-  setDividerVisible(visible) {
+  updateDividerVisibility() {
     if (!this.hasDividerTarget) return
-    this.dividerTarget.hidden = !visible
+    this.dividerTarget.hidden = !(this.lastRelatedCount > 0 || this.lastElsewhereTableCount > 0)
     this.dividerTarget.style.order = "1"
   }
 }

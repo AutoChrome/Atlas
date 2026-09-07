@@ -4,7 +4,8 @@
 
 <% can_edit = policy(@chart).update? %>
 
-<div class="chart-page" data-controller="chart-search">
+<div class="chart-page" data-controller="chart-search" data-chart-search-elsewhere-url-value="<%= elsewhere_area_chart_path(@area, @chart) %>"
+     data-action="click@document->chart-search#closeElsewhereOnOutsideClick">
   <div class="chart-page__topleft">
     <div class="chart-page__identity">
       <%= link_to area_path(@area), class: "chart-page__identity-back", aria: { label: "Back to #{@area.name}" }, title: @area.name do %>
@@ -20,7 +21,15 @@
         <span class="chart-search__spinner" aria-hidden="true"></span>
         <input type="search" class="chart-search__input" placeholder="Search tables or columns…"
                aria-label="Search tables or columns"
-               data-chart-search-target="input" data-action="input->chart-search#search">
+               data-chart-search-target="input"
+               data-action="input->chart-search#search click->chart-search#openElsewhere focus->chart-search#openElsewhere">
+
+        <%# Populated only when a search also matches a table/column name in
+            a DIFFERENT chart — a lightweight, non-authoritative heads-up
+            (name-matching, not a real relationship — see
+            ChartsController#elsewhere) since a foreign key can point at a
+            table someone organized into another chart entirely. %>
+        <div class="chart-search__elsewhere" data-chart-search-target="elsewhere" hidden></div>
       </div>
     <% end %>
   </div>

@@ -44,4 +44,53 @@ class ChartsControllerTest < ActionDispatch::IntegrationTest
 
     assert_redirected_to new_session_path
   end
+
+  test "elsewhere returns a blank result without touching search for a blank query" do
+    sign_in_as(users(:one))
+
+    get elsewhere_area_chart_path(@area, @chart), params: { q: "" }, as: :json
+
+    assert_response :success
+    assert_equal [], JSON.parse(response.body)["results"]
+  end
+
+  test "elsewhere reports which of another chart's own tables/columns matched, excluding this chart itself" do
+    sign_in_as(users(:one))
+    other_chart = charts(:two) # has chart_tables(:other_chart_table), named "widgets"
+
+    with_search_stub(Chart, ->(*) { [ other_chart ] }) do
+      get elsewhere_area_chart_path(@area, @chart), params: { q: "widgets" }, as: :json
+    end
+
+    assert_response :success
+    results = JSON.parse(response.body)["results"]
+    assert_equal 1, results.size
+    assert_equal other_chart.title, results.first["chart_title"]
+    assert_equal other_chart.area.name, results.first["area_name"]
+    # A rendered preview of the matched table (see chart_tables/_preview),
+    # not just its name — includes the table name and, since PK: true is
+    # set on chart_columns(:other_chart_column), its PK badge.
+    assert_match "widgets", results.first["tables_html"]
+    assert_match "PK", results.first["tables_html"]
+  end
+
+  test "elsewhere excludes a returned chart whose tables don't actually match by name (a title/description-only hit)" do
+    sign_in_as(users(:one))
+    other_chart = charts(:two)
+
+    with_search_stub(Chart, ->(*) { [ other_chart ] }) do
+      get elsewhere_area_chart_path(@area, @chart), params: { q: "no_such_table_or_column" }, as: :json
+    end
+
+    assert_response :success
+    assert_equal [], JSON.parse(response.body)["results"]
+  end
+
+  test "an anonymous visitor can reach elsewhere for a publicly visible chart" do
+    @area.update!(public: true)
+
+    get elsewhere_area_chart_path(@area, @chart), params: { q: "anything" }, as: :json
+
+    assert_response :success
+  end
 end

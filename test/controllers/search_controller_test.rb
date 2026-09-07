@@ -36,16 +36,4 @@ class SearchControllerTest < ActionDispatch::IntegrationTest
     results = JSON.parse(response.body)["results"]
     assert_equal [ { "type" => "Area", "title" => area_one.name, "url" => area_path(area_one) } ], results
   end
-
-  private
-    # Swaps a model's Searchkick-provided .search for the duration of the
-    # block, then restores the original — no mocking gem needed for one
-    # class-method stub.
-    def with_search_stub(model, replacement)
-      original = model.method(:search)
-      model.define_singleton_method(:search, replacement)
-      yield
-    ensure
-      model.define_singleton_method(:search, original)
-    end
 end

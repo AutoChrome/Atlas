@@ -94,6 +94,7 @@ body.body--chart-fullscreen {
 }
 
 .chart-search {
+  position: relative;
   flex: 1;
   min-width: 0;
   max-width: 320px;
@@ -106,6 +107,86 @@ body.body--chart-fullscreen {
   background-color: var(--color-surface-container-lowest);
   border: 1px solid var(--color-outline-variant);
   @include m.surface-elevation(2);
+}
+
+// A name match in a *different* chart — not a real relationship (see
+// ChartsController#elsewhere), just a heads-up that a foreign key here
+// might point at a table someone organized elsewhere. Just a quick-jump
+// link list; the actual table content this represents is rendered
+// directly into the grid instead (see chart_search_controller.js's
+// insertElsewhereTables), under "Also connected to your search". Anchored
+// to the search box itself since chart-page__topleft's own children float
+// side by side and don't otherwise give this something to hang under.
+.chart-search__elsewhere {
+  position: absolute;
+  top: calc(100% + #{m.spacer(1)});
+  left: 0;
+  right: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: m.spacer(2);
+  max-height: 40vh;
+  overflow-y: auto;
+  background-color: var(--color-surface-container-high);
+  border-radius: v.$radius-md;
+  @include m.surface-elevation(3);
+
+  &[hidden] {
+    display: none;
+  }
+}
+
+.chart-search__elsewhere-item {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: m.spacer(2) m.spacer(3);
+  border-radius: v.$radius-sm;
+  color: var(--color-on-surface);
+
+  &:hover {
+    background-color: var(--color-surface-container-highest);
+  }
+}
+
+.chart-search__elsewhere-chart {
+  @include m.type(body);
+  font-weight: 600;
+
+  &::before {
+    content: "↗ Also in ";
+    font-weight: 400;
+    color: var(--color-on-surface-variant);
+  }
+}
+
+.chart-search__elsewhere-meta {
+  @include m.type(label);
+  color: var(--color-on-surface-variant);
+}
+
+// Dashed border marks this as a reference from another chart, not a real
+// card in this one — same .chart-table base look otherwise (see
+// chart_tables/_preview.html.erb), just non-interactive: no edit buttons,
+// no drag, nothing to click inside it except its own source-chart link.
+.chart-table--preview {
+  border-style: dashed;
+  cursor: default;
+}
+
+.chart-table__preview-source {
+  @include m.type(label);
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  color: var(--color-on-surface-variant);
+  margin-left: auto;
+
+  &:hover {
+    color: var(--color-on-surface);
+    text-decoration: underline;
+  }
 }
 
 .chart-search__icon {

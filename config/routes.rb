@@ -20,7 +20,7 @@ Rails.application.routes.draw do
 
     resources :charts, param: :slug do
       collection { get :new_import; post :import }
-      member { post :preview_import; post :apply_import }
+      member { post :preview_import; post :apply_import; get :elsewhere }
 
       resources :chart_tables, path: "tables", only: %i[create update destroy]
       resources :chart_columns, path: "columns", only: %i[new create edit update destroy]
