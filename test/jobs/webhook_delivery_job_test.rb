@@ -11,7 +11,7 @@ class WebhookDeliveryJobTest < ActiveJob::TestCase
   test "sends html format content by default" do
     webhook = Webhook.create!(description: "Default", url: "https://example.com/hook", active: true)
 
-    requests = perform_and_capture_requests(@announcement.id, [ webhook.id ])
+    requests = perform_and_capture_requests(WebhookDeliveryJob::PUBLISHED, @announcement.id, [ webhook.id ])
 
     body = JSON.parse(requests.fetch(webhook.id))
     assert_equal "html", body.dig("announcement", "content_format")
@@ -21,7 +21,7 @@ class WebhookDeliveryJobTest < ActiveJob::TestCase
   test "sends plain_text format content when the webhook is configured that way" do
     webhook = Webhook.create!(description: "Plain", url: "https://example.com/hook", active: true, content_format: :plain_text)
 
-    requests = perform_and_capture_requests(@announcement.id, [ webhook.id ])
+    requests = perform_and_capture_requests(WebhookDeliveryJob::PUBLISHED, @announcement.id, [ webhook.id ])
 
     body = JSON.parse(requests.fetch(webhook.id))
     assert_equal "plain_text", body.dig("announcement", "content_format")
@@ -33,7 +33,7 @@ class WebhookDeliveryJobTest < ActiveJob::TestCase
     html_webhook = Webhook.create!(description: "HTML", url: "https://example.com/hook", active: true, content_format: :html)
     text_webhook = Webhook.create!(description: "Text", url: "https://example.com/hook", active: true, content_format: :plain_text)
 
-    requests = perform_and_capture_requests(@announcement.id, [ html_webhook.id, text_webhook.id ])
+    requests = perform_and_capture_requests(WebhookDeliveryJob::PUBLISHED, @announcement.id, [ html_webhook.id, text_webhook.id ])
 
     refute_equal requests.fetch(html_webhook.id), requests.fetch(text_webhook.id)
   end
@@ -42,7 +42,7 @@ class WebhookDeliveryJobTest < ActiveJob::TestCase
     webhook = Webhook.create!(description: "Default", url: "https://example.com/hook", active: true)
     webhook.update!(custom_parameters_json: '{"team": "platform", "priority": 1}')
 
-    requests = perform_and_capture_requests(@announcement.id, [ webhook.id ])
+    requests = perform_and_capture_requests(WebhookDeliveryJob::PUBLISHED, @announcement.id, [ webhook.id ])
 
     body = JSON.parse(requests.fetch(webhook.id))
     assert_equal({ "team" => "platform", "priority" => 1 }, body["custom_parameters"])
@@ -51,7 +51,7 @@ class WebhookDeliveryJobTest < ActiveJob::TestCase
   test "custom_parameters is an empty object, not absent, when nothing's configured" do
     webhook = Webhook.create!(description: "Default", url: "https://example.com/hook", active: true)
 
-    requests = perform_and_capture_requests(@announcement.id, [ webhook.id ])
+    requests = perform_and_capture_requests(WebhookDeliveryJob::PUBLISHED, @announcement.id, [ webhook.id ])
 
     body = JSON.parse(requests.fetch(webhook.id))
     assert_equal({}, body["custom_parameters"])
@@ -63,7 +63,7 @@ class WebhookDeliveryJobTest < ActiveJob::TestCase
     team_b = Webhook.create!(description: "B", url: "https://example.com/hook", active: true)
     team_b.update!(custom_parameters_json: '{"team": "b"}')
 
-    requests = perform_and_capture_requests(@announcement.id, [ team_a.id, team_b.id ])
+    requests = perform_and_capture_requests(WebhookDeliveryJob::PUBLISHED, @announcement.id, [ team_a.id, team_b.id ])
 
     assert_equal "a", JSON.parse(requests.fetch(team_a.id)).dig("custom_parameters", "team")
     assert_equal "b", JSON.parse(requests.fetch(team_b.id)).dig("custom_parameters", "team")
@@ -72,7 +72,7 @@ class WebhookDeliveryJobTest < ActiveJob::TestCase
   test "renamed field is content, not the old content_html key" do
     webhook = Webhook.create!(description: "Default", url: "https://example.com/hook", active: true)
 
-    requests = perform_and_capture_requests(@announcement.id, [ webhook.id ])
+    requests = perform_and_capture_requests(WebhookDeliveryJob::PUBLISHED, @announcement.id, [ webhook.id ])
 
     body = JSON.parse(requests.fetch(webhook.id))
     assert body["announcement"].key?("content")
@@ -83,7 +83,7 @@ class WebhookDeliveryJobTest < ActiveJob::TestCase
     webhook = Webhook.create!(description: "Default", url: "https://example.com/hook", active: true)
 
     assert_difference "webhook.webhook_deliveries.count", 1 do
-      perform_and_capture_requests(@announcement.id, [ webhook.id ])
+      perform_and_capture_requests(WebhookDeliveryJob::PUBLISHED, @announcement.id, [ webhook.id ])
     end
 
     # Scoped to this specific webhook, not .last — fixture rows (see
@@ -92,6 +92,71 @@ class WebhookDeliveryJobTest < ActiveJob::TestCase
     delivery = webhook.webhook_deliveries.sole
     assert delivery.success?
     assert_equal 200, delivery.status_code
+    assert_equal @announcement, delivery.announcement
+  end
+
+  test "announcement.updated sends the same full shape as published, with the new event name" do
+    webhook = Webhook.create!(description: "Default", url: "https://example.com/hook", active: true)
+    @announcement.update!(title: "Updated title")
+
+    requests = perform_and_capture_requests(WebhookDeliveryJob::UPDATED, @announcement.id, [ webhook.id ])
+
+    body = JSON.parse(requests.fetch(webhook.id))
+    assert_equal "announcement.updated", body["event"]
+    assert_equal "Updated title", body.dig("announcement", "title")
+    assert_match "<strong>Some content</strong>", body.dig("announcement", "content")
+  end
+
+  test "announcement.deleted sends a lean payload with no content, keyed by the id/title/url the caller supplies" do
+    webhook = Webhook.create!(description: "Default", url: "https://example.com/hook", active: true)
+
+    requests = perform_and_capture_requests(
+      WebhookDeliveryJob::DELETED, 999_999, [ webhook.id ],
+      title: "A deleted announcement", url: "https://example.com/announcements/999999"
+    )
+
+    body = JSON.parse(requests.fetch(webhook.id))
+    assert_equal "announcement.deleted", body["event"]
+    assert_equal 999_999, body.dig("announcement", "id")
+    assert_equal "A deleted announcement", body.dig("announcement", "title")
+    assert_equal "https://example.com/announcements/999999", body.dig("announcement", "url")
+    refute body["announcement"].key?("content")
+    refute body["announcement"].key?("content_format")
+    refute body["announcement"].key?("author")
+  end
+
+  test "announcement.deleted still includes the webhook's own custom_parameters" do
+    webhook = Webhook.create!(description: "Default", url: "https://example.com/hook", active: true)
+    webhook.update!(custom_parameters_json: '{"team": "platform"}')
+
+    requests = perform_and_capture_requests(WebhookDeliveryJob::DELETED, 999_999, [ webhook.id ], title: "Gone", url: "https://example.com/x")
+
+    body = JSON.parse(requests.fetch(webhook.id))
+    assert_equal({ "team" => "platform" }, body["custom_parameters"])
+  end
+
+  test "announcement.deleted doesn't need the announcement to still exist in the database" do
+    webhook = Webhook.create!(description: "Default", url: "https://example.com/hook", active: true)
+    nonexistent_id = @announcement.id
+    @announcement.destroy
+
+    assert_difference "webhook.webhook_deliveries.count", 1 do
+      perform_and_capture_requests(WebhookDeliveryJob::DELETED, nonexistent_id, [ webhook.id ], title: "Gone", url: "https://example.com/x")
+    end
+
+    delivery = webhook.webhook_deliveries.sole
+    assert delivery.success?
+    assert_nil delivery.announcement
+  end
+
+  test "announcement.published does nothing (and doesn't error) when the announcement no longer exists" do
+    webhook = Webhook.create!(description: "Default", url: "https://example.com/hook", active: true)
+    nonexistent_id = @announcement.id
+    @announcement.destroy
+
+    assert_no_difference "webhook.webhook_deliveries.count" do
+      perform_and_capture_requests(WebhookDeliveryJob::PUBLISHED, nonexistent_id, [ webhook.id ])
+    end
   end
 
   private
@@ -99,7 +164,7 @@ class WebhookDeliveryJobTest < ActiveJob::TestCase
     # gem for one HTTP call — same reasoning as SearchStubTestHelper)
     # to capture the exact JSON body sent to each webhook, keyed by
     # webhook id, without making a real HTTP request.
-    def perform_and_capture_requests(announcement_id, webhook_ids)
+    def perform_and_capture_requests(event, announcement_id, webhook_ids, title: nil, url: nil)
       requests = {}
       # A block passed to define_singleton_method runs with `self` bound to
       # the receiver (job), not this test instance, so a call to another
@@ -108,11 +173,11 @@ class WebhookDeliveryJobTest < ActiveJob::TestCase
       # closure keeps regardless of `self`.
       response = fake_success_response
       job = WebhookDeliveryJob.new
-      job.define_singleton_method(:post) do |webhook, body|
+      job.define_singleton_method(:post) do |_event, webhook, body|
         requests[webhook.id] = body
         response
       end
-      job.perform(announcement_id, webhook_ids)
+      job.perform(event, announcement_id, webhook_ids, title: title, url: url)
       requests
     end
 

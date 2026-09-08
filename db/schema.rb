@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_09_08_120827) do
+ActiveRecord::Schema[8.1].define(version: 2026_09_08_124256) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
 
@@ -56,6 +56,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_09_08_120827) do
     t.datetime "created_at", null: false
     t.date "ends_on"
     t.datetime "published_at"
+    t.jsonb "published_webhook_ids", default: [], null: false
     t.date "starts_on"
     t.string "title", null: false
     t.datetime "updated_at", null: false
@@ -326,7 +327,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_09_08_120827) do
   end
 
   create_table "webhook_deliveries", force: :cascade do |t|
-    t.bigint "announcement_id", null: false
+    t.bigint "announcement_id"
     t.datetime "created_at", null: false
     t.string "error_message"
     t.text "response_body"

@@ -13,6 +13,7 @@
 
   <nav class="docs-nav">
     <a href="#overview" class="btn btn--text btn--sm">Overview</a>
+    <a href="#events" class="btn btn--text btn--sm">Events</a>
     <a href="#request" class="btn btn--text btn--sm">The request</a>
     <a href="#payload" class="btn btn--text btn--sm">Payload</a>
     <a href="#signature" class="btn btn--text btn--sm">Verifying the signature</a>
@@ -23,9 +24,10 @@
   <section id="overview" class="docs-section stack">
     <h2>Overview</h2>
     <p>
-      When an announcement is published (or re-published) inside Atlas, it's delivered as a single
-      HTTP <code class="font-mono">POST</code> to every <strong>active</strong> webhook's configured
-      URL. Delivery happens in the background, independently per webhook — one receiver being slow
+      When an announcement is published, edited, or deleted inside Atlas, that's delivered as a
+      single HTTP <code class="font-mono">POST</code> to every webhook it was actually sent to (see
+      <a href="#events">Events</a>) — never to a webhook that was never told about it in the first
+      place. Delivery happens in the background, independently per webhook — one receiver being slow
       or down doesn't affect the others.
     </p>
     <p>
@@ -34,6 +36,41 @@
       that's the extent of the contract — what your application does with the content
       (post it to Slack, render it on an intranet page, forward it somewhere else entirely) is
       entirely up to you.
+    </p>
+  </section>
+
+  <section id="events" class="docs-section stack">
+    <h2>Events</h2>
+    <table class="data-table">
+      <thead>
+        <tr>
+          <th>Event</th>
+          <th>Sent when</th>
+          <th>Goes to</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td><code class="font-mono">announcement.published</code></td>
+          <td>An announcement is (re-)published from its own page, using whichever platforms are checked there at the time.</td>
+          <td>Whatever's checked on that specific publish/re-publish.</td>
+        </tr>
+        <tr>
+          <td><code class="font-mono">announcement.updated</code></td>
+          <td>An already-published announcement's title, content, or dates are edited and saved. Not sent for a draft (nothing to tell anyone yet), or a save that didn't actually change anything.</td>
+          <td>Whichever webhooks the <strong>most recent</strong> <code class="font-mono">announcement.published</code> actually went to — not necessarily every currently-active webhook, and not one added afterward that was never told about this announcement.</td>
+        </tr>
+        <tr>
+          <td><code class="font-mono">announcement.deleted</code></td>
+          <td>A published announcement is deleted. Not sent for a draft, same reasoning as above.</td>
+          <td>Same set as <code class="font-mono">announcement.updated</code> above.</td>
+        </tr>
+      </tbody>
+    </table>
+    <p class="field__hint">
+      Re-publishing to a different set of platforms changes who gets told about later edits/deletion
+      too — if you deliberately uncheck a platform on re-publish, that platform stops hearing about
+      this announcement from that point on, the same as if it had never been checked.
     </p>
   </section>
 
@@ -49,20 +86,24 @@
       </thead>
       <tbody>
         <tr><td><code class="font-mono">Content-Type</code></td><td><code class="font-mono">application/json</code></td></tr>
-        <tr><td><code class="font-mono">X-Atlas-Event</code></td><td><code class="font-mono">announcement.published</code></td></tr>
+        <tr><td><code class="font-mono">X-Atlas-Event</code></td><td>One of the three event names above — also repeated as <code class="font-mono">event</code> in the body itself.</td></tr>
         <tr><td><code class="font-mono">X-Atlas-Signature</code></td><td><code class="font-mono">sha256=&lt;hex-encoded HMAC&gt;</code> — see <a href="#signature">Verifying the signature</a></td></tr>
       </tbody>
     </table>
     <p class="field__hint">
-      There is currently one event type. Re-publishing an announcement sends the same event again
-      with the updated content, so a receiver that de-duplicates should key on
-      <code class="font-mono">announcement.id</code> plus <code class="font-mono">announcement.published_at</code>, not the event name alone.
+      A receiver that de-duplicates should key on <code class="font-mono">announcement.id</code> plus
+      the event name, not <code class="font-mono">announcement.id</code> alone — the same announcement
+      legitimately produces multiple deliveries (published, then updated, maybe more than once, then
+      possibly deleted) over its lifetime, each one meaningfully different.
     </p>
   </section>
 
   <section id="payload" class="docs-section stack">
     <h2>Payload</h2>
-    <p>The request body is JSON shaped like this:</p>
+    <p>
+      <code class="font-mono">announcement.published</code> and <code class="font-mono">announcement.updated</code>
+      share the same full shape:
+    </p>
     <pre class="code-block">{
   "event": "announcement.published",
   "announcement": {
@@ -139,6 +180,30 @@
       as real markup to render directly, not to display as literal text. If you're forwarding it into a system that
       doesn't render HTML at all (a chat webhook, an SMS gateway, a plain log), set that webhook's format to
       <code class="font-mono">plain_text</code> instead of trying to strip tags yourself downstream.
+    </p>
+
+    <p>
+      <code class="font-mono">announcement.deleted</code> is deliberately leaner — there's no more content to send,
+      just enough to identify what's gone:
+    </p>
+    <pre class="code-block">{
+  "event": "announcement.deleted",
+  "announcement": {
+    "id": 42,
+    "title": "Scheduled maintenance this weekend",
+    "url": "https://atlas.example.com/announcements/42"
+  },
+  "custom_parameters": {
+    "team": "platform",
+    "environment": "production"
+  }
+}</pre>
+    <p class="field__hint">
+      Use <code class="font-mono">announcement.id</code> (the same <code class="font-mono">atlas_announcement_id</code>-style
+      value you'd already be tracking from the earlier events) to find and remove or deactivate your own copy.
+      <code class="font-mono">announcement.url</code> is included for logging even though it no longer resolves to
+      anything once deleted; <code class="font-mono">content</code>, <code class="font-mono">content_format</code>,
+      <code class="font-mono">author</code>, and the date fields are all absent, not empty.
     </p>
   </section>
 

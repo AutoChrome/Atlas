@@ -91,6 +91,14 @@
   &:hover:not(:disabled) {
     background-color: color-mix(in srgb, var(--color-primary) 8%, transparent);
   }
+
+  // Same "the active thing" treatment as .btn--icon.is-active — used for
+  // e.g. key_value_editor_controller.js's pairs/JSON view toggle, where
+  // both buttons stay visible and one just needs to read as "selected".
+  &.is-active {
+    background-color: var(--color-primary-container);
+    color: var(--color-on-primary-container);
+  }
 }
 
 .btn--danger {

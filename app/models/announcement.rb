@@ -6,7 +6,11 @@ class Announcement < ApplicationRecord
 
   belongs_to :user, optional: true
   has_rich_text :content
-  has_many :webhook_deliveries, dependent: :destroy
+  # Nullified, not destroyed — deleting an announcement shouldn't also wipe
+  # its own delivery history (and this record's "announcement.deleted"
+  # delivery is sent after it's already gone, so a delivery genuinely can
+  # exist with no announcement to point back to — see WebhookDeliveryJob).
+  has_many :webhook_deliveries, dependent: :nullify
 
   validates :title, presence: true
   validate :starts_on_is_present_and_valid
@@ -44,7 +48,14 @@ class Announcement < ApplicationRecord
   def publish!(webhook_ids: Webhook.active.pluck(:id), by: nil)
     first_publish = !published?
     update!(published_at: Time.current) if first_publish
-    WebhookDeliveryJob.perform_later(id, webhook_ids)
+    # Remembered so a later edit or deletion (see notify_webhooks_of_update!
+    # / notify_webhooks_of_deletion!) reaches exactly these webhooks, not
+    # whichever happen to be active by then — a webhook never told about
+    # this announcement shouldn't suddenly hear it was "updated" or
+    # "deleted", and one that WAS told shouldn't go quiet just because a
+    # later re-publish (deliberately) left it unchecked.
+    update!(published_webhook_ids: webhook_ids)
+    WebhookDeliveryJob.perform_later(WebhookDeliveryJob::PUBLISHED, id, webhook_ids)
 
     Audited::Audit.create!(
       auditable: self,
@@ -52,6 +63,39 @@ class Announcement < ApplicationRecord
       user: by,
       audited_changes: { "webhook_ids" => webhook_ids },
       comment: "#{first_publish ? "Published" : "Re-published"} to #{webhook_ids.size} webhook#{"s" unless webhook_ids.size == 1}."
+    )
+  end
+
+  # Called after a successful edit (AnnouncementsController#update) — tells
+  # whichever webhooks actually received this announcement (see publish!)
+  # that its content changed. A no-op for a draft (nothing to tell anyone,
+  # published_webhook_ids is empty).
+  #
+  # Deliberately does NOT try to skip this when the save didn't change
+  # anything detectable — `content` lives on the associated ActionText::RichText
+  # record (has_rich_text), not a column on this row, so `saved_changes?`
+  # here can be false even immediately after a real, saved content edit
+  # (confirmed directly: editing only `content` and checking `saved_changes?`
+  # right after returns false). Notifying on every successful update, even
+  # an occasional genuine no-op resave, is a much smaller cost than silently
+  # dropping a real content change.
+  def notify_webhooks_of_update!
+    return unless published?
+
+    WebhookDeliveryJob.perform_later(WebhookDeliveryJob::UPDATED, id, published_webhook_ids)
+  end
+
+  # Called from AnnouncementsController#destroy BEFORE the record is
+  # actually destroyed — the job runs in the background well after this
+  # method returns, by which point the record is gone, so everything the
+  # "deleted" payload needs is captured as plain values right now rather
+  # than left for the job to look up later.
+  def notify_webhooks_of_deletion!
+    return unless published?
+
+    WebhookDeliveryJob.perform_later(
+      WebhookDeliveryJob::DELETED, id, published_webhook_ids,
+      title: title, url: Rails.application.routes.url_helpers.announcement_url(self, host: ENV.fetch("SITE_ADDRESS", "localhost"))
     )
   end
 

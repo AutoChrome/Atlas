@@ -1,9 +1,9 @@
-# Fans a published Announcement out to a set of Webhooks — whichever ones
-# were checked on the publish/re-publish form (Announcement#publish!).
-# Runs in the background (Sidekiq) so publishing doesn't block on a slow or
-# unreachable receiver, and each delivery is independent — one webhook
-# failing doesn't stop the others, or get retried into a pile of duplicate
-# deliveries.
+# Fans an Announcement's lifecycle out to a set of Webhooks — published,
+# edited, or deleted (Announcement#publish!, #notify_webhooks_of_update!,
+# #notify_webhooks_of_deletion!). Runs in the background (Sidekiq) so none
+# of those actions block on a slow or unreachable receiver, and each
+# delivery is independent — one webhook failing doesn't stop the others, or
+# get retried into a pile of duplicate deliveries.
 #
 # We don't validate or care what the receiving endpoint does with the
 # payload — this only cares that the HTTP request was made and records
@@ -11,33 +11,63 @@
 class WebhookDeliveryJob < ApplicationJob
   queue_as :default
 
-  EVENT = "announcement.published"
+  PUBLISHED = "announcement.published"
+  UPDATED = "announcement.updated"
+  DELETED = "announcement.deleted"
+
   OPEN_TIMEOUT = 5
   READ_TIMEOUT = 10
 
   # webhook_ids nil (rather than []) means "every active webhook" — only
-  # relevant for a job already serialized and waiting when this argument
-  # didn't exist yet; every new call passes an explicit array, even an
-  # empty one for "publish, but don't deliver anywhere this time".
-  def perform(announcement_id, webhook_ids = nil)
-    announcement = Announcement.find_by(id: announcement_id)
-    return unless announcement
-
+  # relevant for a PUBLISHED job already serialized and waiting when this
+  # argument didn't exist yet; every new call passes an explicit array
+  # (Announcement#published_webhook_ids for UPDATED/DELETED), even an empty
+  # one for "publish, but don't deliver anywhere this time".
+  #
+  # `title`/`url` are only ever passed for DELETED — the announcement no
+  # longer exists to look up by the time this runs (this is a notification
+  # that it's gone), so the caller (Announcement#notify_webhooks_of_deletion!)
+  # captures what the payload needs as plain values while the record is
+  # still alive, rather than this method finding nothing and silently
+  # skipping the delivery entirely.
+  def perform(event, announcement_id, webhook_ids = nil, title: nil, url: nil)
     webhooks = webhook_ids.nil? ? Webhook.active : Webhook.active.where(id: webhook_ids)
-    # Shared across every webhook below rather than one per — RichTextPayload
-    # memoizes the (real ActionView partial) render internally, so this
-    # costs at most one render of each format actually in use, however many
-    # webhooks end up asking for it.
-    payload = RichTextPayload.new(announcement.content)
+    return if webhooks.none?
 
-    webhooks.find_each do |webhook|
-      deliver(webhook, announcement, payload_json(announcement, payload, webhook))
+    if event == DELETED
+      deliver_deletion(webhooks, announcement_id, title, url)
+    else
+      deliver_content(event, webhooks, announcement_id)
     end
   end
 
   private
-    def deliver(webhook, announcement, body)
-      response = post(webhook, body)
+    def deliver_content(event, webhooks, announcement_id)
+      announcement = Announcement.find_by(id: announcement_id)
+      return unless announcement
+
+      # Shared across every webhook below rather than one per — RichTextPayload
+      # memoizes the (real ActionView partial) render internally, so this
+      # costs at most one render of each format actually in use, however many
+      # webhooks end up asking for it.
+      payload = RichTextPayload.new(announcement.content)
+
+      webhooks.find_each do |webhook|
+        deliver(event, webhook, announcement, content_payload_json(event, announcement, payload, webhook))
+      end
+    end
+
+    def deliver_deletion(webhooks, announcement_id, title, url)
+      webhooks.find_each do |webhook|
+        # No `announcement:` — the record is already gone by the time this
+        # runs, and WebhookDelivery#announcement is optional for exactly
+        # this reason (see its own comment).
+        deliver(DELETED, webhook, nil, deletion_payload_json(announcement_id, title, url, webhook))
+      end
+    end
+
+    def deliver(event, webhook, announcement, body)
+      response = post(event, webhook, body)
 
       WebhookDelivery.create!(
         webhook: webhook,
@@ -55,7 +85,7 @@ class WebhookDeliveryJob < ApplicationJob
       )
     end
 
-    def post(webhook, body)
+    def post(event, webhook, body)
       uri = URI.parse(webhook.url)
 
       http = Net::HTTP.new(uri.host, uri.port)
@@ -65,7 +95,7 @@ class WebhookDeliveryJob < ApplicationJob
 
       request = Net::HTTP::Post.new(uri.request_uri.presence || "/")
       request["Content-Type"] = "application/json"
-      request["X-Atlas-Event"] = EVENT
+      request["X-Atlas-Event"] = event
       request["X-Atlas-Signature"] = "sha256=#{signature_for(webhook, body)}"
       request.body = body
 
@@ -81,9 +111,9 @@ class WebhookDeliveryJob < ApplicationJob
     # per-webhook data merged in here — top-level, alongside `announcement`
     # rather than nested inside it, since it describes this delivery/
     # webhook, not a property of the announcement itself.
-    def payload_json(announcement, payload, webhook)
+    def content_payload_json(event, announcement, payload, webhook)
       {
-        event: EVENT,
+        event: event,
         announcement: {
           id: announcement.id,
           title: announcement.title,
@@ -96,6 +126,22 @@ class WebhookDeliveryJob < ApplicationJob
           starts_on: announcement.starts_on&.iso8601,
           ends_on: announcement.ends_on&.iso8601,
           url: Rails.application.routes.url_helpers.announcement_url(announcement, host: ENV.fetch("SITE_ADDRESS", "localhost"))
+        },
+        custom_parameters: webhook.custom_parameters
+      }.to_json
+    end
+
+    # Deliberately lean — no content/content_format/author/dates, since
+    # there's no longer any content to speak of. Just enough for a receiver
+    # to identify and remove/deactivate its own copy, which is exactly what
+    # a delete notification is for.
+    def deletion_payload_json(announcement_id, title, url, webhook)
+      {
+        event: DELETED,
+        announcement: {
+          id: announcement_id,
+          title: title,
+          url: url
         },
         custom_parameters: webhook.custom_parameters
       }.to_json

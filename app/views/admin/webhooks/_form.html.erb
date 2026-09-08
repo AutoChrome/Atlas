@@ -35,15 +35,44 @@
     </p>
   </div>
 
-  <div class="field">
-    <%= f.label :custom_parameters_json, "Custom parameters", class: "field__label" %>
+  <div class="field" data-controller="key-value-editor">
+    <div class="cluster" style="justify-content: space-between;">
+      <%= f.label :custom_parameters_json, "Custom parameters", class: "field__label" %>
+      <div class="cluster" style="gap: 4px;">
+        <button type="button" class="btn btn--text btn--sm" data-key-value-editor-target="pairsTab" data-action="key-value-editor#showPairs">Key/value pairs</button>
+        <button type="button" class="btn btn--text btn--sm" data-key-value-editor-target="jsonTab" data-action="key-value-editor#showJson">Raw JSON</button>
+      </div>
+    </div>
+
+    <div data-key-value-editor-target="pairsView" class="stack" style="gap: 8px;">
+      <div data-key-value-editor-target="list" class="stack" style="gap: 8px;"></div>
+      <button type="button" class="btn btn--text btn--sm" data-action="key-value-editor#addRow">
+        <%= fa_icon "plus" %> Add parameter
+      </button>
+    </div>
+
+    <template data-key-value-editor-target="template">
+      <div class="cluster" data-key-value-editor-target="row" style="gap: 8px; flex-wrap: nowrap;">
+        <input type="text" class="input" placeholder="Key" data-key-value-editor-target="key" data-action="input->key-value-editor#syncFromPairs">
+        <input type="text" class="input" placeholder="Value" data-key-value-editor-target="value" data-action="input->key-value-editor#syncFromPairs">
+        <button type="button" class="btn btn--icon btn--sm" data-action="key-value-editor#removeRow" aria-label="Remove parameter">
+          <%= fa_icon "trash" %>
+        </button>
+      </div>
+    </template>
+
     <%= f.text_area :custom_parameters_json, class: "input font-mono", rows: 6,
+          data: { key_value_editor_target: "textarea" },
           placeholder: "{\n  \"team\": \"platform\",\n  \"environment\": \"production\"\n}" %>
+    <p class="field__error" data-key-value-editor-target="jsonError" hidden>
+      That's not a flat JSON object — fix it here, or switch back once it is.
+    </p>
+
     <p class="field__hint">
-      Optional. A flat JSON object — string, number, boolean, or <code class="font-mono">null</code>
-      values only, no nested objects or arrays — sent as-is under
-      <code class="font-mono">custom_parameters</code> in every payload this webhook receives. Leave
-      blank to send none.
+      Optional. String, number, boolean, or <code class="font-mono">null</code> values only, no nested
+      objects or arrays — sent as-is under <code class="font-mono">custom_parameters</code> in every
+      payload this webhook receives. Leave empty to send none. The key/value view only ever produces
+      string values; switch to raw JSON for a number, boolean, or <code class="font-mono">null</code>.
     </p>
   </div>
 

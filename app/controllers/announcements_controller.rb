@@ -36,6 +36,7 @@ class AnnouncementsController < ApplicationController
     authorize @announcement
 
     if @announcement.update(announcement_params)
+      @announcement.notify_webhooks_of_update!
       redirect_to @announcement, notice: "Announcement updated."
     else
       render :edit, status: :unprocessable_entity
@@ -44,6 +45,10 @@ class AnnouncementsController < ApplicationController
 
   def destroy
     authorize @announcement
+    # Before, not after — notify_webhooks_of_deletion! needs to read the
+    # still-live record (title, published_webhook_ids); once destroyed
+    # there's nothing left to read.
+    @announcement.notify_webhooks_of_deletion!
     @announcement.destroy
     redirect_to announcements_path, notice: "Announcement deleted.", status: :see_other
   end
