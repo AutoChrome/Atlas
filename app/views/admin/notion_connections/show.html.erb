@@ -1,0 +1,74 @@
+<% content_for :title, @notion_connection.name %>
+
+<div class="stack container--wide">
+  <div class="cluster" style="justify-content: space-between;">
+    <div>
+      <p class="text-muted"><%= link_to "← Back to Notion connections", admin_notion_connections_path %></p>
+      <h1><%= @notion_connection.name %></h1>
+      <p class="text-muted">
+        Syncs into <strong><%= @notion_connection.area.path_name %></strong> —
+        <% if @notion_connection.active? %>
+          <span class="badge badge--success">Active</span>
+        <% else %>
+          <span class="badge">Disabled</span>
+        <% end %>
+      </p>
+    </div>
+    <div class="cluster">
+      <%= link_to "Edit", edit_admin_notion_connection_path(@notion_connection), class: "btn btn--outlined" %>
+      <%= button_to "Delete", admin_notion_connection_path(@notion_connection), method: :delete,
+            data: { turbo_confirm: "Delete \"#{@notion_connection.name}\"? Notion will keep sending events here, but Atlas will reject them." },
+            class: "btn btn--danger" %>
+    </div>
+  </div>
+
+  <section class="docs-section stack">
+    <h2>Webhook URL</h2>
+    <p>Paste this into Notion's connection page — <strong>Webhooks tab → Create a subscription</strong>.</p>
+    <pre class="code-block" style="word-break: break-all; white-space: pre-wrap;"><%= @webhook_url %></pre>
+    <p class="field__hint">
+      Keep this URL as private as a password until Notion's own signature verification is active below —
+      until then, it's the only thing standing in for authentication.
+    </p>
+    <%= button_to "Regenerate webhook URL", regenerate_webhook_token_admin_notion_connection_path(@notion_connection), method: :post,
+          data: { turbo_confirm: "Generate a new webhook URL for \"#{@notion_connection.name}\"? Update it in Notion's Webhooks tab or events will stop arriving." },
+          class: "btn btn--outlined btn--sm" %>
+  </section>
+
+  <section class="docs-section stack">
+    <% if @notion_connection.awaiting_verification? %>
+      <h2>Verification — waiting</h2>
+      <div class="card card--outlined">
+        <p>
+          Notion hasn't contacted this URL yet. In Notion, paste the webhook URL above into
+          <strong>Create a subscription</strong>, choose which events to send (<code class="font-mono">Page content updated</code>,
+          <code class="font-mono">Page created</code>, and <code class="font-mono">Page properties updated</code> are the ones
+          Atlas actually acts on — others are safe to leave unchecked), and save. Reload this page afterward —
+          Notion's one-time handshake request is what fills in the token below.
+        </p>
+      </div>
+    <% else %>
+      <h2>Verification token</h2>
+      <p>
+        Notion sent this the moment the subscription was created above. Copy it into Notion's own
+        <strong>⚠️ Verify → Verify subscription</strong> prompt to finish activating it there — until you do,
+        Notion won't send any real events yet.
+      </p>
+      <pre class="code-block" style="word-break: break-all; white-space: pre-wrap;"><%= @notion_connection.verification_token %></pre>
+      <p class="field__hint">
+        From here on, this same value is also what Atlas checks every real event against
+        (<code class="font-mono">X-Notion-Signature</code>) — it isn't just for that one-time paste.
+      </p>
+    <% end %>
+  </section>
+
+  <section class="docs-section stack">
+    <h2>What happens on sync</h2>
+    <ul class="stack" style="gap: 8px;">
+      <li>A page created or edited in Notion (and shared with this connection there) creates or updates a matching Atlas page in <strong><%= @notion_connection.area.path_name %></strong> — matched by Notion's own page ID, so repeated edits update the same Atlas page rather than creating duplicates.</li>
+      <li>New pages are always created <strong>private</strong>, regardless of the area's own visibility — someone still reviews before making it public, same reasoning as the Basecamp integration landing as a draft.</li>
+      <li>Deleting a page in Notion does <strong>not</strong> delete or hide it here — Atlas only reacts to content changes, never removals, so nothing already reviewed here disappears out from under someone.</li>
+      <li>Not everything Notion can contain converts — child pages, databases, embeds, and a handful of other block types are skipped rather than guessed at; text, headings, lists, quotes, code, images, simple tables, and to-dos all carry over.</li>
+    </ul>
+  </section>
+</div>

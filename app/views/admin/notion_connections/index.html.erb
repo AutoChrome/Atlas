@@ -1,0 +1,57 @@
+<% content_for :title, "Notion connections" %>
+
+<div class="stack">
+  <div class="cluster" style="justify-content: space-between;">
+    <h1>Notion connections</h1>
+    <%= link_to "New connection", new_admin_notion_connection_path, class: "btn btn--filled" %>
+  </div>
+  <p class="text-muted">
+    Each connection matches one internal integration created in Notion — a page created or edited there (and
+    shared with that integration) creates or updates a matching page in the area configured below.
+  </p>
+
+  <% if @notion_connections.any? %>
+    <table class="data-table">
+      <thead>
+        <tr>
+          <th>Name</th>
+          <th>Notion workspace</th>
+          <th>Area</th>
+          <th>Verification</th>
+          <th>Status</th>
+          <th></th>
+        </tr>
+      </thead>
+      <tbody>
+        <% @notion_connections.each do |connection| %>
+          <tr>
+            <td><%= link_to connection.name, admin_notion_connection_path(connection) %></td>
+            <td class="text-muted"><%= connection.notion_workspace_name.presence || "—" %></td>
+            <td class="text-muted"><%= connection.area.path_name %></td>
+            <td>
+              <% if connection.awaiting_verification? %>
+                <span class="badge badge--warning">Waiting</span>
+              <% else %>
+                <span class="badge badge--success">Verified</span>
+              <% end %>
+            </td>
+            <td>
+              <% if connection.active? %>
+                <span class="badge badge--success">Active</span>
+              <% else %>
+                <span class="badge">Disabled</span>
+              <% end %>
+            </td>
+            <td class="cluster">
+              <%= link_to "Manage", admin_notion_connection_path(connection), class: "btn btn--text btn--sm" %>
+              <%= button_to "Delete", admin_notion_connection_path(connection), method: :delete,
+                    data: { turbo_confirm: "Delete \"#{connection.name}\"?" }, class: "btn btn--text btn--sm" %>
+            </td>
+          </tr>
+        <% end %>
+      </tbody>
+    </table>
+  <% else %>
+    <p class="text-muted">No Notion connections configured yet.</p>
+  <% end %>
+</div>

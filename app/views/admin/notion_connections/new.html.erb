@@ -1,0 +1,12 @@
+<% content_for :title, "New Notion connection" %>
+
+<div class="stack">
+  <p class="text-muted"><%= link_to "← Back to Notion connections", admin_notion_connections_path %></p>
+  <h1>New Notion connection</h1>
+  <p class="text-muted">
+    First create the connection in Notion itself (Settings → Connections → your integration) and copy its
+    integration token — then fill this in to match. You'll get a webhook URL to paste back into Notion once
+    this is saved.
+  </p>
+  <%= render "form", notion_connection: @notion_connection %>
+</div>

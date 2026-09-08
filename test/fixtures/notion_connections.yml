@@ -1,0 +1,18 @@
+# Read about fixtures at https://api.rubyonrails.org/classes/ActiveRecord/FixtureSet.html
+
+one:
+  name: Atlas First B2B
+  integration_token: secret_fixture_token_one
+  verification_token: fixture_verification_token_one
+  webhook_token: fixture_webhook_token_one
+  area: one
+  active: true
+  notion_workspace_name: IAN's Notion
+
+two:
+  name: Design Team Notion
+  integration_token: secret_fixture_token_two
+  webhook_token: fixture_webhook_token_two
+  area: two
+  active: true
+  notion_workspace_name:

@@ -1,0 +1,7 @@
+<% content_for :title, "Edit Notion connection" %>
+
+<div class="stack">
+  <p class="text-muted"><%= link_to "← Back to #{@notion_connection.name}", admin_notion_connection_path(@notion_connection) %></p>
+  <h1>Edit Notion connection</h1>
+  <%= render "form", notion_connection: @notion_connection %>
+</div>

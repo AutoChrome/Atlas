@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_09_08_124256) do
+ActiveRecord::Schema[8.1].define(version: 2026_09_08_150048) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
 
@@ -211,18 +211,34 @@ ActiveRecord::Schema[8.1].define(version: 2026_09_08_124256) do
     t.index ["sluggable_type", "sluggable_id"], name: "index_friendly_id_slugs_on_sluggable_type_and_sluggable_id"
   end
 
+  create_table "notion_connections", force: :cascade do |t|
+    t.boolean "active", default: true, null: false
+    t.bigint "area_id", null: false
+    t.datetime "created_at", null: false
+    t.string "integration_token", null: false
+    t.string "name", null: false
+    t.string "notion_workspace_name"
+    t.datetime "updated_at", null: false
+    t.string "verification_token"
+    t.string "webhook_token", null: false
+    t.index ["area_id"], name: "index_notion_connections_on_area_id"
+    t.index ["webhook_token"], name: "index_notion_connections_on_webhook_token", unique: true
+  end
+
   create_table "pages", force: :cascade do |t|
     t.bigint "area_id", null: false
     t.datetime "created_at", null: false
     t.string "icon"
+    t.string "notion_page_id"
     t.integer "position", default: 0, null: false
     t.boolean "public", default: false, null: false
     t.string "slug", null: false
     t.string "title", null: false
     t.datetime "updated_at", null: false
-    t.bigint "user_id", null: false
+    t.bigint "user_id"
     t.index ["area_id", "slug"], name: "index_pages_on_area_id_and_slug", unique: true
     t.index ["area_id"], name: "index_pages_on_area_id"
+    t.index ["notion_page_id"], name: "index_pages_on_notion_page_id", unique: true
     t.index ["public"], name: "index_pages_on_public"
     t.index ["user_id"], name: "index_pages_on_user_id"
   end
@@ -365,6 +381,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_09_08_124256) do
   add_foreign_key "chart_relationships", "charts"
   add_foreign_key "chart_tables", "charts"
   add_foreign_key "charts", "areas"
+  add_foreign_key "notion_connections", "areas"
   add_foreign_key "pages", "areas"
   add_foreign_key "pages", "users"
   add_foreign_key "roadmap_cards", "roadmap_sections"

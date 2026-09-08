@@ -4,7 +4,7 @@ class ApiTokensController < ApplicationController
   def index
     @api_tokens = real_current_user.api_tokens.order(created_at: :desc)
     @api_token = ApiToken.new
-    @areas = Area.ordered
+    @areas = areas_by_path_name
   end
 
   def create
@@ -16,7 +16,7 @@ class ApiTokensController < ApplicationController
       redirect_to api_tokens_path, notice: "API token \"#{@api_token.name}\" created. Copy it now — you won't see it again."
     else
       @api_tokens = real_current_user.api_tokens.order(created_at: :desc)
-      @areas = Area.ordered
+      @areas = areas_by_path_name
       render :index, status: :unprocessable_entity
     end
   end
@@ -45,6 +45,18 @@ class ApiTokensController < ApplicationController
   private
     def api_token_params
       params.require(:api_token).permit(:name, :all_areas, area_ids: [])
+    end
+
+    # Sorted by the full "Parent > Child" breadcrumb (see Area#path_name),
+    # not Area.ordered's plain (position, name) — that scope is per-parent
+    # sibling order, so applied globally it interleaves unrelated areas
+    # from all over the tree with no indication of who's a child of whom.
+    # Sorting by the breadcrumb string instead naturally groups a parent
+    # with its own children (they share its prefix) and orders them
+    # alphabetically within that group — same trick areas/_form.html.erb
+    # already uses for the parent-area picker.
+    def areas_by_path_name
+      Area.all.sort_by(&:path_name)
     end
 
     def bruno_collection_zip

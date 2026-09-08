@@ -90,6 +90,10 @@ Rails.application.routes.draw do
       member { post :regenerate_secret }
     end
 
+    resources :notion_connections do
+      member { post :regenerate_webhook_token }
+    end
+
     namespace :integrations do
       get "basecamp", to: "basecamp#show"
     end
@@ -99,8 +103,13 @@ Rails.application.routes.draw do
   # or CSRF token involved. :token is the shared secret from
   # BASECAMP_WEBHOOK_TOKEN (see Integrations::BasecampController); Basecamp
   # doesn't sign its webhooks, so the URL itself is what's kept secret.
+  #
+  # Notion posts to the second one when a page shared with a
+  # NotionConnection's integration changes — see Integrations::NotionController
+  # for its own two-stage verification story.
   namespace :integrations do
     post "basecamp/webhook/:token", to: "basecamp#webhook", as: :basecamp_webhook
+    post "notion/webhook/:token", to: "notion#webhook", as: :notion_webhook
   end
 
   constraints admin_only do

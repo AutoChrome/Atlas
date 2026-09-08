@@ -38,7 +38,7 @@
                 <span class="badge badge--primary">All areas</span>
               <% else %>
                 <span class="badge"><%= pluralize(token.areas.size, "area") %></span>
-                <span class="text-muted"><%= token.areas.map(&:name).to_sentence %></span>
+                <span class="text-muted"><%= token.areas.map(&:path_name).to_sentence %></span>
               <% end %>
             </td>
             <td><%= token.last_used_at ? time_ago_in_words(token.last_used_at) + " ago" : "Never" %></td>
@@ -73,10 +73,19 @@
       <span class="field__label">Areas this token can access</span>
       <% if @areas.any? %>
         <div class="stack" style="max-height: 240px; overflow-y: auto; gap: 4px;">
-          <%= f.collection_check_boxes :area_ids, @areas, :id, :name do |b| %>
+          <%# path_name ("Parent > Child") rather than a bare name — a
+              sub-area's own name alone doesn't say which area it's under,
+              which is genuinely ambiguous when two areas share a name
+              (duplicates are allowed; only the slug has to be unique). %>
+          <%= f.collection_check_boxes :area_ids, @areas, :id, :path_name do |b| %>
             <div class="checkbox">
               <%= b.check_box %>
-              <%= b.label %>
+              <%= b.label do %>
+                <%= b.object.path_name %>
+                <% if b.object.public? %>
+                  <span class="badge badge--success">Public</span>
+                <% end %>
+              <% end %>
             </div>
           <% end %>
         </div>
