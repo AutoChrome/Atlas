@@ -13,6 +13,7 @@ module Admin
     def show
       authorize @notion_connection
       @webhook_url = integrations_notion_webhook_url(token: @notion_connection.webhook_token, host: request.base_url)
+      @deliveries = @notion_connection.notion_sync_deliveries.ordered.limit(50)
     end
 
     def new

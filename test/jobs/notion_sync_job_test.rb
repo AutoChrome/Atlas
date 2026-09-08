@@ -108,4 +108,62 @@ class NotionSyncJobTest < ActiveJob::TestCase
       NotionSyncJob.perform_now(-1, "notion-page-123")
     end
   end
+
+  test "marks the delivery succeeded and links the resulting page" do
+    delivery = @connection.notion_sync_deliveries.create!(event_type: "page.created", notion_page_id: "notion-page-123")
+
+    stub_notion_client(page: notion_page(title: "Test"), blocks: []) do
+      NotionSyncJob.perform_now(@connection.id, "notion-page-123", delivery.id)
+    end
+
+    delivery.reload
+    assert delivery.succeeded?
+    assert_equal @area.pages.find_by(notion_page_id: "notion-page-123"), delivery.page
+    assert delivery.completed_at.present?
+  end
+
+  test "marks the delivery ignored for an archived or trashed Notion page" do
+    delivery = @connection.notion_sync_deliveries.create!(event_type: "page.created", notion_page_id: "notion-page-123")
+
+    stub_notion_client(page: notion_page(title: "Test", archived: true), blocks: []) do
+      NotionSyncJob.perform_now(@connection.id, "notion-page-123", delivery.id)
+    end
+
+    assert delivery.reload.ignored?
+  end
+
+  test "marks the delivery failed when the connection is inactive" do
+    @connection.update!(active: false)
+    delivery = @connection.notion_sync_deliveries.create!(event_type: "page.created", notion_page_id: "notion-page-123")
+
+    NotionSyncJob.perform_now(@connection.id, "notion-page-123", delivery.id)
+
+    delivery.reload
+    assert delivery.failed?
+    assert delivery.error_message.present?
+  end
+
+  test "marks the delivery failed when the Notion API call itself fails" do
+    delivery = @connection.notion_sync_deliveries.create!(event_type: "page.created", notion_page_id: "notion-page-123")
+    original_retrieve_page = NotionClient.instance_method(:retrieve_page)
+    NotionClient.define_method(:retrieve_page) { |_page_id| raise NotionClient::Error, "Notion API 401: unauthorized" }
+
+    begin
+      NotionSyncJob.perform_now(@connection.id, "notion-page-123", delivery.id)
+    ensure
+      NotionClient.define_method(:retrieve_page, original_retrieve_page)
+    end
+
+    delivery.reload
+    assert delivery.failed?
+    assert_match "401", delivery.error_message
+  end
+
+  test "runs fine without a delivery_id, for backward compatibility with an already-queued job" do
+    stub_notion_client(page: notion_page(title: "Test"), blocks: []) do
+      assert_nothing_raised do
+        NotionSyncJob.perform_now(@connection.id, "notion-page-123")
+      end
+    end
+  end
 end

@@ -11,6 +11,15 @@ module Integrations
   # verification_token has been captured (same role BASECAMP_WEBHOOK_TOKEN
   # plays for Basecamp, which never signs anything at all) — once that's
   # captured, every real event is also checked against X-Notion-Signature.
+  #
+  # Every request that reaches a known connection gets a NotionSyncDelivery
+  # row — including a rejected signature and an event type Atlas doesn't
+  # act on — specifically so "did Notion even contact us, and what
+  # happened" is answerable from the connection's own page, not just
+  # server logs. An unknown token gets no log row at all: there's no
+  # connection to attach it to, and logging every random guess against
+  # this URL would just be a self-inflicted way to let someone fill up the
+  # table.
   class NotionController < ActionController::Base
     skip_forgery_protection
 
@@ -20,7 +29,8 @@ module Integrations
     # might send (comment.created, page.moved, database.schema_updated,
     # ...) still gets a 200 below rather than a 404/422 — same reasoning as
     # BasecampController's HANDLED_KIND: a non-2xx is how Notion decides a
-    # webhook is broken and starts backing off deliveries to it.
+    # webhook is broken and starts backing off deliveries to it. Still
+    # logged as "ignored", just never handed to NotionSyncJob.
     HANDLED_EVENT_TYPES = %w[page.created page.content_updated page.properties_updated].freeze
 
     def webhook
@@ -28,7 +38,7 @@ module Integrations
       return head :unauthorized unless @connection
 
       return handle_verification_handshake if params[:verification_token].present?
-      return head :unauthorized unless valid_signature?
+      return reject_invalid_signature unless valid_signature?
 
       handle_event
       head :ok
@@ -42,6 +52,7 @@ module Integrations
       # it's stored rather than just checked and discarded.
       def handle_verification_handshake
         @connection.receive_verification_token!(params[:verification_token])
+        @connection.notion_sync_deliveries.create!(event_type: "verification", status: :succeeded, completed_at: Time.current)
         head :ok
       end
 
@@ -49,12 +60,30 @@ module Integrations
         @connection.valid_signature?(body: request.raw_post, signature: request.headers["X-Notion-Signature"])
       end
 
-      def handle_event
-        return unless HANDLED_EVENT_TYPES.include?(params[:type])
-        return unless params.dig(:entity, :type) == "page"
+      def reject_invalid_signature
+        @connection.notion_sync_deliveries.create!(
+          event_type: params[:type].presence || "unknown",
+          notion_page_id: params.dig(:entity, :id),
+          status: :failed,
+          error_message: "Missing or invalid X-Notion-Signature",
+          completed_at: Time.current
+        )
+        head :unauthorized
+      end
 
-        page_id = params.dig(:entity, :id)
-        NotionSyncJob.perform_later(@connection.id, page_id) if page_id.present?
+      def handle_event
+        handled = HANDLED_EVENT_TYPES.include?(params[:type]) && params.dig(:entity, :type) == "page"
+        notion_page_id = params.dig(:entity, :id)
+        handled &&= notion_page_id.present?
+
+        delivery = @connection.notion_sync_deliveries.create!(
+          event_type: params[:type].presence || "unknown",
+          notion_page_id: notion_page_id,
+          status: handled ? :received : :ignored,
+          completed_at: handled ? nil : Time.current
+        )
+
+        NotionSyncJob.perform_later(@connection.id, notion_page_id, delivery.id) if handled
       end
   end
 end

@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_09_08_150048) do
+ActiveRecord::Schema[8.1].define(version: 2026_09_08_152137) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
 
@@ -225,6 +225,22 @@ ActiveRecord::Schema[8.1].define(version: 2026_09_08_150048) do
     t.index ["webhook_token"], name: "index_notion_connections_on_webhook_token", unique: true
   end
 
+  create_table "notion_sync_deliveries", force: :cascade do |t|
+    t.datetime "completed_at"
+    t.datetime "created_at", null: false
+    t.string "error_message"
+    t.string "event_type", null: false
+    t.bigint "notion_connection_id", null: false
+    t.string "notion_page_id"
+    t.bigint "page_id"
+    t.integer "status", default: 0, null: false
+    t.datetime "updated_at", null: false
+    t.index ["notion_connection_id", "created_at"], name: "idx_on_notion_connection_id_created_at_b8dcf2e2c8"
+    t.index ["notion_connection_id"], name: "index_notion_sync_deliveries_on_notion_connection_id"
+    t.index ["notion_page_id"], name: "index_notion_sync_deliveries_on_notion_page_id"
+    t.index ["page_id"], name: "index_notion_sync_deliveries_on_page_id"
+  end
+
   create_table "pages", force: :cascade do |t|
     t.bigint "area_id", null: false
     t.datetime "created_at", null: false
@@ -382,6 +398,8 @@ ActiveRecord::Schema[8.1].define(version: 2026_09_08_150048) do
   add_foreign_key "chart_tables", "charts"
   add_foreign_key "charts", "areas"
   add_foreign_key "notion_connections", "areas"
+  add_foreign_key "notion_sync_deliveries", "notion_connections"
+  add_foreign_key "notion_sync_deliveries", "pages"
   add_foreign_key "pages", "areas"
   add_foreign_key "pages", "users"
   add_foreign_key "roadmap_cards", "roadmap_sections"

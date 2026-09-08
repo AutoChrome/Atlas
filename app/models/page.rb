@@ -11,6 +11,7 @@ class Page < ApplicationRecord
   belongs_to :user, optional: true
   has_rich_text :content
   has_many_attached :attachments
+  has_many :notion_sync_deliveries, dependent: :nullify
 
   # word_start on both fields so a partial word like "onbo" matches
   # "Onboarding" whether it's in the title or the body content.
@@ -34,5 +35,22 @@ class Page < ApplicationRecord
   # ancestor area), has been made public.
   def publicly_visible?
     public? || area.publicly_visible?
+  end
+
+  # The most recent Notion sync attempt for this page, if it's one
+  # NotionSyncJob manages — matched by Notion's own page ID rather than
+  # this row's own #notion_sync_deliveries association, since that only
+  # gets linked once a sync actually *succeeds* (see
+  # NotionSyncDelivery#mark_succeeded!) — a page's very first sync is
+  # still "in progress" from a delivery that has no page_id yet to look up
+  # by, but does share the same notion_page_id.
+  def current_notion_sync
+    return nil if notion_page_id.blank?
+
+    NotionSyncDelivery.where(notion_page_id: notion_page_id).ordered.first
+  end
+
+  def notion_syncing?
+    current_notion_sync&.syncing? || false
   end
 end

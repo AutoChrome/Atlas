@@ -18,6 +18,7 @@ class NotionConnection < ApplicationRecord
   encrypts :verification_token
 
   belongs_to :area
+  has_many :notion_sync_deliveries, dependent: :destroy
 
   audited except: %i[integration_token verification_token]
 

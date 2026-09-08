@@ -15,6 +15,22 @@
     <%= f.text_field :title, class: "input", required: true, spellcheck: true %>
   </div>
 
+  <%# Only for an existing page — for a brand new one, the area is already
+      fixed by whichever area's "New page" button got you to this form, so
+      a picker here would just be a redundant second way to set the same
+      thing. %>
+  <% if page.persisted? %>
+    <div class="field">
+      <%= f.label :area_id, "Area", class: "field__label" %>
+      <%= f.collection_select :area_id, Area.all.sort_by(&:path_name), :id, :path_name, {}, { class: "input" } %>
+      <p class="field__hint">
+        Moves this page to a different area on save. If a page with the same title already exists there,
+        this one's URL gets a randomized suffix to stay unique rather than failing to save — rename one of
+        them afterward if you'd rather have a clean URL.
+      </p>
+    </div>
+  <% end %>
+
   <%= render "shared/rich_text_field", f: f %>
 
   <%= render "shared/icon_field", f: f %>

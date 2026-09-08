@@ -9,6 +9,19 @@
       <% if current_user && @page.public? %>
         <span class="badge badge--success">Public — visible without signing in</span>
       <% end %>
+      <%# Refreshes on page load/reload, not pushed live — a sync is
+          typically a few seconds of work, so this is mainly useful for
+          confirming a recent edit in Notion actually arrived, not for
+          watching it happen in real time. %>
+      <% if current_user && (sync = @page.current_notion_sync) %>
+        <% if sync.syncing? %>
+          <span class="badge badge--warning" title="A change in Notion is being pulled in right now">⏳ Syncing from Notion…</span>
+        <% elsif sync.succeeded? %>
+          <span class="badge badge--success" title="<%= sync.completed_at.to_fs(:long) %>">Synced from Notion <%= time_ago_in_words(sync.completed_at) %> ago</span>
+        <% elsif sync.failed? %>
+          <span class="badge badge--error" title="<%= sync.error_message %>">⚠ Last Notion sync failed</span>
+        <% end %>
+      <% end %>
     </div>
 
     <div class="cluster">

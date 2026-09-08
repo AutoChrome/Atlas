@@ -71,4 +71,59 @@
       <li>Not everything Notion can contain converts — child pages, databases, embeds, and a handful of other block types are skipped rather than guessed at; text, headings, lists, quotes, code, images, simple tables, and to-dos all carry over.</li>
     </ul>
   </section>
+
+  <section class="stack">
+    <h2>Recent syncs</h2>
+    <% if @deliveries.any? %>
+      <table class="data-table">
+        <thead>
+          <tr>
+            <th>When</th>
+            <th>Event</th>
+            <th>Notion page</th>
+            <th>Atlas page</th>
+            <th>Result</th>
+          </tr>
+        </thead>
+        <tbody>
+          <% @deliveries.each do |delivery| %>
+            <tr>
+              <td><%= delivery.created_at.to_fs(:long) %></td>
+              <td class="font-mono text-muted"><%= delivery.event_type %></td>
+              <td class="font-mono text-muted"><%= delivery.notion_page_id.presence || "—" %></td>
+              <td>
+                <% if delivery.page %>
+                  <%= link_to delivery.page.title, area_page_path(delivery.page.area, delivery.page) %>
+                <% else %>
+                  <span class="text-muted">—</span>
+                <% end %>
+              </td>
+              <td>
+                <% case delivery.status
+                   when "syncing" %>
+                  <span class="badge badge--warning">⏳ Syncing…</span>
+                <% when "succeeded" %>
+                  <span class="badge badge--success">Synced</span>
+                <% when "failed" %>
+                  <span class="badge badge--error">Failed</span>
+                  <% if delivery.error_message.present? %>
+                    <span class="text-muted"><%= delivery.error_message %></span>
+                  <% end %>
+                <% when "ignored" %>
+                  <span class="badge">Ignored<%= " — #{delivery.error_message}" if delivery.error_message.present? %></span>
+                <% else %>
+                  <span class="badge">Queued</span>
+                <% end %>
+              </td>
+            </tr>
+          <% end %>
+        </tbody>
+      </table>
+    <% else %>
+      <p class="text-muted">
+        Nothing yet — once Notion contacts the webhook URL above (even just the verification handshake),
+        it'll show up here.
+      </p>
+    <% end %>
+  </section>
 </div>

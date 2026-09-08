@@ -33,7 +33,13 @@ class PagesController < ApplicationController
     authorize @page
 
     if @page.update(page_params)
-      redirect_to [ @area, @page ], notice: "Page updated."
+      # Not [@area, @page] — the edit form lets a page move to a different
+      # area (see _form.html.erb), so @area (from the URL this request came
+      # in on) may no longer be where the page actually lives. @page.area
+      # reflects whatever area_id update just set; reload first since
+      # belongs_to's inverse-of caching would otherwise still hand back the
+      # original @area instance the association was loaded through.
+      redirect_to [ @page.reload.area, @page ], notice: "Page updated."
     else
       render :edit, status: :unprocessable_entity
     end
@@ -76,6 +82,6 @@ class PagesController < ApplicationController
     end
 
     def page_params
-      params.require(:page).permit(:title, :content, :public, :position, :icon, attachments: [])
+      params.require(:page).permit(:title, :content, :public, :position, :icon, :area_id, attachments: [])
     end
 end

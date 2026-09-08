@@ -1,0 +1,18 @@
+# Read about fixtures at https://api.rubyonrails.org/classes/ActiveRecord/FixtureSet.html
+
+one:
+  notion_connection: one
+  page: one
+  event_type: page.content_updated
+  notion_page_id: fixture-notion-page-one
+  status: 2 # succeeded
+  completed_at: 2026-09-08 15:21:37
+
+two:
+  notion_connection: one
+  page:
+  event_type: page.content_updated
+  notion_page_id: fixture-notion-page-two
+  status: 3 # failed
+  error_message: "Notion API 401: unauthorized"
+  completed_at: 2026-09-08 15:22:00
