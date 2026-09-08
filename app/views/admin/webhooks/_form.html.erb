@@ -20,6 +20,33 @@
     <p class="field__hint">Every published announcement is sent here as JSON. See the <%= link_to "integration guide", docs_admin_webhooks_path %> for the exact payload.</p>
   </div>
 
+  <div class="field">
+    <%= f.label :content_format, "Content format", class: "field__label" %>
+    <%= f.select :content_format,
+          options_for_select(
+            [ [ "Safe HTML — full formatting, attachments included", "html" ],
+              [ "Raw text — formatting and attachments stripped to plain text", "plain_text" ] ],
+            f.object.content_format
+          ), {}, class: "input" %>
+    <p class="field__hint">
+      What the announcement's <code class="font-mono">content</code> field looks like in the payload
+      this webhook receives. See the <%= link_to "integration guide", docs_admin_webhooks_path %>
+      for exactly what each produces.
+    </p>
+  </div>
+
+  <div class="field">
+    <%= f.label :custom_parameters_json, "Custom parameters", class: "field__label" %>
+    <%= f.text_area :custom_parameters_json, class: "input font-mono", rows: 6,
+          placeholder: "{\n  \"team\": \"platform\",\n  \"environment\": \"production\"\n}" %>
+    <p class="field__hint">
+      Optional. A flat JSON object — string, number, boolean, or <code class="font-mono">null</code>
+      values only, no nested objects or arrays — sent as-is under
+      <code class="font-mono">custom_parameters</code> in every payload this webhook receives. Leave
+      blank to send none.
+    </p>
+  </div>
+
   <div class="checkbox">
     <%= f.check_box :active %>
     <%= f.label :active, "Active — deliver announcements to this webhook" %>

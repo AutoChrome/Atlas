@@ -40,4 +40,14 @@ class ContentTableTest < ActiveSupport::TestCase
     assert_equal "content_tables/content_table", table.to_trix_content_attachment_partial_path
     assert table.attachable_sgid.present?
   end
+
+  # See RichTextPayload's "raw text" webhook format — without this, a
+  # table embedded in an announcement silently vanishes from plain-text
+  # output entirely (the default falls back to just the attachment's
+  # caption, which is always blank here).
+  test "attachable_plain_text_representation renders rows as pipe-delimited lines" do
+    table = ContentTable.new(data: [ [ "Name", "Role" ], [ "Ada", "Engineer" ] ])
+
+    assert_equal "Name | Role\nAda | Engineer", table.attachable_plain_text_representation
+  end
 end

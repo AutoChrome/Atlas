@@ -44,6 +44,16 @@ class ContentTable < ApplicationRecord
     to_attachable_partial_path
   end
 
+  # Used by ActionText::Attachment#to_plain_text (in turn used by
+  # RichText#to_plain_text — see WebhookDeliveryJob's "raw text" payload
+  # format) — without this override the default falls back to just the
+  # attachment's caption, which is blank here, silently dropping every
+  # table from a plain-text rendering. Pipe-delimited rows read reasonably
+  # as plain text without needing real table layout.
+  def attachable_plain_text_representation(_caption = nil)
+    data.map { |row| row.join(" | ") }.join("\n")
+  end
+
   private
     def data_is_a_grid_of_text
       unless data.is_a?(Array) && data.all? { |row| row.is_a?(Array) && row.all?(String) }

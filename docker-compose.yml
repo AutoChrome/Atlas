@@ -14,8 +14,12 @@ services:
       interval: 5s
       timeout: 5s
       retries: 10
+    # Host-side port only — change via DATABASE_HOST_PORT in .env if 5432
+    # is already taken locally. The app itself always reaches this
+    # container at its real 5432 over the Docker network (see web/worker's
+    # own DATABASE_PORT below), so this doesn't need to match that.
     ports:
-      - "127.0.0.1:5432:5432"
+      - "127.0.0.1:${DATABASE_HOST_PORT:-5432}:5432"
 
   redis:
     image: redis:7-alpine

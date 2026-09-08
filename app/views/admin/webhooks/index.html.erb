@@ -20,6 +20,7 @@
         <tr>
           <th>Description</th>
           <th>URL</th>
+          <th>Format</th>
           <th>Status</th>
           <th>Recent deliveries</th>
           <th></th>
@@ -30,6 +31,7 @@
           <tr>
             <td><%= webhook.description %></td>
             <td class="font-mono text-muted" style="word-break: break-all;"><%= webhook.url %></td>
+            <td><span class="badge"><%= webhook.html? ? "Safe HTML" : "Raw text" %></span></td>
             <td>
               <% if webhook.active? %>
                 <span class="badge badge--success">Active</span>

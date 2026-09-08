@@ -30,4 +30,13 @@ class Callout < ApplicationRecord
   def to_trix_content_attachment_partial_path
     to_attachable_partial_path
   end
+
+  # Used by ActionText::Attachment#to_plain_text (in turn used by
+  # RichText#to_plain_text — see WebhookDeliveryJob's "raw text" payload
+  # format) — without this override the default falls back to just the
+  # attachment's caption, which is blank here, silently dropping every
+  # callout from a plain-text rendering.
+  def attachable_plain_text_representation(_caption = nil)
+    "[#{variant.upcase}] #{body}"
+  end
 end

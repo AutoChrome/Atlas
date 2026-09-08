@@ -24,10 +24,14 @@ class WebhookDeliveryJob < ApplicationJob
     return unless announcement
 
     webhooks = webhook_ids.nil? ? Webhook.active : Webhook.active.where(id: webhook_ids)
-    body = payload_json(announcement)
+    # Shared across every webhook below rather than one per — RichTextPayload
+    # memoizes the (real ActionView partial) render internally, so this
+    # costs at most one render of each format actually in use, however many
+    # webhooks end up asking for it.
+    payload = RichTextPayload.new(announcement.content)
 
     webhooks.find_each do |webhook|
-      deliver(webhook, announcement, body)
+      deliver(webhook, announcement, payload_json(announcement, payload, webhook))
     end
   end
 
@@ -72,19 +76,19 @@ class WebhookDeliveryJob < ApplicationJob
       OpenSSL::HMAC.hexdigest("SHA256", webhook.secret, body)
     end
 
-    def payload_json(announcement)
+    # See RichTextPayload for what each Webhook#content_format value
+    # actually produces, and Webhook#custom_parameters for the arbitrary
+    # per-webhook data merged in here — top-level, alongside `announcement`
+    # rather than nested inside it, since it describes this delivery/
+    # webhook, not a property of the announcement itself.
+    def payload_json(announcement, payload, webhook)
       {
         event: EVENT,
         announcement: {
           id: announcement.id,
           title: announcement.title,
-          # .body.fragment.source.to_html, not .content.to_s — the latter
-          # renders through ActionView (for attachment previews), which in
-          # development also injects the view-annotation comments
-          # (config.action_view.annotate_rendered_view_with_filenames) right
-          # into the payload. This is the same raw-fragment serialization
-          # Autocorrectable uses for the same reason.
-          content_html: announcement.content.body.fragment.source.to_html,
+          content: webhook.plain_text? ? payload.plain_text : payload.html,
+          content_format: webhook.content_format,
           author: announcement.user&.name,
           published_at: announcement.published_at&.iso8601,
           # Date, not DateTime, so this comes out as plain "YYYY-MM-DD" —
@@ -92,7 +96,8 @@ class WebhookDeliveryJob < ApplicationJob
           starts_on: announcement.starts_on&.iso8601,
           ends_on: announcement.ends_on&.iso8601,
           url: Rails.application.routes.url_helpers.announcement_url(announcement, host: ENV.fetch("SITE_ADDRESS", "localhost"))
-        }
+        },
+        custom_parameters: webhook.custom_parameters
       }.to_json
     end
 end

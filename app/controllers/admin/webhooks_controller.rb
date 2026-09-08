@@ -58,7 +58,7 @@ module Admin
       end
 
       def webhook_params
-        params.require(:webhook).permit(:description, :url, :active)
+        params.require(:webhook).permit(:description, :url, :active, :content_format, :custom_parameters_json)
       end
   end
 end

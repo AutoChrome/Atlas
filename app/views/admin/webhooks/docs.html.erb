@@ -68,12 +68,17 @@
   "announcement": {
     "id": 42,
     "title": "Scheduled maintenance this weekend",
-    "content_html": "&lt;div&gt;&lt;p&gt;We'll be taking the app down...&lt;/p&gt;&lt;/div&gt;",
+    "content": "&lt;div&gt;&lt;p&gt;We'll be taking the app down...&lt;/p&gt;&lt;/div&gt;",
+    "content_format": "html",
     "author": "Jordan Blake",
     "published_at": "2026-09-05T18:32:10Z",
     "starts_on": "2026-09-06",
     "ends_on": "2026-09-07",
     "url": "https://atlas.example.com/announcements/42"
+  },
+  "custom_parameters": {
+    "team": "platform",
+    "environment": "production"
   }
 }</pre>
     <table class="data-table">
@@ -87,14 +92,54 @@
       <tbody>
         <tr><td><code class="font-mono">announcement.id</code></td><td>integer</td><td>Stable identifier for de-duplication.</td></tr>
         <tr><td><code class="font-mono">announcement.title</code></td><td>string</td><td>Plain text.</td></tr>
-        <tr><td><code class="font-mono">announcement.content_html</code></td><td>string</td><td>The full rich-text body as raw HTML, exactly as authored in Atlas's WYSIWYG editor. Atlas does not sanitize or transform this for your use case — treat it as trusted HTML from your own organization's editors and render or forward it however fits your application.</td></tr>
+        <tr>
+          <td><code class="font-mono">announcement.content</code></td>
+          <td>string</td>
+          <td>
+            The announcement body, in whichever format this webhook is configured to send (see
+            <code class="font-mono">content_format</code> below and each webhook's own edit page). Atlas does not
+            sanitize or transform this beyond what the chosen format implies — treat HTML as trusted content from
+            your own organization's editors.
+          </td>
+        </tr>
+        <tr>
+          <td><code class="font-mono">announcement.content_format</code></td>
+          <td>string</td>
+          <td>
+            Either <code class="font-mono">"html"</code> or <code class="font-mono">"plain_text"</code>, matching
+            what this specific webhook is set to send — read this rather than assuming, since different webhooks on
+            the same Atlas instance can be configured differently.
+            <ul>
+              <li><strong>html</strong> — the full rich-text body, exactly as authored, with every embedded table/callout/image expanded to its real markup (not just a reference).</li>
+              <li><strong>plain_text</strong> — all formatting and embedded content stripped down to text; a table becomes pipe-delimited rows, a callout becomes <code class="font-mono">[VARIANT] body text</code>, on their own lines.</li>
+            </ul>
+          </td>
+        </tr>
         <tr><td><code class="font-mono">announcement.author</code></td><td>string or null</td><td>Display name of the user who created it, if any.</td></tr>
         <tr><td><code class="font-mono">announcement.published_at</code></td><td>string (ISO 8601)</td><td>When this publish/re-publish happened.</td></tr>
         <tr><td><code class="font-mono">announcement.starts_on</code></td><td>string (<code class="font-mono">YYYY-MM-DD</code>)</td><td>First day the announcement should be considered live. Date only, no time — announcements run whole days, at least one.</td></tr>
         <tr><td><code class="font-mono">announcement.ends_on</code></td><td>string (<code class="font-mono">YYYY-MM-DD</code>)</td><td>Last day the announcement should be considered live (inclusive). Never earlier than <code class="font-mono">starts_on</code> — the same date means a single-day announcement.</td></tr>
         <tr><td><code class="font-mono">announcement.url</code></td><td>string</td><td>Link back to the announcement inside Atlas.</td></tr>
+        <tr>
+          <td><code class="font-mono">custom_parameters</code></td>
+          <td>object</td>
+          <td>
+            Arbitrary data set on this webhook's own edit page in Atlas — not derived from the announcement, and
+            identical on every delivery to this webhook until someone changes it there. A flat object of string,
+            number, boolean, or <code class="font-mono">null</code> values (no nesting) — use it for things your
+            receiver needs to know that Atlas has no concept of, like which internal team or channel a webhook is
+            for. Always present, as <code class="font-mono">{}</code> if nothing's configured.
+          </td>
+        </tr>
       </tbody>
     </table>
+    <p class="field__hint">
+      <strong>Handling <code class="font-mono">content</code> on your end:</strong> if your receiver renders this
+      somewhere a browser will display it (an intranet page, an email), treat <code class="font-mono">html</code>
+      as real markup to render directly, not to display as literal text. If you're forwarding it into a system that
+      doesn't render HTML at all (a chat webhook, an SMS gateway, a plain log), set that webhook's format to
+      <code class="font-mono">plain_text</code> instead of trying to strip tags yourself downstream.
+    </p>
   </section>
 
   <section id="signature" class="docs-section stack">
