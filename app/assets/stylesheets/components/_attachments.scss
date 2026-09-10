@@ -1,0 +1,95 @@
+// The page form's attachment picker (see attachment_fields_controller.js)
+// — a proper drop zone in the form itself, plus a full-page overlay shown
+// while dragging a file anywhere on the page, not just over the small
+// zone (easy to miss, awkward to aim for on a long form).
+@use "../abstracts/variables" as v;
+@use "../abstracts/mixins" as m;
+
+.attachment-dropzone {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: m.spacer(2);
+  padding: m.spacer(6) m.spacer(4);
+  border: 2px dashed var(--color-outline-variant);
+  border-radius: v.$radius-md;
+  color: var(--color-on-surface-variant);
+  text-align: center;
+  cursor: pointer;
+  @include m.type(body);
+
+  &:hover {
+    background-color: var(--color-surface-container-high);
+    border-color: var(--color-primary);
+    color: var(--color-on-surface);
+  }
+
+  .icon-fa {
+    font-size: 1.5em;
+    color: var(--color-on-surface-variant);
+  }
+
+  strong {
+    color: var(--color-primary);
+  }
+}
+
+// Covers the whole viewport while a drag is in progress anywhere on the
+// page — pointer-events: none so it never itself becomes the thing being
+// dragged over (which would just add another layer of dragenter/dragleave
+// noise for the controller to filter back out).
+.attachment-drop-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 1000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background-color: color-mix(in srgb, var(--color-surface) 85%, transparent);
+  pointer-events: none;
+
+  &[hidden] {
+    display: none;
+  }
+}
+
+.attachment-drop-overlay__message {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: m.spacer(3);
+  padding: m.spacer(8) m.spacer(10);
+  border: 3px dashed var(--color-primary);
+  border-radius: v.$radius-lg;
+  background-color: var(--color-surface-container);
+  color: var(--color-on-surface);
+  @include m.type(title-lg);
+
+  .icon-fa {
+    font-size: 2em;
+    color: var(--color-primary);
+  }
+}
+
+.attachment-field {
+  display: flex;
+  flex-direction: column;
+  gap: m.spacer(2);
+  padding: m.spacer(3);
+  border: 1px solid var(--color-outline-variant);
+  border-radius: v.$radius-sm;
+  background-color: var(--color-surface-container-low);
+
+  // Same reason every other JS-toggled `hidden` element in this app needs
+  // this — see _grid.scss's .stack for the fuller explanation. A removed
+  // (but already-persisted) attachment is hidden, not deleted from the
+  // DOM, so Rails still sees its _destroy flag on submit.
+  &[hidden] {
+    display: none;
+  }
+}
+
+.attachment-field__name {
+  color: var(--color-on-surface-variant);
+  overflow-wrap: anywhere;
+}

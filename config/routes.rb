@@ -18,6 +18,10 @@ Rails.application.routes.draw do
       member do
         patch :move
       end
+
+      resources :page_attachments, path: "attachments", only: [] do
+        member { get :download }
+      end
     end
 
     resources :charts, param: :slug do

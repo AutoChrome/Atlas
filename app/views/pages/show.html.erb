@@ -43,14 +43,25 @@
     <%= @page.content %>
   </div>
 
-  <% if @page.attachments.attached? %>
+  <% if @page.page_attachments.any? %>
     <section class="stack">
       <h2>Attachments</h2>
       <div class="stack">
-        <% @page.attachments.each do |attachment| %>
+        <% @page.page_attachments.each do |page_attachment| %>
+          <% next unless page_attachment.file.attached? %>
           <div class="card cluster" style="justify-content: space-between;">
-            <span><%= attachment.filename %></span>
-            <%= link_to "Download", rails_blob_path(attachment, disposition: "attachment"), class: "btn btn--text btn--sm" %>
+            <span class="cluster" style="gap: 6px;">
+              <%= fa_icon "paperclip" %>
+              <span>
+                <%= page_attachment.label.presence || page_attachment.effective_filename %>
+                <% if page_attachment.label.present? %>
+                  <span class="text-muted">— <%= page_attachment.effective_filename %></span>
+                <% end %>
+              </span>
+            </span>
+            <%= link_to "Download",
+                  download_area_page_page_attachment_path(@area, @page, page_attachment),
+                  class: "btn btn--text btn--sm" %>
           </div>
         <% end %>
       </div>

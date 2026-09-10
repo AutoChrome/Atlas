@@ -20,6 +20,16 @@ trix-toolbar {
   border-radius: v.$radius-md v.$radius-md 0 0;
   padding: m.spacer(2) !important;
   margin: 0 !important;
+  // Sticks under the topbar (same 64px/z-index: 10 pairing as .docs-nav)
+  // while scrolling through a long page's content, so the formatting
+  // buttons stay reachable instead of scrolling out of view. Sticky's
+  // containing block is this field's own wrapper (see
+  // shared/_rich_text_field.html.erb), so it naturally stops sticking
+  // once you scroll past the whole editor — it won't float over the
+  // fields below it (icon, attachments, public checkbox, submit).
+  position: sticky;
+  top: 64px;
+  z-index: 10;
 
   .trix-button-row {
     border: none !important;
@@ -153,7 +163,9 @@ trix-editor {
 }
 
 .rich-text-table__add-row,
-.rich-text-table__add-column {
+.rich-text-table__add-column,
+.rich-text-table__remove-row,
+.rich-text-table__remove-column {
   padding: m.spacer(1) m.spacer(3);
   border: 1px dashed var(--color-outline-variant);
   border-radius: v.$radius-sm;
@@ -265,6 +277,37 @@ trix-editor {
   &:focus {
     outline: 2px solid var(--color-primary);
     outline-offset: -2px;
+  }
+}
+
+// Restores normal vertical rhythm between block-level content — the
+// global `* { margin: 0 }` reset (base/_reset.scss) strips it from every
+// <p>/<h1-3>/list/<blockquote>/attachment otherwise, in both the live
+// editor and the published page. Unscoped by nesting depth (no `>`) so it
+// still applies inside a <blockquote> or <li>'s own children, not just at
+// the very top level.
+//
+// action-text-attachment (the wrapper Trix puts around a ContentTable,
+// image, etc. — see actiontext.css) has no declared display of its own,
+// so browsers default it to `inline`, and an inline box's top margin is
+// ignored for layout. Forcing it to `block` here is what lets its own
+// margin-top below actually create visible space above it.
+trix-editor,
+.trix-content {
+  action-text-attachment {
+    display: block;
+  }
+
+  :where(p, h1, h2, h3, ul, ol, blockquote, pre, table, action-text-attachment, .rich-text-callout):not(:first-child) {
+    margin-top: m.spacer(4);
+  }
+
+  // A heading — or a bolded line standing in for one, e.g. a Notion
+  // toggle's summary or a bold-only paragraph (see
+  // NotionBlocksToHtml::EMPHASIS_CLASS) — reads as a section break, so it
+  // gets noticeably more room above it than an ordinary paragraph does.
+  :where(h1, h2, h3, .notion-emphasis):not(:first-child) {
+    margin-top: m.spacer(8);
   }
 }
 

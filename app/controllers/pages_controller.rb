@@ -82,6 +82,9 @@ class PagesController < ApplicationController
     end
 
     def page_params
-      params.require(:page).permit(:title, :content, :public, :position, :icon, :area_id, attachments: [])
+      params.require(:page).permit(
+        :title, :content, :public, :position, :icon, :area_id,
+        page_attachments_attributes: %i[id label download_filename file _destroy]
+      )
     end
 end

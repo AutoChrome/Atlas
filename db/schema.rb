@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_09_08_152137) do
+ActiveRecord::Schema[8.1].define(version: 2026_09_10_074734) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
 
@@ -241,6 +241,15 @@ ActiveRecord::Schema[8.1].define(version: 2026_09_08_152137) do
     t.index ["page_id"], name: "index_notion_sync_deliveries_on_page_id"
   end
 
+  create_table "page_attachments", force: :cascade do |t|
+    t.datetime "created_at", null: false
+    t.string "download_filename"
+    t.string "label"
+    t.bigint "page_id", null: false
+    t.datetime "updated_at", null: false
+    t.index ["page_id"], name: "index_page_attachments_on_page_id"
+  end
+
   create_table "pages", force: :cascade do |t|
     t.bigint "area_id", null: false
     t.datetime "created_at", null: false
@@ -400,6 +409,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_09_08_152137) do
   add_foreign_key "notion_connections", "areas"
   add_foreign_key "notion_sync_deliveries", "notion_connections"
   add_foreign_key "notion_sync_deliveries", "pages"
+  add_foreign_key "page_attachments", "pages"
   add_foreign_key "pages", "areas"
   add_foreign_key "pages", "users"
   add_foreign_key "roadmap_cards", "roadmap_sections"

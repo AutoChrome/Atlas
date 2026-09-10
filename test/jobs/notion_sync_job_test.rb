@@ -159,6 +159,37 @@ class NotionSyncJobTest < ActiveJob::TestCase
     assert_match "401", delivery.error_message
   end
 
+  test "a synced Notion table becomes a real ContentTable, not a plain <table>" do
+    table_block = {
+      "type" => "table",
+      "table" => { "has_column_header" => true },
+      "has_children" => true,
+      "children" => [
+        { "type" => "table_row", "table_row" => { "cells" => [
+          [ { "plain_text" => "Column", "annotations" => {}, "href" => nil } ],
+          [ { "plain_text" => "Purpose", "annotations" => {}, "href" => nil } ]
+        ] } },
+        { "type" => "table_row", "table_row" => { "cells" => [
+          [ { "plain_text" => "Supplier Product Code", "annotations" => {}, "href" => nil } ],
+          [ { "plain_text" => "Matches the price line", "annotations" => {}, "href" => nil } ]
+        ] } }
+      ]
+    }
+
+    stub_notion_client(page: notion_page(title: "Price list fields"), blocks: [ table_block ]) do
+      assert_difference "ContentTable.count", 1 do
+        NotionSyncJob.perform_now(@connection.id, "notion-page-123")
+      end
+    end
+
+    table = ContentTable.last
+    assert_equal [ [ "Column", "Purpose" ], [ "Supplier Product Code", "Matches the price line" ] ], table.data
+
+    page = @area.pages.find_by(notion_page_id: "notion-page-123")
+    assert_match "action-text-attachment", page.content.to_s
+    assert_no_match "<table>", page.content.to_s
+  end
+
   test "runs fine without a delivery_id, for backward compatibility with an already-queued job" do
     stub_notion_client(page: notion_page(title: "Test"), blocks: []) do
       assert_nothing_raised do

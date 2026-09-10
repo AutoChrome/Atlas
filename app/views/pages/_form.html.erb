@@ -35,10 +35,40 @@
 
   <%= render "shared/icon_field", f: f %>
 
-  <div class="field">
-    <%= f.label :attachments, "Add attachments", class: "field__label" %>
-    <%= f.file_field :attachments, multiple: true %>
-    <p class="field__hint">Images, videos, PDFs — anything you want available for download alongside the page.</p>
+  <div class="field" data-controller="attachment-fields"
+       data-action="dragenter@window->attachment-fields#dragEnter dragover@window->attachment-fields#dragOver
+                    dragleave@window->attachment-fields#dragLeave drop@window->attachment-fields#drop">
+    <span class="field__label">Attachments</span>
+
+    <div class="attachment-dropzone" data-action="click->attachment-fields#browse">
+      <%= fa_icon "cloud-arrow-up" %>
+      <p>Drag files anywhere on this page, or <strong>click to browse</strong></p>
+    </div>
+    <input type="file" multiple hidden data-attachment-fields-target="fileInput" data-action="change->attachment-fields#filesSelected">
+
+    <div class="stack" style="gap: 8px; margin-top: 8px;" data-attachment-fields-target="list">
+      <%= f.fields_for :page_attachments do |attachment_form| %>
+        <%= render "attachment_fields", f: attachment_form %>
+      <% end %>
+    </div>
+
+    <template data-attachment-fields-target="template">
+      <%= f.fields_for :page_attachments, PageAttachment.new, child_index: "NEW_RECORD" do |attachment_form| %>
+        <%= render "attachment_fields", f: attachment_form %>
+      <% end %>
+    </template>
+
+    <div class="attachment-drop-overlay" data-attachment-fields-target="dropOverlay" hidden>
+      <div class="attachment-drop-overlay__message">
+        <%= fa_icon "cloud-arrow-up" %>
+        <p>Drop to attach</p>
+      </div>
+    </div>
+
+    <p class="field__hint">
+      Images, videos, PDFs — anything you want available for download alongside the page. Give one a label so
+      people know what it is, or a different download name if the original filename isn't a good fit.
+    </p>
   </div>
 
   <div class="checkbox">

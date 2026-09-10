@@ -10,8 +10,17 @@ class Page < ApplicationRecord
   belongs_to :area
   belongs_to :user, optional: true
   has_rich_text :content
-  has_many_attached :attachments
+  has_many :page_attachments, dependent: :destroy
   has_many :notion_sync_deliveries, dependent: :nullify
+
+  # `file` blank AND no `id` means an empty fieldset that was never
+  # actually given a file (the template itself, or one added then cleared
+  # before submitting) — reject rather than create a PageAttachment with
+  # nothing attached. A fieldset WITH an id but no new file is a normal
+  # edit to an existing attachment's label/filename, not a re-upload —
+  # left alone here, not rejected.
+  accepts_nested_attributes_for :page_attachments, allow_destroy: true,
+    reject_if: ->(attrs) { attrs["id"].blank? && attrs["file"].blank? }
 
   # word_start on both fields so a partial word like "onbo" matches
   # "Onboarding" whether it's in the title or the body content.

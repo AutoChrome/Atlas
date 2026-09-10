@@ -57,6 +57,28 @@ export default class extends Controller {
     this.saveNow()
   }
 
+  // Only ever removes from tbody — the header row (thead's own <tr>,
+  // always present) isn't a "row" a person adds/removes, it's the table's
+  // one required row. Removing every tbody row is exactly how you get a
+  // "2x1" table: header only, no body.
+  removeRow() {
+    const body = this.tableTarget.querySelector("tbody")
+    if (!body.lastElementChild) return
+
+    body.lastElementChild.remove()
+    this.saveNow()
+  }
+
+  // Guards at 1 rather than 0 — a table with zero columns has nothing left
+  // to hold a row at all, so the minimum grid is 1 column.
+  removeColumn() {
+    const rows = this.tableTarget.querySelectorAll("tr")
+    if (rows[0]?.children.length <= 1) return
+
+    rows.forEach((row) => row.lastElementChild?.remove())
+    this.saveNow()
+  }
+
   async save() {
     const rows = Array.from(this.tableTarget.querySelectorAll("tr")).map((row) =>
       Array.from(row.children).map((cell) => cell.textContent.trim())

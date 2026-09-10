@@ -44,4 +44,71 @@ class PagesControllerTest < ActionDispatch::IntegrationTest
     assert_equal @other_area, @page.area
     assert_not_equal colliding.slug, @page.slug
   end
+
+  test "creating a page with an attached file also creates a PageAttachment" do
+    file = fixture_file_upload("sample_attachment.txt", "text/plain")
+
+    assert_difference "PageAttachment.count", 1 do
+      post area_pages_path(@area), params: {
+        page: {
+          title: "New page",
+          page_attachments_attributes: {
+            "0" => { label: "Contract", file: file }
+          }
+        }
+      }
+    end
+
+    page_attachment = Page.find_by(title: "New page").page_attachments.sole
+    assert_equal "Contract", page_attachment.label
+    assert_equal "sample_attachment.txt", page_attachment.file.filename.to_s
+  end
+
+  test "updating a page can add a labeled attachment with a custom download filename" do
+    file = fixture_file_upload("sample_attachment.txt", "text/plain")
+
+    patch area_page_path(@area, @page), params: {
+      page: {
+        page_attachments_attributes: {
+          "0" => { label: "Contract", download_filename: "renamed.txt", file: file }
+        }
+      }
+    }
+
+    page_attachment = @page.reload.page_attachments.find_by(label: "Contract")
+    assert_equal "renamed.txt", page_attachment.effective_filename
+  end
+
+  test "updating a page can rename and relabel an existing attachment" do
+    page_attachment = @page.page_attachments.create!(label: "Old label")
+    page_attachment.file.attach(
+      io: File.open(Rails.root.join("test/fixtures/files/sample_attachment.txt")),
+      filename: "sample_attachment.txt", content_type: "text/plain"
+    )
+
+    patch area_page_path(@area, @page), params: {
+      page: {
+        page_attachments_attributes: {
+          "0" => { id: page_attachment.id, label: "New label", download_filename: "renamed.txt" }
+        }
+      }
+    }
+
+    assert_equal "New label", page_attachment.reload.label
+    assert_equal "renamed.txt", page_attachment.effective_filename
+  end
+
+  test "updating a page can destroy an existing attachment" do
+    page_attachment = @page.page_attachments.create!(label: "Old label")
+
+    assert_difference "PageAttachment.count", -1 do
+      patch area_page_path(@area, @page), params: {
+        page: {
+          page_attachments_attributes: {
+            "0" => { id: page_attachment.id, _destroy: "1" }
+          }
+        }
+      }
+    end
+  end
 end

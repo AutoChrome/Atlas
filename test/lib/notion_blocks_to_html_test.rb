@@ -36,15 +36,19 @@ class NotionBlocksToHtmlTest < ActiveSupport::TestCase
   end
 
   test "applies bold, italic, strikethrough, underline, and code annotations, nested correctly" do
+    # A fully-bold paragraph gets notion-emphasis (see the dedicated tests
+    # below) — that's incidental to this test, which is really about
+    # annotation nesting order, so these two use a trailing plain run to
+    # stay out of that path.
     html = NotionBlocksToHtml.convert([
-      block("paragraph", { "rich_text" => [ rich_text("bold", annotations: { "bold" => true }) ] })
+      block("paragraph", { "rich_text" => [ rich_text("bold", annotations: { "bold" => true }), rich_text(".") ] })
     ])
-    assert_equal "<p><strong>bold</strong></p>", html
+    assert_equal "<p><strong>bold</strong>.</p>", html
 
     html = NotionBlocksToHtml.convert([
-      block("paragraph", { "rich_text" => [ rich_text("both", annotations: { "bold" => true, "italic" => true }) ] })
+      block("paragraph", { "rich_text" => [ rich_text("both", annotations: { "bold" => true, "italic" => true }), rich_text(".") ] })
     ])
-    assert_equal "<p><em><strong>both</strong></em></p>", html
+    assert_equal "<p><em><strong>both</strong></em>.</p>", html
 
     html = NotionBlocksToHtml.convert([
       block("paragraph", { "rich_text" => [ rich_text("struck", annotations: { "strikethrough" => true }) ] })
@@ -132,12 +136,21 @@ class NotionBlocksToHtmlTest < ActiveSupport::TestCase
     assert_equal "<hr>", NotionBlocksToHtml.convert([ block("divider", {}) ])
   end
 
-  test "converts a checked and unchecked to_do" do
+  test "converts to_do blocks into a plain bulleted list, regardless of checked state" do
     checked = block("to_do", { "rich_text" => [ rich_text("Done") ], "checked" => true })
     unchecked = block("to_do", { "rich_text" => [ rich_text("Not done") ], "checked" => false })
 
-    assert_equal "<p>☑ Done</p>", NotionBlocksToHtml.convert([ checked ])
-    assert_equal "<p>☐ Not done</p>", NotionBlocksToHtml.convert([ unchecked ])
+    assert_equal "<ul><li>Done</li></ul>", NotionBlocksToHtml.convert([ checked ])
+    assert_equal "<ul><li>Not done</li></ul>", NotionBlocksToHtml.convert([ unchecked ])
+  end
+
+  test "groups consecutive to_do blocks into one ul" do
+    blocks = [
+      block("to_do", { "rich_text" => [ rich_text("One") ], "checked" => false }),
+      block("to_do", { "rich_text" => [ rich_text("Two") ], "checked" => true })
+    ]
+
+    assert_equal "<ul><li>One</li><li>Two</li></ul>", NotionBlocksToHtml.convert(blocks)
   end
 
   test "converts an image block, preferring external url then file url" do
@@ -154,11 +167,30 @@ class NotionBlocksToHtmlTest < ActiveSupport::TestCase
     assert_equal "<blockquote>⚠️ Careful</blockquote>", NotionBlocksToHtml.convert([ callout ])
   end
 
-  test "converts a toggle as a bold line followed by its children, with no collapse" do
+  test "converts a toggle as a bold line marked notion-emphasis, followed by its children, with no collapse" do
     toggle = block("toggle", { "rich_text" => [ rich_text("Summary") ] }, has_children: true,
       children: [ block("paragraph", { "rich_text" => [ rich_text("Detail") ] }) ])
 
-    assert_equal "<p><strong>Summary</strong></p><p>Detail</p>", NotionBlocksToHtml.convert([ toggle ])
+    assert_equal '<p class="notion-emphasis"><strong>Summary</strong></p><p>Detail</p>', NotionBlocksToHtml.convert([ toggle ])
+  end
+
+  test "marks a fully-bold paragraph as notion-emphasis, so it gets heading-like spacing above it" do
+    html = NotionBlocksToHtml.convert([
+      block("paragraph", { "rich_text" => [ rich_text("Section title", annotations: { "bold" => true }) ] })
+    ])
+
+    assert_equal '<p class="notion-emphasis"><strong>Section title</strong></p>', html
+  end
+
+  test "does not mark a paragraph notion-emphasis when only part of it is bold" do
+    html = NotionBlocksToHtml.convert([
+      block("paragraph", { "rich_text" => [
+        rich_text("Bold", annotations: { "bold" => true }),
+        rich_text(" and plain")
+      ] })
+    ])
+
+    assert_equal "<p><strong>Bold</strong> and plain</p>", html
   end
 
   test "converts a table, marking the first row as headers when has_column_header is true" do
@@ -169,6 +201,22 @@ class NotionBlocksToHtmlTest < ActiveSupport::TestCase
 
     assert_equal "<table><tr><th>Name</th><th>Role</th></tr><tr><td>Ada</td><td>Engineer</td></tr></table>",
       NotionBlocksToHtml.convert([ table ])
+  end
+
+  test "passes a table's rows as plain-text cells to a given table_builder, instead of rendering a plain <table>" do
+    table = block("table", { "has_column_header" => true }, has_children: true, children: [
+      { "type" => "table_row", "table_row" => { "cells" => [ [ rich_text("Name") ], [ rich_text("Role") ] ] } },
+      { "type" => "table_row", "table_row" => {
+        "cells" => [ [ rich_text("Ada") ], [ rich_text("Engineer", annotations: { "bold" => true }) ] ] } }
+    ])
+
+    captured = nil
+    builder = ->(rows) { captured = rows; "<CUSTOM-TABLE>" }
+
+    html = NotionBlocksToHtml.convert([ table ], table_builder: builder)
+
+    assert_equal "<CUSTOM-TABLE>", html
+    assert_equal [ [ "Name", "Role" ], [ "Ada", "Engineer" ] ], captured
   end
 
   test "silently skips an unsupported block type instead of raising" do
