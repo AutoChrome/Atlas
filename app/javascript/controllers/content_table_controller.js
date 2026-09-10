@@ -39,18 +39,22 @@ export default class extends Controller {
     this.save()
   }
 
-  // Pasting a comma- or pipe-separated block (copied from a spreadsheet, a
-  // CSV, a Slack table, ...) fills it straight into the grid instead of
-  // dumping the raw separators into one cell: a pipe or comma starts the
-  // next column, a new line starts the next row, anchored at whichever
-  // cell you pasted into. A plain single value (no separators at all) is
-  // left to the browser's own paste handling instead — replacing just the
-  // one cell's text the normal way, cursor position and undo included.
+  // Pasting a pipe-separated block (copied from a spreadsheet, a Slack
+  // table, ...) fills it straight into the grid instead of dumping the
+  // raw separators into one cell: a pipe starts the next column, a new
+  // line starts the next row, anchored at whichever cell you pasted into.
+  // Comma is deliberately NOT a column separator here — unlike a pipe, a
+  // comma shows up constantly inside a perfectly ordinary sentence (e.g.
+  // "Password or SSH key"), which was splitting normal cell text into
+  // extra columns it was never meant to have. A plain single value (no
+  // pipe at all) is left to the browser's own paste handling instead —
+  // replacing just the one cell's text the normal way, cursor position
+  // and undo included.
   paste(event) {
     const text = event.clipboardData?.getData("text/plain")
     if (!text) return
 
-    const rows = text.replace(/\r\n/g, "\n").split("\n").map((line) => line.split(/[,|]/).map((cell) => cell.trim()))
+    const rows = text.replace(/\r\n/g, "\n").split("\n").map((line) => line.split("|").map((cell) => cell.trim()))
     // A trailing blank line is just how most apps terminate a copied
     // block, not a real empty row someone meant to paste.
     while (rows.length > 1 && rows[rows.length - 1].every((cell) => cell === "")) rows.pop()
