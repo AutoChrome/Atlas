@@ -99,6 +99,9 @@ Rails.application.configure do
   # Enable DNS rebinding protection and other `Host` header attacks.
   config.hosts << ENV["SITE_ADDRESS"] if ENV["SITE_ADDRESS"].present?
   #
-  # Skip DNS rebinding protection for the default health check endpoint.
-  # config.host_authorization = { exclude: ->(request) { request.path == "/up" } }
+  # Skip DNS rebinding protection for the default health check endpoint —
+  # needed so scripts/deploy.sh's blue/green health check can curl a fresh
+  # container by its bare "localhost:3000" from inside itself, without a
+  # Host header matching SITE_ADDRESS (which it has no way to send there).
+  config.host_authorization = { exclude: ->(request) { request.path == "/up" } }
 end
