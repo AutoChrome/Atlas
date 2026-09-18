@@ -34,7 +34,11 @@ class NotionSyncJob < ApplicationJob
 
     blocks = client.retrieve_block_children(notion_page_id)
 
-    page = connection.area.pages.find_or_initialize_by(notion_page_id: notion_page_id)
+    page = Page.find_or_initialize_by(notion_page_id: notion_page_id)
+    # We should only assign the area if it's a new record
+    if page.new_record?
+      page.area = connection.area
+    end
     page.title = NotionClient.extract_title(notion_page)
     page.content = NotionBlocksToHtml.convert(blocks, table_builder: method(:build_table_attachment))
     # Never made public automatically, even on the first sync — same
