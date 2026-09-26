@@ -357,7 +357,7 @@ GEM
     ruby-vips (2.3.0)
       ffi (~> 1.12)
       logger
-    rubyzip (3.6.0)
+    rubyzip (3.7.0)
     sass-embedded (1.104.0-x86_64-linux-gnu)
       google-protobuf (~> 4.31)
     searchkick (6.1.2)
