@@ -14,8 +14,32 @@ class NotionClient
   OPEN_TIMEOUT = 5
   READ_TIMEOUT = 15
   MAX_CHILD_DEPTH = 10
+  MAX_DOWNLOAD_BYTES = 25.megabytes
 
   class Error < StandardError; end
+
+  # Downloads a Notion-hosted file from its presigned S3 URL (these expire
+  # after an hour, so anything we want to keep has to be copied out at sync
+  # time). Deliberately a class method that sends no Authorization header —
+  # the signature is in the URL, and S3 rejects requests that carry both.
+  # Returns [body, content_type].
+  def self.download_file(url)
+    uri = URI.parse(url)
+    http = Net::HTTP.new(uri.host, uri.port)
+    http.use_ssl = uri.scheme == "https"
+    http.open_timeout = OPEN_TIMEOUT
+    http.read_timeout = READ_TIMEOUT
+
+    response = http.request(Net::HTTP::Get.new(uri.request_uri))
+    raise Error, "Notion file download #{response.code}" unless response.is_a?(Net::HTTPSuccess)
+
+    body = response.body.to_s
+    raise Error, "Notion file too large (#{body.bytesize} bytes)" if body.bytesize > MAX_DOWNLOAD_BYTES
+
+    [ body, response["Content-Type"] ]
+  rescue URI::InvalidURIError, SocketError, SystemCallError, Timeout::Error, OpenSSL::SSL::SSLError => e
+    raise Error, "Notion file download failed: #{e.message}"
+  end
 
   def initialize(integration_token)
     @integration_token = integration_token

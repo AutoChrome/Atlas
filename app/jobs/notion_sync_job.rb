@@ -40,7 +40,11 @@ class NotionSyncJob < ApplicationJob
       page.area = connection.area
     end
     page.title = NotionClient.extract_title(notion_page)
-    page.content = NotionBlocksToHtml.convert(blocks, table_builder: method(:build_table_attachment))
+    page.content = NotionBlocksToHtml.convert(
+      blocks,
+      table_builder: method(:build_table_attachment),
+      image_builder: method(:build_image_attachment)
+    )
     # Never made public automatically, even on the first sync — same
     # reasoning as the Basecamp integration landing as a draft rather than
     # a live announcement: content pulled from an external system should
@@ -58,6 +62,27 @@ class NotionSyncJob < ApplicationJob
   end
 
   private
+    # Notion-hosted images are served from presigned S3 URLs that expire
+    # after an hour, so linking them directly leaves broken images shortly
+    # after publishing. Copies the file into Active Storage instead and
+    # returns the <action-text-attachment> tag for it. Returns nil on any
+    # download failure so the converter falls back to the plain <img> —
+    # briefly working beats dropping the image or failing the whole sync.
+    def build_image_attachment(url)
+      body, content_type = NotionClient.download_file(url)
+      filename = File.basename(URI.parse(url).path).presence || "image"
+      checksum = OpenSSL::Digest::MD5.base64digest(body)
+
+      # Every sync re-downloads, so reuse the blob if this exact file
+      # was already stored rather than piling up an orphan per webhook.
+      blob = ActiveStorage::Blob.find_by(checksum: checksum, filename: filename) ||
+        ActiveStorage::Blob.create_and_upload!(io: StringIO.new(body), filename: filename, content_type: content_type)
+      ActionText::Attachment.from_attachable(blob).node.to_html
+    rescue NotionClient::Error, URI::InvalidURIError => e
+      Rails.logger.warn("Notion image download failed, linking directly: #{e.message}")
+      nil
+    end
+
     # Turns a Notion table's rows (already reduced to plain-text cells — a
     # ContentTable's cells don't support inline formatting, so there's
     # nothing else worth carrying over) into a real ContentTable record,

@@ -161,6 +161,22 @@ class NotionBlocksToHtmlTest < ActiveSupport::TestCase
     assert_equal '<img src="https://notion-hosted.example.com/b.png">', NotionBlocksToHtml.convert([ file ])
   end
 
+  test "routes Notion-hosted images through the image builder, never external ones" do
+    builder = ->(url) { "<attachment for=\"#{url}\"></attachment>" }
+    file = block("image", { "file" => { "url" => "https://notion-hosted.example.com/b.png?sig=1" } })
+    external = block("image", { "external" => { "url" => "https://example.com/a.png" } })
+
+    html = NotionBlocksToHtml.convert([ file, external ], image_builder: builder)
+
+    assert_equal '<attachment for="https://notion-hosted.example.com/b.png?sig=1"></attachment><img src="https://example.com/a.png">', html
+  end
+
+  test "falls back to a plain img when the image builder returns nil" do
+    file = block("image", { "file" => { "url" => "https://notion-hosted.example.com/b.png" } })
+
+    assert_equal '<img src="https://notion-hosted.example.com/b.png">', NotionBlocksToHtml.convert([ file ], image_builder: ->(_) { nil })
+  end
+
   test "converts a callout with its emoji icon prefixed" do
     callout = block("callout", { "rich_text" => [ rich_text("Careful") ], "icon" => { "type" => "emoji", "emoji" => "⚠️" } })
 

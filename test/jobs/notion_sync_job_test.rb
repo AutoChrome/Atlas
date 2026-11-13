@@ -87,6 +87,48 @@ class NotionSyncJobTest < ActiveJob::TestCase
     assert @area.pages.find_by(notion_page_id: "notion-page-123").public?
   end
 
+  def stub_download_file(result)
+    original = NotionClient.method(:download_file)
+    NotionClient.define_singleton_method(:download_file) { |_url| result.respond_to?(:call) ? result.call : result }
+    yield
+  ensure
+    NotionClient.define_singleton_method(:download_file, original)
+  end
+
+  def notion_image_blocks
+    [ { "type" => "image", "image" => { "file" => { "url" => "https://prod-files-secure.s3.us-west-2.amazonaws.com/x/Import_Param.png?X-Amz-Expires=3600" } } } ]
+  end
+
+  test "stores Notion-hosted images in Active Storage instead of linking the expiring URL" do
+    png = Base64.decode64("iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNkYPhfDwAChwGA60e6kgAAAABJRU5ErkJggg==")
+
+    stub_download_file([ png, "image/png" ]) do
+      stub_notion_client(page: notion_page(title: "Test"), blocks: notion_image_blocks) do
+        assert_difference "ActiveStorage::Blob.count", 1 do
+          NotionSyncJob.perform_now(@connection.id, "notion-page-123")
+        end
+        # A re-sync of the same image reuses the blob.
+        assert_no_difference "ActiveStorage::Blob.count" do
+          NotionSyncJob.perform_now(@connection.id, "notion-page-123")
+        end
+      end
+    end
+
+    page = @area.pages.find_by(notion_page_id: "notion-page-123")
+    assert_equal "Import_Param.png", page.content.embeds.first.filename.to_s
+    assert_no_match "X-Amz", page.content.body.to_html
+  end
+
+  test "falls back to the direct image URL when the download fails" do
+    stub_download_file(-> { raise NotionClient::Error, "boom" }) do
+      stub_notion_client(page: notion_page(title: "Test"), blocks: notion_image_blocks) do
+        NotionSyncJob.perform_now(@connection.id, "notion-page-123")
+      end
+    end
+
+    assert_match "Import_Param.png", @area.pages.find_by(notion_page_id: "notion-page-123").content.to_s
+  end
+
   test "does nothing for an archived or trashed Notion page" do
     stub_notion_client(page: notion_page(title: "Test", in_trash: true), blocks: []) do
       assert_no_difference "@area.pages.count" do

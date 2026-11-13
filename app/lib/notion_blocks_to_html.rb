@@ -35,12 +35,19 @@ class NotionBlocksToHtml
   # (e.g. direct/unit use of this class) a table falls back to a plain
   # <table>, preserving per-cell rich text formatting that a ContentTable's
   # plain-text-only cells can't hold anyway.
-  def self.convert(blocks, table_builder: nil)
-    new(table_builder).convert(blocks)
+  #
+  # Same idea for image_builder: a Notion-hosted image's URL is a presigned
+  # S3 link that expires after an hour, so linking it directly breaks the
+  # page shortly after each sync. The caller downloads it and returns the
+  # HTML to use instead (or nil to fall back to the plain, soon-to-expire
+  # <img>). External images have permanent URLs and never go through it.
+  def self.convert(blocks, table_builder: nil, image_builder: nil)
+    new(table_builder, image_builder).convert(blocks)
   end
 
-  def initialize(table_builder = nil)
+  def initialize(table_builder = nil, image_builder = nil)
     @table_builder = table_builder
+    @image_builder = image_builder
   end
 
   def convert(blocks)
@@ -120,8 +127,13 @@ class NotionBlocksToHtml
     end
 
     def render_image(data)
-      url = data.dig("external", "url") || data.dig("file", "url")
-      url.present? ? "<img src=\"#{escape(url)}\">" : ""
+      external_url = data.dig("external", "url")
+      return "<img src=\"#{escape(external_url)}\">" if external_url.present?
+
+      url = data.dig("file", "url")
+      return "" if url.blank?
+
+      (@image_builder&.call(url)) || "<img src=\"#{escape(url)}\">"
     end
 
     def render_callout(data)
