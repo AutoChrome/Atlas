@@ -62,6 +62,23 @@ class RichTextPayloadTest < ActiveSupport::TestCase
     assert_match "Be careful", html
   end
 
+  test "html renders an image attachment with an absolute URL on the app's own host, not a relative path or example.org" do
+    png = Base64.decode64("iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNkYPhfDwAChwGA60e6kgAAAABJRU5ErkJggg==")
+    blob = ActiveStorage::Blob.create_and_upload!(io: StringIO.new(png), filename: "image.png", content_type: "image/png")
+    @announcement.content = ActionText::Attachment.from_attachable(blob).to_html
+    @announcement.save!(validate: false)
+
+    original = Rails.application.routes.default_url_options
+    Rails.application.routes.default_url_options = { host: "atlas.test", protocol: "https" }
+    html = RichTextPayload.new(@announcement.content).html
+
+    assert_match %r{<img src="https://atlas\.test/rails/active_storage/}, html
+    refute_match "figcaption", html
+    refute_match "attachment__size", html
+  ensure
+    Rails.application.routes.default_url_options = original
+  end
+
   test "plain_text strips formatting down to plain text" do
     @announcement.content = "<div><strong>Some</strong> <em>content</em></div>"
     @announcement.save!(validate: false)

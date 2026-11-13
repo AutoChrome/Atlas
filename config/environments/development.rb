@@ -38,11 +38,26 @@ Rails.application.configure do
   config.action_mailer.delivery_method = :letter_opener_web
   config.action_mailer.perform_deliveries = true
 
+  # Run deliver_later mail inline (in the web process) rather than via the
+  # Sidekiq worker, so Action Mailer's own "Delivered mail" debug log —
+  # full headers and body, including any reset/setup links — shows up in
+  # the same console as the request that triggered it. Only mail; other
+  # jobs still go through Sidekiq.
+  config.after_initialize do
+    ActionMailer::MailDeliveryJob.queue_adapter = :inline
+  end
+
   # Make template changes take effect immediately.
   config.action_mailer.perform_caching = false
 
   # Set localhost to be used by links generated in mailer templates.
-  config.action_mailer.default_url_options = { host: ENV.fetch("SITE_ADDRESS", "localhost") }
+  config.action_mailer.default_url_options = { host: ENV.fetch("SITE_ADDRESS", "localhost"), protocol: "https" }
+
+  # Used by anything that builds a full URL outside a request — notably
+  # RichTextPayload rendering announcement images for outbound webhooks
+  # (WebhookDeliveryJob). Without it Rails falls back to http://example.org,
+  # which is what receivers got as the image src.
+  routes.default_url_options = { host: ENV.fetch("SITE_ADDRESS", "localhost"), protocol: "https" }
 
   # Print deprecation notices to the Rails logger.
   config.active_support.deprecation = :log

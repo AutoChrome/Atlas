@@ -41,7 +41,20 @@ class RichTextPayload
         parsed = Nokogiri::HTML::DocumentFragment.parse(@rich_text.to_s)
         parsed.xpath(".//comment()").remove
         wrapper = parsed.at_css(".trix-content")
-        wrapper ? Nokogiri::HTML::DocumentFragment.parse(wrapper.inner_html) : parsed
+        result = wrapper ? Nokogiri::HTML::DocumentFragment.parse(wrapper.inner_html) : parsed
+        strip_default_image_captions(result)
+        result
+      end
+    end
+
+    # An image attachment renders with a figcaption of its filename and size
+    # ("image.png 15.5 KB") when nobody wrote a caption — noise for a
+    # receiver that just wants the picture. A real, author-written caption
+    # has no .attachment__name span, so it's left alone, and non-image file
+    # attachments keep theirs since the filename is all they show.
+    def strip_default_image_captions(fragment)
+      fragment.css("figure.attachment--preview figcaption").each do |caption|
+        caption.remove if caption.at_css(".attachment__name")
       end
     end
 end

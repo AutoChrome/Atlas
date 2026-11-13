@@ -62,6 +62,12 @@ Rails.application.configure do
   # the URL) shouldn't transit even that first unencrypted request.
   config.action_mailer.default_url_options = { host: ENV.fetch("SITE_ADDRESS", "example.com"), protocol: "https" }
 
+  # Used by anything that builds a full URL outside a request — notably
+  # RichTextPayload rendering announcement images for outbound webhooks
+  # (WebhookDeliveryJob). Without it Rails falls back to http://example.org,
+  # which is what receivers got as the image src.
+  routes.default_url_options = { host: ENV.fetch("SITE_ADDRESS", "example.com"), protocol: "https" }
+
   # Outgoing mail via SMTP (e.g. AWS SES's SMTP interface) — plain env vars
   # like everything else in this app's config (see .env.example), not Rails
   # encrypted credentials. Left unconfigured (Action Mailer's own default)

@@ -24,6 +24,12 @@
       <% if policy(@announcement).update? %>
         <%= link_to "Edit", edit_announcement_path(@announcement), class: "btn btn--outlined" %>
       <% end %>
+      <% if @announcement.published? && policy(@announcement).publish? %>
+        <%= button_to "Republish", publish_announcement_path(@announcement),
+              params: { webhook_ids: @announcement.published_webhook_ids },
+              data: { turbo_confirm: "Re-send this announcement to the platforms it was last sent to?" },
+              class: "btn btn--outlined" %>
+      <% end %>
       <% if policy(@announcement).destroy? %>
         <%= button_to "Delete", announcement_path(@announcement), method: :delete,
               data: { turbo_confirm: "Delete this announcement?" }, class: "btn btn--danger" %>
